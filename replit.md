@@ -1,6 +1,6 @@
-# [Project name]
+# Pint Wars
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Pint Wars is a mobile app foundation for private 30-day pub competitions between friends.
 
 ## Run & Operate
 
@@ -9,7 +9,8 @@ _Replace the heading above with the project's name, and this line with one sente
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- `pnpm --filter @workspace/pint-wars run typecheck` — typecheck the Expo mobile app
+- Required app env: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`
 
 ## Stack
 
@@ -19,18 +20,25 @@ _Replace the heading above with the project's name, and this line with one sente
 - Validation: Zod (`zod/v4`), `drizzle-zod`
 - API codegen: Orval (from OpenAPI spec)
 - Build: esbuild (CJS bundle)
+- Mobile: Expo Router, React Native, Supabase Auth, Postgres, Realtime-ready
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- Mobile app: `artifacts/pint-wars`
+- Stage 1 Supabase migration: `artifacts/pint-wars/supabase/migrations/202609160001_stage1_foundation.sql`
+- Supabase client and auth: `artifacts/pint-wars/src/lib/supabase.ts`, `artifacts/pint-wars/src/providers/AuthProvider.tsx`
+- League operations: `artifacts/pint-wars/src/lib/league-service.ts`
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Free Stage 1 league creation is a database RPC; clients cannot insert leagues or memberships directly.
+- Invite joining is a database RPC that validates the invite, capacity, and membership state.
+- League status is server-normalized when a member loads their leagues or dashboard.
+- Pint logging is intentionally not present yet; dashboard totals remain zero and the disabled button cannot award points.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Stage 1 supports account creation, free 8-player Pint War creation, invite-code joining, host invites, a 30-day league dashboard, and profile management.
 
 ## User preferences
 

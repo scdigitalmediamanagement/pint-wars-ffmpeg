@@ -1,0 +1,190 @@
+I want to build a mobile app called PINT WARS.
+
+This is a new project. Do NOT start by building the entire application. First, analyse the requirements below, propose the technical architecture and project structure, and then wait for my approval before implementing anything.
+
+PINT WARS is a social pub competition app.
+
+CORE CONCEPT:
+Users create or join private Pint Wars with their friends. Players record pints by taking a photo of themselves holding the fresh pint. Each logged pint = 1 Pint War point.
+
+The app is intended for iOS and Android.
+
+V1 COMMERCIAL MODEL:
+- Free users can create ONE free active league.
+- Free league: maximum 8 players and 30 days.
+- Paid leagues are paid for ONLY by the host.
+- League sizes:
+  8 players = £2.99 for 30 days
+  12 players = £3.99 for 30 days
+  16 players = £4.99 for 30 days
+  20 players = £5.99 for 30 days
+- Other players join the host's league for free.
+- Extending an existing league for another 30 days costs the host £2.99.
+- Once a league has started, the host can add an individual additional player for £0.99, subject to the 20-player maximum.
+- A newly added player starts at 0 pints/points.
+- Players can retire from a league for free.
+- The host can remove players.
+- Historical pints, photos and results must remain after a player retires.
+- Maximum league size is 20 players.
+
+CORE PRODUCT:
+1. Pint Wars
+2. Pub Passport
+3. Pub Map / Discovery
+
+PINT WAR:
+- Create league
+- Choose league name
+- Choose 8, 12, 16 or 20 players
+- Host pays
+- Invite friends by share link, invite code and/or QR code
+- League lasts 30 days
+- Live leaderboard
+- 1 logged pint = 1 point
+- Host controls league management
+- Add player after start for £0.99
+- Retire/remove players
+- Extend league for £2.99
+- League ends automatically after 30 days
+- Show final results and winner
+- Allow results to be shared
+
+PINT LOGGING:
+- Player taps LOG PINT
+- Camera opens
+- Player takes a photo of themselves holding the fresh pint
+- App records the photo
+- App should use location permission when appropriate to suggest the nearby pub
+- Player confirms the pub
+- Pint is logged
+- Player receives 1 Pint War point
+- Leaderboard updates
+- Store player, league, pub, photo, timestamp and pint number
+
+PINT HISTORY:
+Players should be able to see their previous pints as a visual diary:
+Pint #28 — The Ship — date/time — photo
+
+PUB PASSPORT:
+Users can track pubs they have visited.
+Example:
+47 pubs visited
+Exmouth — 18
+Torquay — 9
+Plymouth — 7
+Bristol — 13
+
+PUB PROFILES:
+Each pub can have:
+- Name
+- Town/city
+- Number of visits
+- Last visit
+- Atmosphere rating
+- Pints/drinks rating
+- Staff rating
+- Music rating
+- Optional food rating
+- Optional value rating
+- Would return? Yes/No
+- Optional written review
+- User photos
+
+PUB DISCOVERY / MAP:
+Users should eventually be able to:
+- Find pubs nearby
+- Find pubs when travelling
+- See pubs they have already visited
+- See pubs they haven't visited
+- See highly rated pubs
+- Filter by atmosphere, pints/drinks, staff and music
+- See pubs visited/recommended by friends
+- See pubs used in Pint Wars
+
+PRIMARY NAVIGATION:
+Home | Wars | Passport | Map | Profile
+
+HOME:
+Show:
+- Active Pint War
+- Current position
+- Current pint total
+- Passport progress
+- Discover pubs
+- Log Pint button when relevant
+
+LEAGUE DASHBOARD:
+Example:
+EXMOUTH PINT WARS
+DAY 17 / 30
+
+Show:
+- Live leaderboard
+- Player positions
+- Pint totals
+- Current user's position
+- Pubs visited
+- Prominent LOG PINT button
+- League activity
+- Host management tools
+
+LEAGUE END:
+Show:
+WAR OVER
+- Champion
+- Final pint totals
+- Players
+- Pubs visited
+- Pint photos
+- Share results
+- Start another war
+
+FUTURE ACHIEVEMENTS:
+Examples:
+- First Pint
+- Pub Crawler
+- Pub Hunter
+- Pub Collector
+- Pub Legend
+- Exmouth Complete
+- Devon Complete
+
+TECHNICAL DIRECTION:
+Use a modern cross-platform architecture suitable for iOS and Android.
+
+Preferred direction:
+- React Native / Expo
+- Supabase for authentication, database, storage and realtime functionality
+- Cloud photo storage
+- Suitable maps/places provider
+- Push notifications
+- Proper payment architecture suitable for Apple App Store and Google Play
+
+IMPORTANT:
+Do not build the whole application yet.
+
+First:
+1. Recommend the exact technical architecture.
+2. Recommend the project folder structure.
+3. Identify the database tables and relationships.
+4. Identify authentication requirements.
+5. Identify the screens required for the first MVP.
+6. Identify any technical risks or decisions we need to make before coding.
+7. Explain how you would build the MVP in stages.
+
+The first MVP target is simple:
+
+An 8-person Pint War must be able to:
+- create an account
+- create a Pint War
+- invite/join players
+- log a pint with a photo
+- award 1 point
+- update the leaderboard
+- view pint history
+- complete the 30-day league
+
+Do not add unrelated features.
+Do not invent different pricing.
+Do not change the Pint Wars rules above.
+Do not build features beyond the agreed MVP unless explicitly approved.
