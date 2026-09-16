@@ -1,1 +1,2 @@
 - [Expo SDK patch updates](expo-sdk-patch-updates.md) — package firewall timing can temporarily block a compatible patch release; verify Metro and typecheck instead of forcing it.
+- [Supabase DDL access](supabase-ddl-access.md) — the connector exposes PostgREST only; schema changes require a separate DDL-capable connection.
