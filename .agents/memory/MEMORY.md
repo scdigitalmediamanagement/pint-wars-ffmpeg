@@ -1,0 +1,1 @@
+- [Expo SDK patch updates](expo-sdk-patch-updates.md) — package firewall timing can temporarily block a compatible patch release; verify Metro and typecheck instead of forcing it.
