@@ -18,17 +18,34 @@ export default function JoinWarScreen() {
       await client.invalidateQueries({ queryKey: ['my-leagues'] });
       router.replace(`/war/${result.league_id}`);
     },
-    onError: (err) => setError(err instanceof Error ? err.message : 'Could not join this war.'),
+    onError: (err) => {
+      if (err instanceof Error) {
+        setError(err.message);
+        return;
+      }
+      const errorRecord = err as { message?: unknown };
+      setError(typeof errorRecord.message === 'string' ? errorRecord.message : 'Could not join this war.');
+    },
   });
 
   return (
     <Screen>
       <ScrollView contentContainerStyle={[uiStyles.content, { paddingTop: 28, gap: 24 }]} keyboardShouldPersistTaps="handled">
-        <Title eyebrow="Join a competition">Enter your invite code</Title>
+        <Title eyebrow="Join a competition">Join a Pint War</Title>
         <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 22 }}>
-          Ask the host for the 6-character code from their invite screen. Joining is free.
+          A friend can give you a 6-character invite code from their Pint War.
         </Text>
-        <Field label="Invite code" value={code} onChangeText={(value) => setCode(value.toUpperCase())} autoCapitalize="characters" maxLength={6} placeholder="ABC123" />
+        <Field
+          label="Invite code"
+          value={code}
+          onChangeText={(value) => {
+            setCode(value.toUpperCase());
+            setError('');
+          }}
+          autoCapitalize="characters"
+          maxLength={6}
+          placeholder="ABC123"
+        />
         {error ? <ErrorText>{error}</ErrorText> : null}
         <Button label="Join Pint War" onPress={() => mutation.mutate()} loading={mutation.isPending} disabled={code.trim().length !== 6} />
       </ScrollView>

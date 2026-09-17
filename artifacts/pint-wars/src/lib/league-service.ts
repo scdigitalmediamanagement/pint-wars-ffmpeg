@@ -99,12 +99,34 @@ export async function createFreeLeague(name: string) {
 }
 
 export async function joinLeagueByCode(code: string) {
-  const { data, error } = await getSupabase().rpc('join_league_by_code', {
-    p_code: code.trim().toUpperCase(),
+  const client = getSupabase();
+  const normalizedCode = code.trim().toUpperCase();
+
+  if (__DEV__) {
+    const { data: userData, error: userError } = await client.auth.getUser();
+    console.log('[Pint Wars] join_league_by_code preflight', {
+      userId: userData.user?.id ?? null,
+      authError: userError ? describeSupabaseError(userError) : null,
+      codeLength: normalizedCode.length,
+    });
+  }
+
+  const { data, error } = await client.rpc('join_league_by_code', {
+    p_code: normalizedCode,
   });
-  if (error) throw error;
+  if (error) {
+    if (__DEV__) {
+      console.error('[Pint Wars] join_league_by_code failed', describeSupabaseError(error));
+    }
+    throw error;
+  }
   const result = Array.isArray(data) ? data[0] : data;
   if (!result) throw new Error('The invite could not be accepted.');
+  if (__DEV__) {
+    console.log('[Pint Wars] join_league_by_code succeeded', {
+      leagueId: result.league_id,
+    });
+  }
   return result as { league_id: string };
 }
 

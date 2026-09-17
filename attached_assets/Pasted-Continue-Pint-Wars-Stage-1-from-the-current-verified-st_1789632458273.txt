@@ -1,0 +1,72 @@
+Continue Pint Wars Stage 1 from the current verified state.
+
+The authenticated free Pint War creation flow is now working:
+- Account creation and email confirmation work.
+- Profile exists/backfill works.
+- Free 8-player Pint War creation works.
+- 30-day league is created.
+- Host membership is created.
+- Invite code is generated.
+- League dashboard loads correctly.
+- Stage 1 correctly prevents pint logging.
+
+Do NOT modify any existing working league-creation logic.
+Do NOT start Stage 2.
+Do NOT add payments, Apple/Google billing, photos, cameras, maps, pub discovery, or pint logging.
+
+Build ONLY the Stage 1 "Join with a code" flow.
+
+Required behaviour:
+
+1. From Home, the existing "Join with a code" button opens a join screen.
+
+2. Join screen:
+   - Title: "Join a Pint War"
+   - Short explanation that a friend can give you a 6-character invite code.
+   - Input for the invite code.
+   - Primary button: "Join Pint War"
+
+3. Validate the code against the existing live Supabase league data.
+
+4. If the code is invalid:
+   - Show a clear user-friendly error.
+   - Do not create a membership.
+
+5. If the league is completed/expired:
+   - Do not allow joining.
+   - Show a clear error.
+
+6. If the league is full:
+   - Do not allow joining.
+   - Show a clear error explaining that the war is full.
+
+7. If the authenticated user is already a member:
+   - Do not create a duplicate membership.
+   - Send them to the existing league dashboard.
+
+8. If valid and space is available:
+   - Create a player membership for the authenticated user.
+   - Role must be "player".
+   - Status must be "active".
+   - Initial pint/point count must be zero.
+   - Do not alter the existing host.
+   - Do not alter existing players.
+   - Send the new player to the league dashboard.
+
+9. The league dashboard must then show the new player in the leaderboard with 0 pints.
+
+10. Preserve all existing RLS/security rules. Prefer an existing secure RPC if one already exists rather than exposing privileged database operations to the client. If an RPC is required, create the smallest possible secure function for joining by invite code.
+
+11. Add useful diagnostic logging around the join operation, similar to the existing create_free_league diagnostics:
+   - preflight
+   - success
+   - failure
+   Include the PostgreSQL error code/message when available.
+
+12. Do not create unnecessary migrations. If a database change is genuinely required, create a single clearly named migration and explain exactly why.
+
+13. Run typecheck after the change and restart the Expo workflow.
+
+14. Do not claim the join flow is verified unless an authenticated user has actually joined using the invite code.
+
+Before making changes, inspect the existing schema, RPCs and current Home/Create/League screens so the implementation uses the existing architecture rather than duplicating it.
