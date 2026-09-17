@@ -1,10 +1,30 @@
 create extension if not exists pgcrypto;
 
-create type public.league_status as enum ('active', 'completed');
-create type public.membership_role as enum ('host', 'player');
-create type public.membership_status as enum ('active', 'retired', 'removed');
+do $$
+begin
+  create type public.league_status as enum ('active', 'completed');
+exception
+  when duplicate_object then null;
+end
+$$;
 
-create table public.profiles (
+do $$
+begin
+  create type public.membership_role as enum ('host', 'player');
+exception
+  when duplicate_object then null;
+end
+$$;
+
+do $$
+begin
+  create type public.membership_status as enum ('active', 'retired', 'removed');
+exception
+  when duplicate_object then null;
+end
+$$;
+
+create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   display_name text not null default 'Player' check (char_length(display_name) between 1 and 60),
   avatar_url text,
@@ -12,7 +32,7 @@ create table public.profiles (
   updated_at timestamptz not null default now()
 );
 
-create table public.leagues (
+create table if not exists public.leagues (
   id uuid primary key default gen_random_uuid(),
   name text not null check (char_length(name) between 1 and 80),
   host_id uuid not null references public.profiles(id) on delete restrict,
@@ -26,7 +46,7 @@ create table public.leagues (
   constraint leagues_valid_window check (ends_at > starts_at)
 );
 
-create table public.league_memberships (
+create table if not exists public.league_memberships (
   id uuid primary key default gen_random_uuid(),
   league_id uuid not null references public.leagues(id) on delete cascade,
   user_id uuid not null references public.profiles(id) on delete restrict,
@@ -38,7 +58,7 @@ create table public.league_memberships (
   unique (league_id, user_id)
 );
 
-create table public.league_invites (
+create table if not exists public.league_invites (
   id uuid primary key default gen_random_uuid(),
   league_id uuid not null references public.leagues(id) on delete cascade,
   created_by uuid not null references public.profiles(id) on delete restrict,
@@ -48,9 +68,9 @@ create table public.league_invites (
   revoked_at timestamptz
 );
 
-create index league_memberships_user_id_idx on public.league_memberships(user_id);
-create index league_memberships_league_id_idx on public.league_memberships(league_id);
-create index league_invites_code_idx on public.league_invites(code);
+create index if not exists league_memberships_user_id_idx on public.league_memberships(user_id);
+create index if not exists league_memberships_league_id_idx on public.league_memberships(league_id);
+create index if not exists league_invites_code_idx on public.league_invites(code);
 
 create or replace function public.handle_new_user()
 returns trigger
@@ -280,17 +300,23 @@ alter table public.leagues enable row level security;
 alter table public.league_memberships enable row level security;
 alter table public.league_invites enable row level security;
 
+drop policy if exists "profiles are readable by signed-in users" on public.profiles;
 create policy "profiles are readable by signed-in users"
   on public.profiles for select to authenticated using (true);
+
+drop policy if exists "users can update their own profile" on public.profiles;
 create policy "users can update their own profile"
   on public.profiles for update to authenticated using (id = auth.uid()) with check (id = auth.uid());
 
+drop policy if exists "members can read their leagues" on public.leagues;
 create policy "members can read their leagues"
   on public.leagues for select to authenticated using (public.is_league_member(id) or host_id = auth.uid());
 
+drop policy if exists "members can read league memberships" on public.league_memberships;
 create policy "members can read league memberships"
   on public.league_memberships for select to authenticated using (public.is_league_member(league_id) or user_id = auth.uid());
 
+drop policy if exists "hosts can read their invites" on public.league_invites;
 create policy "hosts can read their invites"
   on public.league_invites for select to authenticated using (created_by = auth.uid() or public.is_league_host(league_id));
 
@@ -298,6 +324,17 @@ revoke insert, update, delete on public.leagues from authenticated;
 revoke insert, update, delete on public.league_memberships from authenticated;
 revoke insert, update, delete on public.league_invites from authenticated;
 
+revoke execute on function public.is_league_member(uuid) from public;
+revoke execute on function public.is_league_host(uuid) from public;
+revoke execute on function public.make_invite_code() from public;
+revoke execute on function public.create_free_league(text) from public;
+revoke execute on function public.create_league_invite(uuid) from public;
+revoke execute on function public.join_league_by_code(text) from public;
+revoke execute on function public.complete_expired_league(uuid) from public;
+revoke execute on function public.refresh_my_league_statuses() from public;
+
+grant execute on function public.is_league_member(uuid) to authenticated;
+grant execute on function public.is_league_host(uuid) to authenticated;
 grant execute on function public.create_free_league(text) to authenticated;
 grant execute on function public.create_league_invite(uuid) to authenticated;
 grant execute on function public.join_league_by_code(text) to authenticated;
