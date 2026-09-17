@@ -3,6 +3,26 @@ import type { LeagueDashboard, LeagueMembership, MyLeague } from '@/src/types/le
 
 type LeagueRow = MyLeague['league'];
 
+function describeSupabaseError(error: unknown) {
+  if (!error || typeof error !== 'object') {
+    return { code: null, message: String(error), details: null, hint: null };
+  }
+
+  const candidate = error as {
+    code?: unknown;
+    message?: unknown;
+    details?: unknown;
+    hint?: unknown;
+  };
+
+  return {
+    code: typeof candidate.code === 'string' ? candidate.code : null,
+    message: typeof candidate.message === 'string' ? candidate.message : String(error),
+    details: typeof candidate.details === 'string' ? candidate.details : null,
+    hint: typeof candidate.hint === 'string' ? candidate.hint : null,
+  };
+}
+
 export async function getMyLeagues(): Promise<MyLeague[]> {
   const client = getSupabase();
   const { error: refreshError } = await client.rpc('refresh_my_league_statuses', {});
@@ -31,12 +51,50 @@ export async function getMyLeagues(): Promise<MyLeague[]> {
 }
 
 export async function createFreeLeague(name: string) {
-  const { data, error } = await getSupabase().rpc('create_free_league', {
-    p_name: name.trim(),
+  const client = getSupabase();
+  const trimmedName = name.trim();
+
+  if (__DEV__) {
+    const { data: userData, error: userError } = await client.auth.getUser();
+    let profileExists: boolean | null = null;
+    let profileError: ReturnType<typeof describeSupabaseError> | null = null;
+
+    if (userData.user) {
+      const { data: profile, error: lookupError } = await client
+        .from('profiles')
+        .select('id')
+        .eq('id', userData.user.id)
+        .maybeSingle();
+      profileExists = Boolean(profile);
+      profileError = lookupError ? describeSupabaseError(lookupError) : null;
+    }
+
+    console.log('[Pint Wars] create_free_league preflight', {
+      userId: userData.user?.id ?? null,
+      authError: userError ? describeSupabaseError(userError) : null,
+      profileExists,
+      profileError,
+      nameLength: trimmedName.length,
+    });
+  }
+
+  const { data, error } = await client.rpc('create_free_league', {
+    p_name: trimmedName,
   });
-  if (error) throw error;
+  if (error) {
+    if (__DEV__) {
+      console.error('[Pint Wars] create_free_league failed', describeSupabaseError(error));
+    }
+    throw error;
+  }
   const result = Array.isArray(data) ? data[0] : data;
   if (!result) throw new Error('The league could not be created.');
+  if (__DEV__) {
+    console.log('[Pint Wars] create_free_league succeeded', {
+      leagueId: result.league_id,
+      hasInviteCode: Boolean(result.invite_code),
+    });
+  }
   return result as { league_id: string; invite_code: string };
 }
 

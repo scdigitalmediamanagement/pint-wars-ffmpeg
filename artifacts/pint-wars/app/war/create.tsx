@@ -71,7 +71,21 @@ export default function CreateWarScreen() {
       await client.invalidateQueries({ queryKey: ['my-leagues'] });
       router.replace({ pathname: '/war/invite', params: { leagueId: result.league_id, code: result.invite_code } });
     },
-    onError: (err) => setError(err instanceof Error ? err.message : 'Could not create your war.'),
+    onError: (err) => {
+      if (__DEV__) {
+        console.error('[Pint Wars] create screen error', err);
+      }
+      if (err instanceof Error) {
+        setError(err.message);
+        return;
+      }
+      const errorRecord = err as { message?: unknown };
+      if (typeof errorRecord.message === 'string') {
+        setError(errorRecord.message);
+        return;
+      }
+      setError('Could not create your war.');
+    },
   });
 
   return (
