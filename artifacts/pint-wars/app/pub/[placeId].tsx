@@ -12,15 +12,11 @@ import {
   reportPubReview, 
   createPubReview, 
   updatePubReview, 
-  uploadReviewPhoto, 
-  removeReviewPhoto, 
   getPubReviewDetail,
   canReviewPub,
   type ReviewRow 
 } from '@/src/lib/review-service';
-import * as ImagePicker from 'expo-image-picker';
-import { StarRating, ReviewPhoto, RatingBadge } from '@/components/Reviews';
-import { Image } from 'expo-image';
+import { StarRating, RatingBadge } from '@/components/Reviews';
 
 function RatingInput({ label, rating, onChange }: { label: string; rating: number; onChange: (r: number) => void }) {
   const colors = useColors();
@@ -226,14 +222,6 @@ export default function PubScreen() {
                   </View>
                 </View>
 
-                {review.photo_paths && review.photo_paths.length > 0 && (
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, marginTop: 8 }}>
-                    {review.photo_paths.map(path => (
-                      <ReviewPhoto key={path} path={path} size={80} />
-                    ))}
-                  </ScrollView>
-                )}
-
                 <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 16, marginTop: 8 }}>
                   {user?.id === review.user_id ? (
                     <>
@@ -262,7 +250,6 @@ export default function PubScreen() {
         pubProvider={provider as string} 
         pubPlaceId={placeId as string} 
         existingReview={editingReview} 
-        user={user} 
       />
       <ReportModal 
         visible={!!reportingReviewId} 
@@ -279,14 +266,12 @@ function ReviewFormModal({
   pubProvider,
   pubPlaceId,
   existingReview,
-  user,
 }: {
   visible: boolean;
   onClose: () => void;
   pubProvider: string;
   pubPlaceId: string;
   existingReview: ReviewRow | null;
-  user: { id: string } | null;
 }) {
   const colors = useColors();
   const queryClient = useQueryClient();
@@ -298,11 +283,6 @@ function ReviewFormModal({
   const [value, setValue] = useState(0);
   const [wouldReturn, setWouldReturn] = useState<boolean | null>(null);
   const [reviewText, setReviewText] = useState('');
-  
-  const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
-  const [photosToAdd, setPhotosToAdd] = useState<{uri: string; mimeType: string|null}[]>([]);
-  const [photosToRemove, setPhotosToRemove] = useState<string[]>([]);
-  const [persistedReviewId, setPersistedReviewId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -315,10 +295,6 @@ function ReviewFormModal({
       setValue(existingReview?.value_rating || 0);
       setWouldReturn(existingReview?.would_return ?? null);
       setReviewText(existingReview?.review_text || '');
-      setExistingPhotos(existingReview?.photo_paths || []);
-      setPhotosToAdd([]);
-      setPhotosToRemove([]);
-      setPersistedReviewId(existingReview?.id ?? null);
     }
   }, [visible, existingReview]);
 
@@ -332,7 +308,6 @@ function ReviewFormModal({
       return;
     }
     setIsSubmitting(true);
-    let reviewSaved = false;
     try {
       const input = {
         pubProvider, pubPlaceId,
@@ -346,33 +321,11 @@ function ReviewFormModal({
         reviewText
       };
       
-      let reviewId = persistedReviewId ?? existingReview?.id;
-      if (reviewId) {
-        await updatePubReview(reviewId, input);
+      if (existingReview?.id) {
+        await updatePubReview(existingReview.id, input);
       } else {
-        const created = await createPubReview(input);
-        reviewId = created.review_id;
-        setPersistedReviewId(reviewId);
+        await createPubReview(input);
       }
-      reviewSaved = true;
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: reviewKeys.all }),
-        queryClient.invalidateQueries({ queryKey: ['pub-passport'] }),
-      ]);
-
-      for (const path of photosToRemove) {
-        await removeReviewPhoto(path);
-        setPhotosToRemove((current) => current.filter((item) => item !== path));
-      }
-
-      if (user) {
-        for (const photo of photosToAdd) {
-          const path = await uploadReviewPhoto(user.id, reviewId, photo.uri, photo.mimeType);
-          setPhotosToAdd((current) => current.filter((item) => item.uri !== photo.uri));
-          setExistingPhotos((current) => [...current, path]);
-        }
-      }
-
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: reviewKeys.all }),
         queryClient.invalidateQueries({ queryKey: ['pub-passport'] }),
@@ -380,23 +333,11 @@ function ReviewFormModal({
       onClose();
     } catch (error) {
       Alert.alert(
-        reviewSaved ? 'Review Saved' : 'Could Not Save Review',
-        reviewSaved
-          ? `Your review was saved, but some photo changes still need to be retried. ${error instanceof Error ? error.message : ''}`.trim()
-          : error instanceof Error ? error.message : 'Could not save review',
+        'Could Not Save Review',
+        error instanceof Error ? error.message : 'Could not save review',
       );
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const pickPhoto = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 0.8,
-    });
-    if (!result.canceled && result.assets[0]) {
-      setPhotosToAdd(prev => [...prev, { uri: result.assets[0].uri, mimeType: result.assets[0].mimeType || null }]);
     }
   };
 
@@ -457,37 +398,7 @@ function ReviewFormModal({
               placeholderTextColor={colors.mutedForeground}
             />
           </View>
-          
-          <View style={{ gap: 12 }}>
-            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 16, color: colors.foreground }}>Photos (Optional)</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-               {existingPhotos.map(path => (
-                 <View key={path} style={{ position: 'relative' }}>
-                   <ReviewPhoto path={path} size={80} />
-                   <Pressable onPress={() => {
-                      setExistingPhotos(prev => prev.filter(p => p !== path));
-                      setPhotosToRemove(prev => [...prev, path]);
-                   }} style={{ position: 'absolute', top: -6, right: -6, backgroundColor: colors.destructive, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
-                     <FontAwesome name="times" size={12} color={colors.primaryForeground} />
-                   </Pressable>
-                 </View>
-               ))}
-               {photosToAdd.map(photo => (
-                 <View key={photo.uri} style={{ position: 'relative' }}>
-                   <Image source={{ uri: photo.uri }} style={{ width: 80, height: 80, borderRadius: 8 }} />
-                   <Pressable onPress={() => {
-                      setPhotosToAdd(prev => prev.filter(p => p.uri !== photo.uri));
-                   }} style={{ position: 'absolute', top: -6, right: -6, backgroundColor: colors.destructive, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
-                     <FontAwesome name="times" size={12} color={colors.primaryForeground} />
-                   </Pressable>
-                 </View>
-               ))}
-               <Pressable onPress={pickPhoto} style={{ width: 80, height: 80, borderRadius: 8, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed' }}>
-                 <FontAwesome name="camera" size={24} color={colors.mutedForeground} />
-               </Pressable>
-            </ScrollView>
-          </View>
-          
+
           <View style={{ flexDirection: 'row', gap: 16, marginTop: 16 }}>
             <View style={{ flex: 1 }}>
               <Button label="Cancel" variant="quiet" onPress={onClose} disabled={isSubmitting} />

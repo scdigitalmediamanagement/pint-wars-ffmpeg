@@ -1,8 +1,5 @@
-import { fetch as expoFetch } from 'expo/fetch';
 import { getSupabase } from '@/src/lib/supabase';
 import type { ReviewRpcRow } from '@/src/lib/database.types';
-
-const REVIEW_PHOTO_BUCKET = 'pub-review-photos';
 
 export type ReviewRatingInput = {
   pubProvider: string;
@@ -32,21 +29,6 @@ export type ReviewSummary = {
   would_return_count: number;
   current_user_review_id: string | null;
 };
-
-function photoExtension(mimeType: string | null) {
-  switch (mimeType) {
-    case 'image/png':
-      return 'png';
-    case 'image/heic':
-      return 'heic';
-    case 'image/heif':
-      return 'heif';
-    case 'image/webp':
-      return 'webp';
-    default:
-      return 'jpg';
-  }
-}
 
 export async function canReviewPub(pubProvider: string, pubPlaceId: string) {
   const { data, error } = await getSupabase().rpc('can_review_pub', {
@@ -130,13 +112,6 @@ export async function updatePubReview(reviewId: string, input: Omit<ReviewRating
 }
 
 export async function deletePubReview(reviewId: string) {
-  const review = await getPubReviewDetail(reviewId);
-  if (review?.photo_paths.length) {
-    const { error: cleanupError } = await getSupabase().storage
-      .from(REVIEW_PHOTO_BUCKET)
-      .remove(review.photo_paths);
-    if (cleanupError) throw cleanupError;
-  }
   const { data, error } = await getSupabase().rpc('delete_pub_review', {
     p_review_id: reviewId,
   });
@@ -151,53 +126,4 @@ export async function reportPubReview(reviewId: string, reason: string) {
   });
   if (error) throw error;
   return data as string;
-}
-
-export async function uploadReviewPhoto(
-  userId: string,
-  reviewId: string,
-  photoUri: string,
-  mimeType: string | null,
-) {
-  const response = await expoFetch(photoUri);
-  if (!response.ok) throw new Error('The review photo could not be prepared for upload.');
-  const uniquePart = `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-  const storagePath = `${userId}/${reviewId}/${uniquePart}.${photoExtension(mimeType)}`;
-  const { error: reserveError } = await getSupabase().rpc('attach_pub_review_photo', {
-    p_review_id: reviewId,
-    p_storage_path: storagePath,
-  });
-  if (reserveError) throw reserveError;
-  const { error: uploadError } = await getSupabase().storage
-    .from(REVIEW_PHOTO_BUCKET)
-    .upload(storagePath, await response.arrayBuffer(), {
-      contentType: mimeType ?? 'image/jpeg',
-      upsert: false,
-    });
-  if (uploadError) {
-    await getSupabase().rpc('delete_pub_review_photo', {
-      p_storage_path: storagePath,
-    });
-    throw uploadError;
-  }
-  return storagePath;
-}
-
-export async function removeReviewPhoto(storagePath: string) {
-  const { error: storageError } = await getSupabase().storage
-    .from(REVIEW_PHOTO_BUCKET)
-    .remove([storagePath]);
-  if (storageError) throw storageError;
-  const { error: rowError } = await getSupabase().rpc('delete_pub_review_photo', {
-    p_storage_path: storagePath,
-  });
-  if (rowError) throw rowError;
-}
-
-export async function createReviewPhotoUrl(storagePath: string, expiresIn = 3600) {
-  const { data, error } = await getSupabase().storage
-    .from(REVIEW_PHOTO_BUCKET)
-    .createSignedUrl(storagePath, expiresIn);
-  if (error) throw error;
-  return data.signedUrl;
 }

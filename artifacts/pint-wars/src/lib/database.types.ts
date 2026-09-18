@@ -120,18 +120,6 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
-      pub_review_photos: {
-        Row: {
-          id: string;
-          review_id: string;
-          user_id: string;
-          storage_path: string;
-          created_at: string;
-        };
-        Insert: never;
-        Update: never;
-        Relationships: [];
-      };
       pub_review_reports: {
         Row: {
           id: string;
@@ -219,14 +207,6 @@ export type Database = {
         Args: { p_pub_provider: string; p_pub_place_id: string };
         Returns: boolean;
       };
-      can_upload_pub_review_photo: {
-        Args: { p_review_id: string; p_user_id: string; p_storage_path: string };
-        Returns: boolean;
-      };
-      can_read_pub_review_photo: {
-        Args: { p_storage_path: string };
-        Returns: boolean;
-      };
       get_pub_review_summary: {
         Args: { p_pub_provider: string; p_pub_place_id: string };
         Returns: {
@@ -293,14 +273,6 @@ export type Database = {
         Args: { p_review_id: string; p_reason: string };
         Returns: string;
       };
-      attach_pub_review_photo: {
-        Args: { p_review_id: string; p_storage_path: string };
-        Returns: string;
-      };
-      delete_pub_review_photo: {
-        Args: { p_storage_path: string };
-        Returns: boolean;
-      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
@@ -325,5 +297,4 @@ export type ReviewRpcRow = {
   review_text: string | null;
   created_at: string;
   updated_at: string;
-  photo_paths: string[];
 };

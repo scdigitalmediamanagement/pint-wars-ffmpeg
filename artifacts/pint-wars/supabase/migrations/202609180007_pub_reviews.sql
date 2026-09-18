@@ -135,8 +135,7 @@ returns table (
   would_return boolean,
   review_text text,
   created_at timestamptz,
-  updated_at timestamptz,
-  photo_paths text[]
+  updated_at timestamptz
 )
 language plpgsql
 stable
@@ -169,18 +168,11 @@ begin
     review.would_return,
     review.review_text,
     review.created_at,
-    review.updated_at,
-    coalesce(
-      array_agg(photo.storage_path order by photo.created_at)
-        filter (where photo.id is not null),
-      '{}'::text[]
-    )
+    review.updated_at
   from public.pub_reviews as review
   left join public.profiles as profile on profile.id = review.user_id
-  left join public.pub_review_photos as photo on photo.review_id = review.id
   where review.pub_provider = p_pub_provider
     and review.pub_place_id = p_pub_place_id
-  group by review.id, profile.display_name
   order by review.created_at desc
   limit least(greatest(coalesce(p_limit, 50), 1), 100)
   offset greatest(coalesce(p_offset, 0), 0);
@@ -205,8 +197,7 @@ returns table (
   would_return boolean,
   review_text text,
   created_at timestamptz,
-  updated_at timestamptz,
-  photo_paths text[]
+  updated_at timestamptz
 )
 language sql
 stable
@@ -230,18 +221,11 @@ as $$
     review.would_return,
     review.review_text,
     review.created_at,
-    review.updated_at,
-    coalesce(
-      array_agg(photo.storage_path order by photo.created_at)
-        filter (where photo.id is not null),
-      '{}'::text[]
-    )
+    review.updated_at
   from public.pub_reviews as review
   left join public.profiles as profile on profile.id = review.user_id
-  left join public.pub_review_photos as photo on photo.review_id = review.id
   where auth.uid() is not null
-    and review.id = p_review_id
-  group by review.id, profile.display_name;
+    and review.id = p_review_id;
 $$;
 
 create or replace function public.create_pub_review(
@@ -297,6 +281,15 @@ begin
   if not found then
     raise exception 'You can only review a pub after logging a confirmed pint there';
   end if;
+  if exists (
+    select 1
+    from public.pub_reviews as review
+    where review.user_id = auth.uid()
+      and review.pub_provider = p_pub_provider
+      and review.pub_place_id = p_pub_place_id
+  ) then
+    raise exception 'You have already reviewed this pub';
+  end if;
 
   insert into public.pub_reviews (
     user_id, pub_provider, pub_place_id, pub_name, pub_address,
@@ -310,19 +303,6 @@ begin
     p_atmosphere_rating, p_pints_drinks_rating, p_staff_rating, p_music_rating,
     p_food_rating, p_value_rating, p_would_return, nullif(trim(p_review_text), '')
   )
-  on conflict (user_id, pub_provider, pub_place_id)
-  do update set
-    pub_name = excluded.pub_name,
-    pub_address = excluded.pub_address,
-    atmosphere_rating = excluded.atmosphere_rating,
-    pints_drinks_rating = excluded.pints_drinks_rating,
-    staff_rating = excluded.staff_rating,
-    music_rating = excluded.music_rating,
-    food_rating = excluded.food_rating,
-    value_rating = excluded.value_rating,
-    would_return = excluded.would_return,
-    review_text = excluded.review_text,
-    updated_at = now()
   returning id into new_review_id;
 
   return query select new_review_id, p_pub_provider, p_pub_place_id;
@@ -438,56 +418,6 @@ begin
 end;
 $$;
 
-create or replace function public.attach_pub_review_photo(
-  p_review_id uuid,
-  p_storage_path text
-)
-returns uuid
-language plpgsql
-security definer
-set search_path = ''
-as $$
-declare
-  photo_id uuid;
-begin
-  if auth.uid() is null then raise exception 'You must be signed in'; end if;
-  if p_storage_path not like auth.uid()::text || '/' || p_review_id::text || '/%' then
-    raise exception 'The review photo path is invalid';
-  end if;
-  if not exists (
-    select 1
-    from public.pub_reviews as review
-    where review.id = p_review_id
-      and review.user_id = auth.uid()
-  ) then
-    raise exception 'Review not found or you are not the author';
-  end if;
-  insert into public.pub_review_photos(review_id, user_id, storage_path)
-  values (p_review_id, auth.uid(), p_storage_path)
-  returning id into photo_id;
-  return photo_id;
-end;
-$$;
-
-create or replace function public.delete_pub_review_photo(p_storage_path text)
-returns boolean
-language plpgsql
-security definer
-set search_path = ''
-as $$
-declare
-  deleted_count integer;
-begin
-  if auth.uid() is null then raise exception 'You must be signed in'; end if;
-  delete from public.pub_review_photos
-   where storage_path = p_storage_path
-     and user_id = auth.uid();
-  get diagnostics deleted_count = row_count;
-  if deleted_count = 0 then raise exception 'Review photo not found or you are not the owner'; end if;
-  return true;
-end;
-$$;
-
 drop function if exists public.get_my_pub_passport();
 create function public.get_my_pub_passport()
 returns table (
@@ -573,20 +503,14 @@ end;
 $$;
 
 revoke execute on function public.can_review_pub(text, text) from public, anon;
-revoke execute on function public.can_upload_pub_review_photo(uuid, uuid, text) from public, anon;
-revoke execute on function public.can_read_pub_review_photo(text) from public, anon;
 revoke execute on function public.get_pub_review_summary(text, text) from public, anon;
 revoke execute on function public.get_pub_reviews(text, text, integer, integer) from public, anon;
 revoke execute on function public.get_pub_review_detail(uuid) from public, anon;
 revoke execute on function public.delete_pub_review(uuid) from public, anon;
 revoke execute on function public.report_pub_review(uuid, text) from public, anon;
-revoke execute on function public.attach_pub_review_photo(uuid, text) from public, anon;
-revoke execute on function public.delete_pub_review_photo(text) from public, anon;
 revoke execute on function public.get_my_pub_passport() from public, anon;
 
 grant execute on function public.can_review_pub(text, text) to authenticated;
-grant execute on function public.can_upload_pub_review_photo(uuid, uuid, text) to authenticated;
-grant execute on function public.can_read_pub_review_photo(text) to authenticated;
 grant execute on function public.get_pub_review_summary(text, text) to authenticated;
 grant execute on function public.get_pub_reviews(text, text, integer, integer) to authenticated;
 grant execute on function public.get_pub_review_detail(uuid) to authenticated;
@@ -596,6 +520,4 @@ grant execute on function public.create_pub_review(text, text, smallint, smallin
 grant execute on function public.update_pub_review(uuid, smallint, smallint, smallint, smallint, boolean, smallint, smallint, text) to authenticated;
 grant execute on function public.delete_pub_review(uuid) to authenticated;
 grant execute on function public.report_pub_review(uuid, text) to authenticated;
-grant execute on function public.attach_pub_review_photo(uuid, text) to authenticated;
-grant execute on function public.delete_pub_review_photo(text) to authenticated;
 grant execute on function public.get_my_pub_passport() to authenticated;

@@ -2,9 +2,6 @@ import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
-import { useQuery } from '@tanstack/react-query';
-import { createReviewPhotoUrl } from '@/src/lib/review-service';
-import { Image } from 'expo-image';
 
 export function StarRating({ 
   rating, 
@@ -93,23 +90,6 @@ export function PubReviewSummaryBadge({
         <Text style={{ color: colors.accent, fontFamily: 'Inter_700Bold', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>
           You reviewed this
         </Text>
-      ) : null}
-    </View>
-  );
-}
-
-export function ReviewPhoto({ path, size = 80 }: { path: string; size?: number }) {
-  const colors = useColors();
-  const { data: url } = useQuery({
-    queryKey: ['review-photo', path],
-    queryFn: () => createReviewPhotoUrl(path),
-    staleTime: 1000 * 60 * 30,
-  });
-
-  return (
-    <View style={[{ width: size, height: size, borderRadius: 8, backgroundColor: colors.border, overflow: 'hidden' }]}>
-      {url ? (
-        <Image source={{ uri: url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
       ) : null}
     </View>
   );
