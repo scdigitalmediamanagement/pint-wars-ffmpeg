@@ -1,0 +1,89 @@
+Build the next Pint Wars feature: League Completion & Winner.
+
+Use FREE mode.
+
+Before changing anything, inspect the existing league creation, league membership, league timing/expiry, pint logging, leaderboard, Home, Wars and Profile flows so this integrates with the current architecture.
+
+The goal is to complete the core Pint Wars game loop:
+
+Create → Invite → Log Pints → Compete → League Finishes → Winner → Start Another War
+
+Implement the following:
+
+1. League expiry
+- Pint Wars currently use a 10-day duration for new leagues.
+- When the league reaches its server-side end time, it must become finished.
+- Use the existing server-side league timing/expiry logic.
+- Do not rely on the user's phone clock.
+- Do not change the existing 10-day duration.
+
+2. Stop scoring after expiry
+- Once a league is finished, players must not be able to log another pint into it.
+- The existing secure log_pint RPC must remain the authority.
+- Do not create a client-only restriction that could be bypassed.
+- Existing active-league logging must continue working normally.
+
+3. Final leaderboard
+Create a clear completed-league state showing:
+- League name
+- Finished status
+- Final leaderboard
+- Each player's final pint total
+- Correct ranking based on total Pint War points
+
+4. Winner
+- Clearly identify the player who finished with the highest total.
+- Use neutral wording such as "Winner".
+- If there is a tie for the highest score, handle it safely rather than arbitrarily selecting one winner.
+- Do not change the scoring system: 1 logged pint = 1 point.
+
+5. Completed league screen/state
+When a player opens a finished league, show the final result rather than the active-league controls.
+- No Log Pint button for a finished league.
+- No ability to add further points.
+- Keep the final leaderboard readable.
+
+6. Start another Pint War
+Provide a clear action after a league finishes:
+- "Start Another Pint War"
+- It should take the user into the existing Create Pint War flow.
+- Do not automatically create a new league.
+- Do not bypass the existing free-trial or paid-league rules.
+
+7. Existing leagues
+- Do not break historical leagues.
+- Existing active leagues must continue to work.
+- Existing finished/expired leagues must remain readable.
+- Do not modify old league start/end dates.
+
+8. Free-trial and paid rules
+- Do not change the existing locked pricing or free-trial rules.
+- A new league must still obey the existing entitlement rules.
+- Do not implement payments yet.
+
+9. Database/security
+- Reuse existing league timing and secure RPC architecture wherever possible.
+- Do not weaken RLS or security.
+- Do not allow clients to declare a league finished themselves.
+- If a database migration is genuinely required, create it but DO NOT ask me to apply it yet; report it to me first.
+- Do not make unnecessary schema changes.
+
+10. UI
+- Keep the existing Pint Wars visual style.
+- Keep the implementation simple and clean.
+- Do not redesign unrelated screens.
+
+11. Verification
+After implementation:
+- Run typecheck.
+- Run git diff --check.
+- Verify the Expo workflow bundles successfully.
+- Test the relevant active/finished league logic using the existing test/development setup where possible.
+- Report exactly:
+  a) files changed
+  b) whether a migration was created
+  c) whether any migration was applied
+  d) tests performed and results
+  e) anything I need to manually test on the iPhone
+
+Do not make unrelated changes.

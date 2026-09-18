@@ -48,6 +48,7 @@ export default function LeagueDashboardScreen() {
     queryKey: ['league-dashboard', leagueId],
     queryFn: () => getLeagueDashboard(leagueId as string),
     enabled: Boolean(leagueId),
+    refetchInterval: 60_000,
   });
   const logMutation = useMutation({
     mutationFn: (input: {
@@ -243,6 +244,8 @@ export default function LeagueDashboardScreen() {
   const day = dayNumber(league.starts_at, league.ends_at, league.status);
   const sortedMembers = [...members].sort((a, b) => b.pint_total - a.pint_total || a.joined_at.localeCompare(b.joined_at));
   const totalPints = members.reduce((total, member) => total + member.pint_total, 0);
+  const highestPintTotal = sortedMembers[0]?.pint_total ?? 0;
+  const winners = sortedMembers.filter((member) => member.pint_total === highestPintTotal);
 
   return (
     <Screen>
@@ -267,11 +270,25 @@ export default function LeagueDashboardScreen() {
             </View>
           </View>
         </Card>
+        {league.status === 'completed' ? (
+          <Card style={styles.resultCard}>
+            <Text style={[styles.selectedLabel, { color: colors.accent }]}>
+              {winners.length === 1 ? 'WINNER' : 'TIED WINNERS'}
+            </Text>
+            <Text style={[styles.resultNames, { color: colors.foreground }]}>
+              {winners.map((winner) => winner.display_name).join(' · ')}
+            </Text>
+            <Text style={[styles.resultText, { color: colors.mutedForeground }]}>
+              Final score: {highestPintTotal} {highestPintTotal === 1 ? 'pint' : 'pints'}
+            </Text>
+          </Card>
+        ) : null}
         <View style={{ gap: 12 }}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Leaderboard</Text>
           <Card style={{ paddingVertical: 8 }}>
             {sortedMembers.map((member, index) => {
               const isCurrentUser = member.user_id === user?.id;
+              const isWinner = league.status === 'completed' && member.pint_total === highestPintTotal;
               return (
                 <View key={member.id} style={[styles.playerRow, { borderBottomColor: colors.border }]}>
                   <Text style={[styles.rank, { color: colors.accent }]}>{index + 1}</Text>
@@ -279,34 +296,44 @@ export default function LeagueDashboardScreen() {
                     <Text style={[styles.playerName, { color: colors.foreground }]}>{member.display_name}{isCurrentUser ? '  (you)' : ''}</Text>
                     <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', fontSize: 12 }}>{member.role === 'host' ? 'Host' : 'Player'}</Text>
                   </View>
+                  {isWinner ? (
+                    <Text style={[styles.winnerLabel, { color: colors.accent }]}>
+                      {winners.length === 1 ? 'WINNER' : 'TIED'}
+                    </Text>
+                  ) : null}
                   <Text style={[styles.pints, { color: colors.foreground }]}>{member.pint_total}</Text>
                 </View>
               );
             })}
           </Card>
         </View>
-        <Button
-          label={cameraError ? 'Try camera again' : 'Log Pint'}
-          disabled={league.status !== 'active'}
-          loading={isPreparingPint || logMutation.isPending}
-          onPress={() => void takePintPhoto()}
-        />
-        {cameraError ? <ErrorText>{cameraError}</ErrorText> : null}
-        {cameraBlocked && Platform.OS !== 'web' ? (
-          <Button
-            label="Open device settings"
-            variant="quiet"
-            onPress={() => {
-              void Linking.openSettings().catch(() => {
-                setCameraError('Open your device settings and allow camera access for Pint Wars.');
-              });
-            }}
-          />
-        ) : null}
-        {logError ? <ErrorText>{logError}</ErrorText> : null}
-        <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 21 }}>
-          Take a fresh photo with your pint. Each logged pint adds exactly one point.
-        </Text>
+        {league.status === 'active' ? (
+          <>
+            <Button
+              label={cameraError ? 'Try camera again' : 'Log Pint'}
+              loading={isPreparingPint || logMutation.isPending}
+              onPress={() => void takePintPhoto()}
+            />
+            {cameraError ? <ErrorText>{cameraError}</ErrorText> : null}
+            {cameraBlocked && Platform.OS !== 'web' ? (
+              <Button
+                label="Open device settings"
+                variant="quiet"
+                onPress={() => {
+                  void Linking.openSettings().catch(() => {
+                    setCameraError('Open your device settings and allow camera access for Pint Wars.');
+                  });
+                }}
+              />
+            ) : null}
+            {logError ? <ErrorText>{logError}</ErrorText> : null}
+            <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 21 }}>
+              Take a fresh photo with your pint. Each logged pint adds exactly one point.
+            </Text>
+          </>
+        ) : (
+          <Button label="Start Another Pint War" onPress={() => router.push('/war/create')} />
+        )}
         {members.some((member) => member.user_id === user?.id && member.role === 'host') ? (
           <Pressable onPress={() => router.push({ pathname: '/war/invite', params: { leagueId: league.id } })}>
             <Text style={{ color: colors.primary, fontFamily: 'Inter_600SemiBold', textAlign: 'center' }}>Manage invites</Text>
@@ -445,6 +472,9 @@ const styles = StyleSheet.create({
   heading: { gap: 3 },
   kicker: { fontFamily: 'Inter_700Bold', fontSize: 12, letterSpacing: 1.5 },
   summary: { gap: 12 },
+  resultCard: { gap: 7 },
+  resultNames: { fontFamily: 'Inter_700Bold', fontSize: 22, lineHeight: 28 },
+  resultText: { fontFamily: 'Inter_400Regular', lineHeight: 21 },
   metricValue: { fontFamily: 'Inter_700Bold', fontSize: 26 },
   metricLabel: { fontFamily: 'Inter_700Bold', fontSize: 10, letterSpacing: 1 },
   sectionTitle: { fontFamily: 'Inter_700Bold', fontSize: 21 },
@@ -452,6 +482,7 @@ const styles = StyleSheet.create({
   rank: { width: 25, fontFamily: 'Inter_700Bold', fontSize: 18, textAlign: 'center' },
   playerName: { fontFamily: 'Inter_600SemiBold', fontSize: 15 },
   pints: { fontFamily: 'Inter_700Bold', fontSize: 22 },
+  winnerLabel: { fontFamily: 'Inter_700Bold', fontSize: 10, letterSpacing: 1 },
   modalBackdrop: { flex: 1, justifyContent: 'flex-end' },
   pubSheet: {
     maxHeight: '82%',
