@@ -63,6 +63,7 @@ export default function CreateWarScreen() {
   const client = useQueryClient();
   const [name, setName] = useState('');
   const [selectedPlanId, setSelectedPlanId] = useState('free-4');
+  const [isPaidConfirmation, setIsPaidConfirmation] = useState(false);
   const [error, setError] = useState('');
   const selectedPlan = leaguePlans.find((plan) => plan.id === selectedPlanId) ?? leaguePlans[0];
   const mutation = useMutation({
@@ -91,67 +92,112 @@ export default function CreateWarScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={[uiStyles.content, { paddingTop: 28, gap: 24 }]} keyboardShouldPersistTaps="handled">
-        <Title eyebrow="New competition">Create a Pint War</Title>
-        <Card style={{ gap: 16 }}>
-          <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 22 }}>
-            Choose your league size. Every Pint War starts as soon as it is created and runs for 10 days.
-          </Text>
-          <View style={styles.planList}>
-            <Text style={[styles.sectionLabel, { color: colors.foreground }]}>League size</Text>
-            {leaguePlans.map((plan) => {
-              const isSelected = plan.id === selectedPlan.id;
-              return (
-                <Pressable
-                  key={plan.id}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: isSelected }}
-                  onPress={() => {
-                    setSelectedPlanId(plan.id);
-                    setError('');
-                  }}
-                  style={({ pressed }) => [
-                    styles.plan,
-                    {
-                      backgroundColor: colors.background,
-                      borderColor: isSelected ? colors.accent : colors.border,
-                      opacity: pressed ? 0.78 : 1,
-                    },
-                  ]}
-                >
-                  <View style={styles.planCopy}>
-                    <View style={styles.planTitleRow}>
-                      <Text style={[styles.planTitle, { color: colors.foreground }]}>{plan.title}</Text>
-                      {plan.kind === 'paid' ? (
-                        <Text style={[styles.comingSoon, { color: colors.accent }]}>COMING SOON</Text>
-                      ) : null}
-                    </View>
-                    <Text style={[styles.planDescription, { color: colors.mutedForeground }]}>{plan.description}</Text>
-                  </View>
-                  <View style={styles.planMeta}>
-                    <Text style={[styles.planPrice, { color: colors.foreground }]}>{plan.price}</Text>
-                    <Text style={[styles.planPlayers, { color: colors.mutedForeground }]}>{plan.capacity} players</Text>
-                  </View>
-                </Pressable>
-              );
-            })}
-          </View>
-          <Field label="League name" value={name} onChangeText={setName} placeholder="Exmouth Pint Wars" maxLength={80} autoFocus />
-          {selectedPlan.kind === 'paid' ? (
-            <Text style={[styles.paymentNote, { color: colors.mutedForeground }]}>
-              Payments are not enabled yet. Choose the free 4-player trial to create a Pint War today.
+        {isPaidConfirmation && selectedPlan.kind === 'paid' ? (
+          <>
+            <Title eyebrow="Payment-ready preview">Confirm your Pint War</Title>
+            <Card style={{ gap: 18 }}>
+              <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 22 }}>
+                Review your league details. Payments are not enabled yet, so nothing will be charged or created.
+              </Text>
+              <View style={styles.summary}>
+                <View style={styles.summaryRow}>
+                  <Text style={[styles.summaryLabel, { color: colors.mutedForeground }]}>League size</Text>
+                  <Text style={[styles.summaryValue, { color: colors.foreground }]}>{selectedPlan.title}</Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text style={[styles.summaryLabel, { color: colors.mutedForeground }]}>Price</Text>
+                  <Text style={[styles.summaryValue, { color: colors.foreground }]}>{selectedPlan.price}</Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text style={[styles.summaryLabel, { color: colors.mutedForeground }]}>Duration</Text>
+                  <Text style={[styles.summaryValue, { color: colors.foreground }]}>10 days</Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text style={[styles.summaryLabel, { color: colors.mutedForeground }]}>Players</Text>
+                  <Text style={[styles.summaryValue, { color: colors.foreground }]}>{selectedPlan.capacity}</Text>
+                </View>
+              </View>
+              <Field label="League name" value={name} onChangeText={setName} placeholder="Exmouth Pint Wars" maxLength={80} autoFocus />
+              <Text style={[styles.paymentNote, { color: colors.mutedForeground }]}>
+                This option will create a 10-day Pint War for {selectedPlan.capacity} players after payment is added.
+              </Text>
+              {error ? <ErrorText>{error}</ErrorText> : null}
+              <Button
+                label="Payments coming soon"
+                onPress={() => undefined}
+                disabled
+              />
+              <Button
+                label="Change league size"
+                variant="quiet"
+                onPress={() => {
+                  setIsPaidConfirmation(false);
+                  setError('');
+                }}
+              />
+            </Card>
+          </>
+        ) : (
+          <>
+            <Title eyebrow="New competition">Create a Pint War</Title>
+            <Card style={{ gap: 16 }}>
+              <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 22 }}>
+                Choose your league size. Every Pint War starts as soon as it is created and runs for 10 days.
+              </Text>
+              <View style={styles.planList}>
+                <Text style={[styles.sectionLabel, { color: colors.foreground }]}>League size</Text>
+                {leaguePlans.map((plan) => {
+                  const isSelected = plan.id === selectedPlan.id;
+                  return (
+                    <Pressable
+                      key={plan.id}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: isSelected }}
+                      onPress={() => {
+                        setSelectedPlanId(plan.id);
+                        setIsPaidConfirmation(plan.kind === 'paid');
+                        setError('');
+                      }}
+                      style={({ pressed }) => [
+                        styles.plan,
+                        {
+                          backgroundColor: colors.background,
+                          borderColor: isSelected ? colors.accent : colors.border,
+                          opacity: pressed ? 0.78 : 1,
+                        },
+                      ]}
+                    >
+                      <View style={styles.planCopy}>
+                        <View style={styles.planTitleRow}>
+                          <Text style={[styles.planTitle, { color: colors.foreground }]}>{plan.title}</Text>
+                          {plan.kind === 'paid' ? (
+                            <Text style={[styles.comingSoon, { color: colors.accent }]}>COMING SOON</Text>
+                          ) : null}
+                        </View>
+                        <Text style={[styles.planDescription, { color: colors.mutedForeground }]}>{plan.description}</Text>
+                      </View>
+                      <View style={styles.planMeta}>
+                        <Text style={[styles.planPrice, { color: colors.foreground }]}>{plan.price}</Text>
+                        <Text style={[styles.planPlayers, { color: colors.mutedForeground }]}>{plan.capacity} players</Text>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <Field label="League name" value={name} onChangeText={setName} placeholder="Exmouth Pint Wars" maxLength={80} autoFocus />
+              {error ? <ErrorText>{error}</ErrorText> : null}
+              <Button
+                label="Create free war"
+                onPress={() => mutation.mutate()}
+                loading={mutation.isPending}
+                disabled={!name.trim()}
+              />
+            </Card>
+            <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 21 }}>
+              Each group gets one free 4-player trial. Paid league sizes will be available after payments are added.
             </Text>
-          ) : null}
-          {error ? <ErrorText>{error}</ErrorText> : null}
-          <Button
-            label={selectedPlan.kind === 'free' ? 'Create free war' : 'Payments coming soon'}
-            onPress={() => mutation.mutate()}
-            loading={mutation.isPending}
-            disabled={!name.trim() || selectedPlan.kind !== 'free'}
-          />
-        </Card>
-        <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 21 }}>
-          Each group gets one free 4-player trial. Paid league sizes will be available after payments are added.
-        </Text>
+          </>
+        )}
       </ScrollView>
     </Screen>
   );
@@ -169,5 +215,9 @@ const styles = StyleSheet.create({
   planMeta: { alignItems: 'flex-end', gap: 3 },
   planPrice: { fontFamily: 'Inter_700Bold', fontSize: 15 },
   planPlayers: { fontFamily: 'Inter_400Regular', fontSize: 11 },
+  summary: { gap: 12, paddingVertical: 2 },
+  summaryRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16 },
+  summaryLabel: { fontFamily: 'Inter_400Regular', fontSize: 14 },
+  summaryValue: { flex: 1, fontFamily: 'Inter_600SemiBold', fontSize: 14, textAlign: 'right' },
   paymentNote: { fontFamily: 'Inter_400Regular', fontSize: 13, lineHeight: 19 },
 });
