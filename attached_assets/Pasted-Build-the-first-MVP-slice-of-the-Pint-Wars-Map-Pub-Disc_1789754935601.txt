@@ -1,0 +1,76 @@
+Build the first MVP slice of the Pint Wars Map / Pub Discovery feature.
+
+Use FREE mode.
+
+Implement ONLY the current-location Map experience described below.
+
+1. Add a new Map tab:
+   - Create app/(tabs)/map.tsx
+   - Register Map between Wars and Passport
+   - Update BOTH NativeTabLayout and ClassicTabLayout
+   - Do not change the existing tab order otherwise.
+
+2. Add the map rendering dependency:
+   - Use the Expo-compatible version of react-native-maps for the project's current Expo SDK.
+   - Do not install an arbitrary/latest version.
+   - Keep the dependency change limited to what is required for the Map.
+
+3. Create shared location handling:
+   - Extract/reuse the existing foreground location permission/current-position logic.
+   - Do NOT break or change the existing War logging location behaviour.
+   - Location must remain optional.
+   - Handle:
+     a) loading
+     b) permission denied
+     c) location unavailable/error
+     d) successful location
+
+4. On the Map screen, when location is available:
+   - Call the existing findNearbyPubs(location) from pub-service.ts.
+   - Reuse the existing authenticated /api/pubs/nearby endpoint.
+   - Do NOT create a second pub-search API.
+   - Use the existing 500-metre search radius.
+   - Do not change the API contract or database.
+
+5. Display:
+   - A real interactive map centred on the user's current location.
+   - User location where supported.
+   - One marker for each returned nearby pub.
+   - Marker keys must use provider + placeId.
+   - A simple nearby-pub list below the map or as a bottom section.
+   - Each pub should show its name and distance.
+   - Keep the UI consistent with the existing Pint Wars design system.
+
+6. Pub selection:
+   - Tapping a map marker or list item must navigate to the EXISTING:
+     /pub/[placeId]
+   - Pass the existing provider, placeId, name and address values.
+   - Do not create a new pub detail screen or identity system.
+
+7. Handle these states clearly:
+   - Getting location
+   - Location permission denied
+   - Location unavailable
+   - Loading nearby pubs
+   - No pubs found
+   - Google Places/provider error
+   - Rate-limited response
+   - Successful results
+
+8. Add a simple Refresh action so the user can retry the nearby-pub search.
+
+9. Important:
+   - Do NOT add Google ratings, opening hours, photos, phone numbers, text search, favourites, reviews, map panning discovery, or larger-radius searches yet.
+   - Do NOT modify the database.
+   - Do NOT modify the Pub Reviews system.
+   - Do NOT modify Pub Passport behaviour.
+   - Do NOT add fake/mock pub data.
+   - Do NOT change the Pint War scoring or logging flow.
+
+10. After implementation:
+   - Run typecheck.
+   - Run git diff --check.
+   - Verify the Expo workflow bundles successfully.
+   - Report exactly what files changed and whether any migration was created/applied.
+
+Keep this implementation small and focused. Do not refactor unrelated code.
