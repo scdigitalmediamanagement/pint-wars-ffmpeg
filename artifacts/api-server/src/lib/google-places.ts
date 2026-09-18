@@ -4,7 +4,7 @@ const GOOGLE_NEARBY_SEARCH_URL =
   "https://places.googleapis.com/v1/places:searchNearby";
 const GOOGLE_FIELD_MASK =
   "places.id,places.displayName,places.formattedAddress,places.location";
-const SEARCH_RADIUS_METERS = 500;
+const SEARCH_RADIUS_METERS = 3_000;
 const MAX_RESULTS = 10;
 const EARTH_RADIUS_METERS = 6_371_000;
 const REQUEST_TIMEOUT_MILLISECONDS = 5_000;
