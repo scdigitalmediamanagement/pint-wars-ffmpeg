@@ -274,12 +274,22 @@ export async function logPint({
 
 export type PubPassportEntry = {
   location_key: string;
+  pub_provider: string | null;
+  pub_place_id: string | null;
   pub_name: string | null;
   address: string | null;
   latitude: number;
   longitude: number;
   pint_count: number;
   most_recent_visit: string;
+  review_count: number;
+  average_atmosphere: number | null;
+  average_pints_drinks: number | null;
+  average_staff: number | null;
+  average_music: number | null;
+  average_food: number | null;
+  average_value: number | null;
+  current_user_review_id: string | null;
 };
 
 export async function getMyPubPassport(): Promise<PubPassportEntry[]> {

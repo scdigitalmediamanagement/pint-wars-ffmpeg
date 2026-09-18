@@ -1,0 +1,46 @@
+Implement Pub Reviews for Pint Wars using the approved technical plan and these locked product decisions:
+
+- Rating scale: 1–5
+- One current review per user per identified pub
+- A user must have logged at least one confirmed pint at that pub before reviewing it
+- Reviews are visible to all signed-in Pint Wars users
+- The review author can edit and delete their own review
+- Atmosphere, Pints/Drinks, Staff and Music are required
+- Food and Value are optional
+- Would Return is required and is Yes/No
+- Written review is optional
+- User review photos are included
+- Coordinate-only/location-only Passport entries cannot be reviewed
+- Google Places is used only for pub identity. Do not import Google reviews, Google ratings, Google photos or opening hours.
+- Do not change Pint War scoring or pint logging behaviour.
+
+Use the existing Pub Passport and Google Places identity architecture.
+
+Implementation order:
+
+1. Create the Supabase migration for pub_reviews and pub_review_photos.
+2. Add appropriate indexes, constraints and RLS.
+3. Use the existing secure SECURITY DEFINER RPC architecture for review reads/writes.
+4. Ensure clients cannot spoof user_id or review eligibility.
+5. Validate all ratings and required fields server-side.
+6. Use private Supabase storage for review photos.
+7. Update database types.
+8. Add the review service.
+9. Add review summaries to identified Passport pubs.
+10. Add a Pub Detail screen.
+11. Add Create/Edit Review UI.
+12. Add Delete Review.
+13. Add an optional Review this pub prompt after a successful confirmed pint.
+14. Add a basic Report Review capability so inappropriate user content can be flagged for future moderation.
+15. Do not alter existing Pint War scoring, leaderboard, camera, GPS or Google Places behaviour.
+
+Important:
+- Keep the existing UI style.
+- Keep the implementation simple and mobile-first.
+- Do not create a separate pub master table.
+- Do not install unnecessary packages.
+- Do not change existing working functionality.
+- Do not apply the Supabase migration automatically. Create the migration file and tell me exactly what SQL needs to be run manually in Supabase.
+- Run typecheck and relevant tests after implementation.
+
+Before making changes, briefly state the files and database objects you intend to create/change. Then implement the feature.

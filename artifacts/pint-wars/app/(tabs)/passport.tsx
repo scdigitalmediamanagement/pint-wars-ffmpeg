@@ -1,8 +1,11 @@
 import React from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'expo-router';
+import { PubReviewSummaryBadge } from '@/components/Reviews';
 import { Card, ErrorText, Screen, Title, uiStyles } from '@/components/AppUi';
 import { getMyPubPassport, type PubPassportEntry } from '@/src/lib/league-service';
+import { useAuth } from '@/src/providers/AuthProvider';
 import { useColors } from '@/hooks/useColors';
 
 function formatLocation(entry: PubPassportEntry) {
@@ -22,9 +25,11 @@ function formatVisitDate(value: string) {
 
 export default function PassportScreen() {
   const colors = useColors();
+  const { user } = useAuth();
   const query = useQuery({
-    queryKey: ['pub-passport'],
+    queryKey: ['pub-passport', user?.id],
     queryFn: getMyPubPassport,
+    enabled: Boolean(user),
   });
   const entries = query.data ?? [];
 
@@ -67,31 +72,70 @@ export default function PassportScreen() {
         {!query.isLoading && !query.isError && entries.length ? (
           <View style={styles.list}>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Visited pubs</Text>
-            {entries.map((entry) => (
-              <Card key={entry.location_key} style={styles.pubCard}>
-                <View style={styles.pubHeader}>
-                  <View style={styles.pubCopy}>
-                    <Text style={[styles.pubName, { color: colors.foreground }]}>
-                      {entry.pub_name ?? 'Pub name unavailable'}
-                    </Text>
-                    <Text style={[styles.identificationNote, { color: colors.accent }]}>
-                      {entry.pub_name ? 'Identified pub' : 'Waiting for pub identification'}
+            {entries.map((entry) => {
+              const isIdentified = Boolean(entry.pub_provider && entry.pub_place_id);
+
+              const content = (
+                <Card style={styles.pubCard}>
+                  <View style={styles.pubHeader}>
+                    <View style={styles.pubCopy}>
+                      <Text style={[styles.pubName, { color: colors.foreground }]}>
+                        {entry.pub_name ?? 'Pub name unavailable'}
+                      </Text>
+                      <Text style={[styles.identificationNote, { color: colors.accent }]}>
+                        {entry.pub_name ? 'Identified pub' : 'Waiting for pub identification'}
+                      </Text>
+                    </View>
+                    <Text style={[styles.pintCount, { color: colors.foreground }]}>
+                      {entry.pint_count} {entry.pint_count === 1 ? 'pint' : 'pints'}
                     </Text>
                   </View>
-                  <Text style={[styles.pintCount, { color: colors.foreground }]}>
-                    {entry.pint_count} {entry.pint_count === 1 ? 'pint' : 'pints'}
-                  </Text>
-                </View>
-                <View style={styles.details}>
-                  <Text style={[styles.detailLabel, { color: colors.mutedForeground }]}>Location</Text>
-                  <Text style={[styles.detailValue, { color: colors.foreground }]}>{formatLocation(entry)}</Text>
-                </View>
-                <View style={styles.details}>
-                  <Text style={[styles.detailLabel, { color: colors.mutedForeground }]}>Most recent visit</Text>
-                  <Text style={[styles.detailValue, { color: colors.foreground }]}>{formatVisitDate(entry.most_recent_visit)}</Text>
-                </View>
-              </Card>
-            ))}
+                  <View style={styles.details}>
+                    <Text style={[styles.detailLabel, { color: colors.mutedForeground }]}>Location</Text>
+                    <Text style={[styles.detailValue, { color: colors.foreground }]}>{formatLocation(entry)}</Text>
+                  </View>
+                  <View style={styles.details}>
+                    <Text style={[styles.detailLabel, { color: colors.mutedForeground }]}>Most recent visit</Text>
+                    <Text style={[styles.detailValue, { color: colors.foreground }]}>{formatVisitDate(entry.most_recent_visit)}</Text>
+                  </View>
+                  {isIdentified ? (
+                    <View style={{ marginTop: 8, paddingTop: 14, borderTopWidth: 1, borderTopColor: colors.border }}>
+                       <PubReviewSummaryBadge
+                         reviewCount={entry.review_count}
+                         averageAtmosphere={entry.average_atmosphere}
+                         averagePintsDrinks={entry.average_pints_drinks}
+                         averageStaff={entry.average_staff}
+                         averageMusic={entry.average_music}
+                         currentUserReviewId={entry.current_user_review_id}
+                       />
+                    </View>
+                  ) : null}
+                </Card>
+              );
+
+              if (isIdentified && entry.pub_provider && entry.pub_place_id) {
+                return (
+                  <Link
+                    key={entry.location_key}
+                    href={{
+                      pathname: '/pub/[placeId]',
+                      params: {
+                        placeId: entry.pub_place_id,
+                        provider: entry.pub_provider,
+                        name: entry.pub_name || '',
+                        address: entry.address || '',
+                      },
+                    }}
+                    asChild
+                  >
+                    <Pressable>
+                      {content}
+                    </Pressable>
+                  </Link>
+                );
+              }
+              return <View key={entry.location_key}>{content}</View>;
+            })}
           </View>
         ) : null}
       </ScrollView>

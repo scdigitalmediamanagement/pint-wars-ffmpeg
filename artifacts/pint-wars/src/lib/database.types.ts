@@ -97,6 +97,53 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      pub_reviews: {
+        Row: {
+          id: string;
+          user_id: string;
+          pub_provider: 'google_places';
+          pub_place_id: string;
+          pub_name: string;
+          pub_address: string;
+          atmosphere_rating: number;
+          pints_drinks_rating: number;
+          staff_rating: number;
+          music_rating: number;
+          food_rating: number | null;
+          value_rating: number | null;
+          would_return: boolean;
+          review_text: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      pub_review_photos: {
+        Row: {
+          id: string;
+          review_id: string;
+          user_id: string;
+          storage_path: string;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      pub_review_reports: {
+        Row: {
+          id: string;
+          review_id: string;
+          reporter_id: string;
+          reason: string;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -150,16 +197,133 @@ export type Database = {
         Args: Record<string, never>;
         Returns: {
           location_key: string;
+          pub_provider: string | null;
+          pub_place_id: string | null;
           pub_name: string | null;
           address: string | null;
           latitude: number;
           longitude: number;
           pint_count: number;
           most_recent_visit: string;
+          review_count: number;
+          average_atmosphere: number | null;
+          average_pints_drinks: number | null;
+          average_staff: number | null;
+          average_music: number | null;
+          average_food: number | null;
+          average_value: number | null;
+          current_user_review_id: string | null;
         }[];
+      };
+      can_review_pub: {
+        Args: { p_pub_provider: string; p_pub_place_id: string };
+        Returns: boolean;
+      };
+      can_upload_pub_review_photo: {
+        Args: { p_review_id: string; p_user_id: string; p_storage_path: string };
+        Returns: boolean;
+      };
+      can_read_pub_review_photo: {
+        Args: { p_storage_path: string };
+        Returns: boolean;
+      };
+      get_pub_review_summary: {
+        Args: { p_pub_provider: string; p_pub_place_id: string };
+        Returns: {
+          pub_provider: string;
+          pub_place_id: string;
+          review_count: number;
+          average_atmosphere: number | null;
+          average_pints_drinks: number | null;
+          average_staff: number | null;
+          average_music: number | null;
+          average_food: number | null;
+          average_value: number | null;
+          would_return_count: number;
+          current_user_review_id: string | null;
+        }[];
+      };
+      get_pub_reviews: {
+        Args: {
+          p_pub_provider: string;
+          p_pub_place_id: string;
+          p_limit?: number;
+          p_offset?: number;
+        };
+        Returns: ReviewRpcRow[];
+      };
+      get_pub_review_detail: {
+        Args: { p_review_id: string };
+        Returns: ReviewRpcRow[];
+      };
+      create_pub_review: {
+        Args: {
+          p_pub_provider: string;
+          p_pub_place_id: string;
+          p_atmosphere_rating: number;
+          p_pints_drinks_rating: number;
+          p_staff_rating: number;
+          p_music_rating: number;
+          p_food_rating?: number | null;
+          p_value_rating?: number | null;
+          p_would_return: boolean;
+          p_review_text?: string | null;
+        };
+        Returns: { review_id: string; pub_provider: string; pub_place_id: string }[];
+      };
+      update_pub_review: {
+        Args: {
+          p_review_id: string;
+          p_atmosphere_rating: number;
+          p_pints_drinks_rating: number;
+          p_staff_rating: number;
+          p_music_rating: number;
+          p_food_rating?: number | null;
+          p_value_rating?: number | null;
+          p_would_return: boolean;
+          p_review_text?: string | null;
+        };
+        Returns: { review_id: string; updated_at: string }[];
+      };
+      delete_pub_review: {
+        Args: { p_review_id: string };
+        Returns: boolean;
+      };
+      report_pub_review: {
+        Args: { p_review_id: string; p_reason: string };
+        Returns: string;
+      };
+      attach_pub_review_photo: {
+        Args: { p_review_id: string; p_storage_path: string };
+        Returns: string;
+      };
+      delete_pub_review_photo: {
+        Args: { p_storage_path: string };
+        Returns: boolean;
       };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };
+};
+
+export type ReviewRpcRow = {
+  id: string;
+  user_id: string;
+  author_name: string;
+  pub_provider: string;
+  pub_place_id: string;
+  pub_name: string;
+  pub_address: string;
+  atmosphere_rating: number;
+  pints_drinks_rating: number;
+  staff_rating: number;
+  music_rating: number;
+  food_rating: number | null;
+  value_rating: number | null;
+  would_return: boolean;
+  review_text: string | null;
+  created_at: string;
+  updated_at: string;
+  photo_paths: string[];
 };

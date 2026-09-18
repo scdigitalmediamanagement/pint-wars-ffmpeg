@@ -43,6 +43,7 @@ export default function LeagueDashboardScreen() {
   const [selectedPub, setSelectedPub] = useState<NearbyPub | null>(null);
   const [nearbyPubMessage, setNearbyPubMessage] = useState('');
   const [pendingPint, setPendingPint] = useState<PendingPint | null>(null);
+  const [justLoggedPub, setJustLoggedPub] = useState<NearbyPub | null>(null);
   const query = useQuery({
     queryKey: ['league-dashboard', leagueId],
     queryFn: () => getLeagueDashboard(leagueId as string),
@@ -63,7 +64,7 @@ export default function LeagueDashboardScreen() {
         ...input,
       });
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       setIsPreparingPint(false);
       queryClient.setQueryData<LeagueDashboard>(['league-dashboard', leagueId], (current) => {
         if (!current || !user) return current;
@@ -78,7 +79,16 @@ export default function LeagueDashboardScreen() {
       });
       void queryClient.invalidateQueries({ queryKey: ['league-dashboard', leagueId] });
       void queryClient.invalidateQueries({ queryKey: ['pub-passport'] });
+      if (variables.pub && user) {
+        void queryClient.invalidateQueries({
+          queryKey: ['pub-reviews', 'eligibility', user.id, variables.pub.provider, variables.pub.placeId],
+        });
+      }
       setLogError('');
+
+      if (variables.pub) {
+         setJustLoggedPub(variables.pub);
+      }
     },
     onError: (error) => {
       setIsPreparingPint(false);
@@ -315,6 +325,27 @@ export default function LeagueDashboardScreen() {
           </Pressable>
         ) : null}
       </ScrollView>
+
+      <Modal visible={!!justLoggedPub} transparent animationType="fade" statusBarTranslucent>
+        <View style={styles.modalBackdrop}>
+          <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.foreground, opacity: 0.45 }]} />
+          <View style={[styles.pubSheet, { backgroundColor: colors.background, alignItems: 'center', paddingVertical: 40 }]}>
+            <Title>Pint Logged!</Title>
+            <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', textAlign: 'center', marginBottom: 24, fontSize: 16, lineHeight: 24 }}>
+              You scored a point for visiting {justLoggedPub?.name}.
+            </Text>
+            <View style={{ width: '100%', gap: 12 }}>
+              <Button label="Review this pub" onPress={() => {
+                 const pub = justLoggedPub;
+                 setJustLoggedPub(null);
+                 router.push({ pathname: '/pub/[placeId]', params: { placeId: pub!.placeId, provider: pub!.provider, name: pub!.name, address: pub!.address } });
+              }} />
+              <Button label="Done" variant="quiet" onPress={() => setJustLoggedPub(null)} />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <Modal
         visible={pubPickerVisible}
         transparent

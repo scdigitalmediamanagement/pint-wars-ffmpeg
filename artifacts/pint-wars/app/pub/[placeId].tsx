@@ -1,0 +1,503 @@
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Alert, Modal, TextInput } from 'react-native';
+import { useLocalSearchParams, Stack } from 'expo-router';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/src/providers/AuthProvider';
+import { useColors } from '@/hooks/useColors';
+import { Button, Card, ErrorText, Screen, Title, uiStyles } from '@/components/AppUi';
+import { FontAwesome } from '@expo/vector-icons';
+import { usePubReviewSummary, usePubReviews, reviewKeys } from '@/hooks/usePubReviews';
+import { 
+  deletePubReview, 
+  reportPubReview, 
+  createPubReview, 
+  updatePubReview, 
+  uploadReviewPhoto, 
+  removeReviewPhoto, 
+  getPubReviewDetail,
+  canReviewPub,
+  type ReviewRow 
+} from '@/src/lib/review-service';
+import * as ImagePicker from 'expo-image-picker';
+import { StarRating, ReviewPhoto, RatingBadge } from '@/components/Reviews';
+import { Image } from 'expo-image';
+
+function RatingInput({ label, rating, onChange }: { label: string; rating: number; onChange: (r: number) => void }) {
+  const colors = useColors();
+  return (
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 16, color: colors.foreground }}>{label}</Text>
+      <StarRating rating={rating} onChange={onChange} size={28} />
+    </View>
+  );
+}
+
+function ReportModal({ visible, onClose, onSubmit }: { visible: boolean; onClose: () => void; onSubmit: (reason: string) => void }) {
+  const [reason, setReason] = useState('');
+  const colors = useColors();
+  return (
+    <Modal visible={visible} transparent animationType="fade">
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 }}>
+        <View style={{ backgroundColor: colors.card, padding: 24, borderRadius: 24, gap: 16, borderWidth: 1, borderColor: colors.border }}>
+          <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 20, color: colors.foreground }}>Report Review</Text>
+          <TextInput 
+            value={reason} 
+            onChangeText={setReason} 
+            placeholder="Why are you reporting this review?"
+            placeholderTextColor={colors.mutedForeground}
+            style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 16, color: colors.foreground, minHeight: 100, fontFamily: 'Inter_400Regular', backgroundColor: colors.background }}
+            multiline
+          />
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 4 }}>
+            <Button label="Cancel" variant="quiet" onPress={onClose} />
+            <Button label="Submit" onPress={() => { onSubmit(reason); setReason(''); onClose(); }} disabled={!reason.trim()} />
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+export default function PubScreen() {
+  const { placeId, provider, name, address } = useLocalSearchParams<{ placeId: string; provider: string; name?: string; address?: string }>();
+  const colors = useColors();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  
+  const summaryQuery = usePubReviewSummary(user?.id ?? '', provider as string, placeId as string);
+  const reviewsQuery = usePubReviews(provider as string, placeId as string);
+  const eligibilityQuery = useQuery({
+    queryKey: ['pub-reviews', 'eligibility', user?.id, provider, placeId],
+    queryFn: () => canReviewPub(provider as string, placeId as string),
+    enabled: Boolean(user && provider && placeId),
+  });
+
+  const [isFormVisible, setIsFormVisible] = useState(false);
+  const [editingReview, setEditingReview] = useState<ReviewRow | null>(null);
+  const [reportingReviewId, setReportingReviewId] = useState<string | null>(null);
+
+  if (!placeId || !provider) {
+    return (
+      <Screen>
+        <Stack.Screen options={{ title: 'Pub', headerBackTitle: 'Back' }} />
+        <View style={uiStyles.content}><ErrorText>Missing pub details.</ErrorText></View>
+      </Screen>
+    );
+  }
+
+  const handleDelete = (reviewId: string) => {
+    Alert.alert('Delete Review', 'Are you sure you want to delete your review?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: async () => {
+         try {
+           await deletePubReview(reviewId);
+           queryClient.invalidateQueries({ queryKey: reviewKeys.all });
+           queryClient.invalidateQueries({ queryKey: ['pub-passport'] });
+         } catch (e) {
+           Alert.alert('Error', 'Could not delete review');
+         }
+      }}
+    ]);
+  };
+
+  const handleReportSubmit = async (reason: string) => {
+    if (!reportingReviewId) return;
+    try {
+      await reportPubReview(reportingReviewId, reason);
+      Alert.alert('Reported', 'Thank you. The review has been reported.');
+    } catch (e) {
+      Alert.alert('Error', 'Could not report review.');
+    }
+  };
+
+  const handleWritePress = async () => {
+    if (summaryQuery.data?.current_user_review_id) {
+       const currentUserReviewId = summaryQuery.data.current_user_review_id;
+       let rev = reviewsQuery.data?.find(r => r.id === currentUserReviewId);
+       if (!rev) {
+          rev = await getPubReviewDetail(currentUserReviewId) || undefined;
+       }
+       setEditingReview(rev || null);
+    } else {
+       setEditingReview(null);
+    }
+    setIsFormVisible(true);
+  };
+
+  const avgAtmosphere = summaryQuery.data?.average_atmosphere || 0;
+  const avgDrinks = summaryQuery.data?.average_pints_drinks || 0;
+  const avgStaff = summaryQuery.data?.average_staff || 0;
+  const avgMusic = summaryQuery.data?.average_music || 0;
+  const overallAvg = (avgAtmosphere + avgDrinks + avgStaff + avgMusic) / 4;
+
+  return (
+    <Screen>
+      <Stack.Screen options={{ title: name || 'Pub', headerBackTitle: 'Back' }} />
+      <ScrollView contentContainerStyle={uiStyles.content} showsVerticalScrollIndicator={false}>
+        <View style={{ paddingTop: 24, gap: 8 }}>
+          <Title>{name}</Title>
+          {address ? <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', fontSize: 15, lineHeight: 22 }}>{address}</Text> : null}
+        </View>
+
+        <Card style={{ marginTop: 24, gap: 12, paddingVertical: 24, alignItems: 'center' }}>
+          {summaryQuery.isLoading ? <ActivityIndicator color={colors.accent} /> : null}
+          {summaryQuery.data ? (
+            summaryQuery.data.review_count > 0 ? (
+              <>
+                 <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 56, color: colors.foreground, lineHeight: 60 }}>
+                   {overallAvg.toFixed(1)}
+                 </Text>
+                 <StarRating rating={overallAvg} readonly size={32} />
+                 <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_500Medium', fontSize: 14, marginTop: 4 }}>
+                   Based on {summaryQuery.data.review_count} {summaryQuery.data.review_count === 1 ? 'review' : 'reviews'}
+                 </Text>
+                 <View style={{ flexDirection: 'row', gap: 16, marginTop: 12 }}>
+                    <RatingBadge label="Atmosphere" rating={Number(avgAtmosphere.toFixed(1))} />
+                    <RatingBadge label="Drinks" rating={Number(avgDrinks.toFixed(1))} />
+                 </View>
+                 <View style={{ flexDirection: 'row', gap: 16 }}>
+                    <RatingBadge label="Staff" rating={Number(avgStaff.toFixed(1))} />
+                    <RatingBadge label="Music" rating={Number(avgMusic.toFixed(1))} />
+                 </View>
+              </>
+            ) : (
+              <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_500Medium', fontSize: 15 }}>No reviews yet. Be the first to review!</Text>
+            )
+          ) : null}
+        </Card>
+
+        <View style={{ marginTop: 24 }}>
+           <Button 
+             label={
+               summaryQuery.data?.current_user_review_id
+                 ? 'Edit Your Review'
+                 : eligibilityQuery.data === false
+                   ? 'Log a pint here to review'
+                   : 'Write a Review'
+             }
+             onPress={handleWritePress} 
+             disabled={eligibilityQuery.isLoading || eligibilityQuery.data === false}
+           />
+           {eligibilityQuery.isError ? (
+             <ErrorText>Review eligibility could not be checked. Try again later.</ErrorText>
+           ) : null}
+        </View>
+
+        <View style={{ gap: 16, marginTop: 32 }}>
+          <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 22, color: colors.foreground }}>Reviews</Text>
+          {reviewsQuery.isLoading ? <ActivityIndicator color={colors.accent} style={{ marginTop: 20 }} /> : null}
+          {reviewsQuery.data?.length === 0 && !reviewsQuery.isLoading ? (
+            <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular' }}>No reviews found for this pub.</Text>
+          ) : null}
+          {reviewsQuery.data?.map(review => {
+            const reviewAvg = (review.atmosphere_rating + review.pints_drinks_rating + review.staff_rating + review.music_rating) / 4;
+            return (
+              <Card key={review.id} style={{ gap: 14 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <View style={{ gap: 4, flex: 1, paddingRight: 16 }}>
+                    <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 16, color: colors.foreground }}>
+                      {review.author_name}
+                    </Text>
+                    <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: colors.mutedForeground }}>
+                      {new Date(review.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                    </Text>
+                  </View>
+                  <StarRating rating={reviewAvg} readonly size={16} />
+                </View>
+                
+                {review.review_text ? (
+                  <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, color: colors.foreground, lineHeight: 22 }}>
+                    {review.review_text}
+                  </Text>
+                ) : null}
+
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+                  <RatingBadge label="Atmosphere" rating={review.atmosphere_rating} />
+                  <RatingBadge label="Drinks" rating={review.pints_drinks_rating} />
+                  <RatingBadge label="Staff" rating={review.staff_rating} />
+                  <RatingBadge label="Music" rating={review.music_rating} />
+                  {review.food_rating ? <RatingBadge label="Food" rating={review.food_rating} /> : null}
+                  {review.value_rating ? <RatingBadge label="Value" rating={review.value_rating} /> : null}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.background, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: colors.border }}>
+                    <FontAwesome name={review.would_return ? "check" : "times"} size={10} color={review.would_return ? colors.primary : colors.destructive} />
+                    <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 11, color: colors.mutedForeground }}>
+                      {review.would_return ? "Would return" : "Would not return"}
+                    </Text>
+                  </View>
+                </View>
+
+                {review.photo_paths && review.photo_paths.length > 0 && (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, marginTop: 8 }}>
+                    {review.photo_paths.map(path => (
+                      <ReviewPhoto key={path} path={path} size={80} />
+                    ))}
+                  </ScrollView>
+                )}
+
+                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 16, marginTop: 8 }}>
+                  {user?.id === review.user_id ? (
+                    <>
+                      <Pressable onPress={() => { setEditingReview(review); setIsFormVisible(true); }} hitSlop={10}>
+                        <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 13, color: colors.accent, textTransform: 'uppercase', letterSpacing: 0.5 }}>Edit</Text>
+                      </Pressable>
+                      <Pressable onPress={() => handleDelete(review.id)} hitSlop={10}>
+                        <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 13, color: colors.destructive, textTransform: 'uppercase', letterSpacing: 0.5 }}>Delete</Text>
+                      </Pressable>
+                    </>
+                  ) : (
+                    <Pressable onPress={() => setReportingReviewId(review.id)} hitSlop={10}>
+                       <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 13, color: colors.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.5 }}>Report</Text>
+                    </Pressable>
+                  )}
+                </View>
+              </Card>
+            );
+          })}
+        </View>
+      </ScrollView>
+
+      <ReviewFormModal 
+        visible={isFormVisible} 
+        onClose={() => setIsFormVisible(false)} 
+        pubProvider={provider as string} 
+        pubPlaceId={placeId as string} 
+        existingReview={editingReview} 
+        user={user} 
+      />
+      <ReportModal 
+        visible={!!reportingReviewId} 
+        onClose={() => setReportingReviewId(null)} 
+        onSubmit={handleReportSubmit} 
+      />
+    </Screen>
+  );
+}
+
+function ReviewFormModal({
+  visible,
+  onClose,
+  pubProvider,
+  pubPlaceId,
+  existingReview,
+  user,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  pubProvider: string;
+  pubPlaceId: string;
+  existingReview: ReviewRow | null;
+  user: { id: string } | null;
+}) {
+  const colors = useColors();
+  const queryClient = useQueryClient();
+  const [atmosphere, setAtmosphere] = useState(0);
+  const [pintsDrinks, setPintsDrinks] = useState(0);
+  const [staff, setStaff] = useState(0);
+  const [music, setMusic] = useState(0);
+  const [food, setFood] = useState(0);
+  const [value, setValue] = useState(0);
+  const [wouldReturn, setWouldReturn] = useState<boolean | null>(null);
+  const [reviewText, setReviewText] = useState('');
+  
+  const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
+  const [photosToAdd, setPhotosToAdd] = useState<{uri: string; mimeType: string|null}[]>([]);
+  const [photosToRemove, setPhotosToRemove] = useState<string[]>([]);
+  const [persistedReviewId, setPersistedReviewId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (visible) {
+      setAtmosphere(existingReview?.atmosphere_rating || 0);
+      setPintsDrinks(existingReview?.pints_drinks_rating || 0);
+      setStaff(existingReview?.staff_rating || 0);
+      setMusic(existingReview?.music_rating || 0);
+      setFood(existingReview?.food_rating || 0);
+      setValue(existingReview?.value_rating || 0);
+      setWouldReturn(existingReview?.would_return ?? null);
+      setReviewText(existingReview?.review_text || '');
+      setExistingPhotos(existingReview?.photo_paths || []);
+      setPhotosToAdd([]);
+      setPhotosToRemove([]);
+      setPersistedReviewId(existingReview?.id ?? null);
+    }
+  }, [visible, existingReview]);
+
+  const handleSubmit = async () => {
+    if (!atmosphere || !pintsDrinks || !staff || !music) {
+      Alert.alert('Missing Ratings', 'Please rate Atmosphere, Pints/Drinks, Staff, and Music.');
+      return;
+    }
+    if (wouldReturn === null) {
+      Alert.alert('Would You Return?', 'Please choose Yes or No.');
+      return;
+    }
+    setIsSubmitting(true);
+    let reviewSaved = false;
+    try {
+      const input = {
+        pubProvider, pubPlaceId,
+        atmosphereRating: atmosphere,
+        pintsDrinksRating: pintsDrinks,
+        staffRating: staff,
+        musicRating: music,
+        foodRating: food || null,
+        valueRating: value || null,
+        wouldReturn,
+        reviewText
+      };
+      
+      let reviewId = persistedReviewId ?? existingReview?.id;
+      if (reviewId) {
+        await updatePubReview(reviewId, input);
+      } else {
+        const created = await createPubReview(input);
+        reviewId = created.review_id;
+        setPersistedReviewId(reviewId);
+      }
+      reviewSaved = true;
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: reviewKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ['pub-passport'] }),
+      ]);
+
+      for (const path of photosToRemove) {
+        await removeReviewPhoto(path);
+        setPhotosToRemove((current) => current.filter((item) => item !== path));
+      }
+
+      if (user) {
+        for (const photo of photosToAdd) {
+          const path = await uploadReviewPhoto(user.id, reviewId, photo.uri, photo.mimeType);
+          setPhotosToAdd((current) => current.filter((item) => item.uri !== photo.uri));
+          setExistingPhotos((current) => [...current, path]);
+        }
+      }
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: reviewKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ['pub-passport'] }),
+      ]);
+      onClose();
+    } catch (error) {
+      Alert.alert(
+        reviewSaved ? 'Review Saved' : 'Could Not Save Review',
+        reviewSaved
+          ? `Your review was saved, but some photo changes still need to be retried. ${error instanceof Error ? error.message : ''}`.trim()
+          : error instanceof Error ? error.message : 'Could not save review',
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const pickPhoto = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setPhotosToAdd(prev => [...prev, { uri: result.assets[0].uri, mimeType: result.assets[0].mimeType || null }]);
+    }
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="formSheet" onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, gap: 32, paddingBottom: 60, paddingTop: 40 }}>
+          <Title>{existingReview ? 'Edit Review' : 'Write a Review'}</Title>
+          
+          <View style={{ gap: 20 }}>
+            <RatingInput label="Atmosphere *" rating={atmosphere} onChange={setAtmosphere} />
+            <RatingInput label="Pints & Drinks *" rating={pintsDrinks} onChange={setPintsDrinks} />
+            <RatingInput label="Staff *" rating={staff} onChange={setStaff} />
+            <RatingInput label="Music *" rating={music} onChange={setMusic} />
+            
+            <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 18, color: colors.foreground, marginTop: 12 }}>Optional Ratings</Text>
+            <RatingInput label="Food" rating={food} onChange={setFood} />
+            {food ? (
+              <Pressable onPress={() => setFood(0)}>
+                <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_600SemiBold', textAlign: 'right' }}>Clear food rating</Text>
+              </Pressable>
+            ) : null}
+            <RatingInput label="Value" rating={value} onChange={setValue} />
+            {value ? (
+              <Pressable onPress={() => setValue(0)}>
+                <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_600SemiBold', textAlign: 'right' }}>Clear value rating</Text>
+              </Pressable>
+            ) : null}
+          </View>
+
+          <View style={{ gap: 12 }}>
+            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 16, color: colors.foreground }}>Would you return?</Text>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <Pressable 
+                onPress={() => setWouldReturn(true)} 
+                style={[{ flex: 1, borderWidth: 1, borderRadius: 16, paddingVertical: 14, alignItems: 'center' }, wouldReturn === true ? { borderColor: colors.primary, backgroundColor: colors.primary + '20' } : { borderColor: colors.border }]}
+              >
+                <Text style={[{ fontFamily: 'Inter_600SemiBold', fontSize: 15 }, wouldReturn === true ? { color: colors.primary } : { color: colors.mutedForeground }]}>Yes</Text>
+              </Pressable>
+              <Pressable 
+                onPress={() => setWouldReturn(false)} 
+                style={[{ flex: 1, borderWidth: 1, borderRadius: 16, paddingVertical: 14, alignItems: 'center' }, wouldReturn === false ? { borderColor: colors.destructive, backgroundColor: colors.destructive + '20' } : { borderColor: colors.border }]}
+              >
+                <Text style={[{ fontFamily: 'Inter_600SemiBold', fontSize: 15 }, wouldReturn === false ? { color: colors.destructive } : { color: colors.mutedForeground }]}>No</Text>
+              </Pressable>
+            </View>
+          </View>
+
+          <View style={{ gap: 12 }}>
+            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 16, color: colors.foreground }}>Review (Optional)</Text>
+            <TextInput
+              value={reviewText}
+              onChangeText={setReviewText}
+              multiline
+              maxLength={3000}
+              style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 16, color: colors.foreground, minHeight: 120, backgroundColor: colors.card, fontFamily: 'Inter_400Regular', fontSize: 16 }}
+              placeholder="Share your thoughts about this pub..."
+              placeholderTextColor={colors.mutedForeground}
+            />
+          </View>
+          
+          <View style={{ gap: 12 }}>
+            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 16, color: colors.foreground }}>Photos (Optional)</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+               {existingPhotos.map(path => (
+                 <View key={path} style={{ position: 'relative' }}>
+                   <ReviewPhoto path={path} size={80} />
+                   <Pressable onPress={() => {
+                      setExistingPhotos(prev => prev.filter(p => p !== path));
+                      setPhotosToRemove(prev => [...prev, path]);
+                   }} style={{ position: 'absolute', top: -6, right: -6, backgroundColor: colors.destructive, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
+                     <FontAwesome name="times" size={12} color={colors.primaryForeground} />
+                   </Pressable>
+                 </View>
+               ))}
+               {photosToAdd.map(photo => (
+                 <View key={photo.uri} style={{ position: 'relative' }}>
+                   <Image source={{ uri: photo.uri }} style={{ width: 80, height: 80, borderRadius: 8 }} />
+                   <Pressable onPress={() => {
+                      setPhotosToAdd(prev => prev.filter(p => p.uri !== photo.uri));
+                   }} style={{ position: 'absolute', top: -6, right: -6, backgroundColor: colors.destructive, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
+                     <FontAwesome name="times" size={12} color={colors.primaryForeground} />
+                   </Pressable>
+                 </View>
+               ))}
+               <Pressable onPress={pickPhoto} style={{ width: 80, height: 80, borderRadius: 8, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed' }}>
+                 <FontAwesome name="camera" size={24} color={colors.mutedForeground} />
+               </Pressable>
+            </ScrollView>
+          </View>
+          
+          <View style={{ flexDirection: 'row', gap: 16, marginTop: 16 }}>
+            <View style={{ flex: 1 }}>
+              <Button label="Cancel" variant="quiet" onPress={onClose} disabled={isSubmitting} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button label="Save Review" onPress={handleSubmit} loading={isSubmitting} />
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+}
