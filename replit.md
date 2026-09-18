@@ -28,6 +28,7 @@ Pint Wars is a mobile app foundation for private 30-day pub competitions between
 - Stage 1 Supabase migration: `artifacts/pint-wars/supabase/migrations/202609160001_stage1_foundation.sql`
 - Stage 1 profile backfill migration: `artifacts/pint-wars/supabase/migrations/202609170001_stage1_profile_backfill.sql`
 - Stage 1 pgcrypto schema repair: `artifacts/pint-wars/supabase/migrations/202609170002_stage1_pgcrypto_schema_fix.sql`
+- Stage 1 join RPC ambiguity repair: `artifacts/pint-wars/supabase/migrations/202609180001_stage1_join_league_id_ambiguity_fix.sql`
 - Supabase client and auth: `artifacts/pint-wars/src/lib/supabase.ts`, `artifacts/pint-wars/src/providers/AuthProvider.tsx`
 - League operations: `artifacts/pint-wars/src/lib/league-service.ts`
 
