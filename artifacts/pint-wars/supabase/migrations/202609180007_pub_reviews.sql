@@ -198,7 +198,7 @@ begin
     round(avg(review.food_rating)::numeric, 2),
     round(avg(review.value_rating)::numeric, 2),
     count(*) filter (where review.would_return)::bigint,
-    max(review.id) filter (where review.user_id = auth.uid())
+    (max(review.id::text) filter (where review.user_id = auth.uid()))::uuid
   from public.pub_reviews as review
   where review.pub_provider = p_pub_provider
     and review.pub_place_id = p_pub_place_id;
@@ -450,6 +450,26 @@ begin
     or (p_value_rating is not null and p_value_rating not between 1 and 5) then
     raise exception 'Ratings must be between 1 and 5';
   end if;
+  if not exists (
+    select 1
+    from public.pub_reviews as review
+    where review.id = p_review_id
+      and review.user_id = auth.uid()
+  ) then
+    raise exception 'Review not found or you are not the author';
+  end if;
+  if not exists (
+    select 1
+    from public.pub_reviews as review
+    join public.pint_logs as pint_log
+      on pint_log.user_id = auth.uid()
+     and pint_log.pub_provider = review.pub_provider
+     and pint_log.pub_place_id = review.pub_place_id
+    where review.id = p_review_id
+      and review.user_id = auth.uid()
+  ) then
+    raise exception 'You can only review a pub after logging a confirmed pint there';
+  end if;
   update public.pub_reviews
      set atmosphere_rating = p_atmosphere_rating,
          pints_drinks_rating = p_pints_drinks_rating,
@@ -633,7 +653,7 @@ begin
     round(avg(review.music_rating)::numeric, 2),
     round(avg(review.food_rating)::numeric, 2),
     round(avg(review.value_rating)::numeric, 2),
-    max(review.id) filter (where review.user_id = auth.uid())
+    (max(review.id::text) filter (where review.user_id = auth.uid()))::uuid
   from grouped
   left join public.pub_reviews as review
     on review.pub_provider = grouped.pub_provider
