@@ -132,6 +132,24 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          notification_type: 'player_joined' | 'pint_logged' | 'war_ending_soon' | 'war_finished' | 'winner';
+          title: string;
+          body: string;
+          league_id: string | null;
+          read_at: string | null;
+          created_at: string;
+          event_key: string;
+        };
+        Insert: never;
+        Update: {
+          read_at?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -272,6 +290,26 @@ export type Database = {
       report_pub_review: {
         Args: { p_review_id: string; p_reason: string };
         Returns: string;
+      };
+      get_my_notifications: {
+        Args: { p_limit?: number };
+        Returns: {
+          id: string;
+          notification_type: 'player_joined' | 'pint_logged' | 'war_ending_soon' | 'war_finished' | 'winner';
+          title: string;
+          body: string;
+          league_id: string | null;
+          read_at: string | null;
+          created_at: string;
+        }[];
+      };
+      get_my_unread_notification_count: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
+      mark_notification_read: {
+        Args: { p_notification_id: string };
+        Returns: undefined;
       };
     };
     Enums: Record<string, never>;

@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Card, Screen, Title, uiStyles } from '@/components/AppUi';
+import { NotificationBell } from '@/components/NotificationBell';
 import { getMyLeagues } from '@/src/lib/league-service';
 import { useColors } from '@/hooks/useColors';
 
@@ -14,9 +15,12 @@ export default function HomeScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={[uiStyles.content, { paddingTop: 22, gap: 22 }]} showsVerticalScrollIndicator={false}>
-        <View style={styles.greeting}>
-          <Text style={[styles.kicker, { color: colors.accent }]}>WEDNESDAY NIGHT PLANS</Text>
-          <Title>Ready to make it count?</Title>
+        <View style={styles.headerRow}>
+          <View style={styles.greeting}>
+            <Text style={[styles.kicker, { color: colors.accent }]}>WEDNESDAY NIGHT PLANS</Text>
+            <Title>Ready to make it count?</Title>
+          </View>
+          <NotificationBell />
         </View>
         {query.isLoading ? <ActivityIndicator color={colors.accent} /> : null}
         {query.isError ? <Text style={{ color: colors.destructive }}>Could not load your wars. Pull to try again.</Text> : null}
@@ -55,6 +59,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   greeting: { gap: 3 },
   kicker: { fontFamily: 'Inter_700Bold', fontSize: 12, letterSpacing: 1.5 },
   cardLabel: { fontFamily: 'Inter_700Bold', fontSize: 12, letterSpacing: 1.2 },

@@ -6,6 +6,18 @@ import type { NearbyPub } from '@/src/lib/pub-service';
 type LeagueRow = MyLeague['league'];
 const PINT_PROOF_BUCKET = 'pint-proofs';
 
+export type NotificationType = 'player_joined' | 'pint_logged' | 'war_ending_soon' | 'war_finished' | 'winner';
+
+export type AppNotification = {
+  id: string;
+  notification_type: NotificationType;
+  title: string;
+  body: string;
+  league_id: string | null;
+  read_at: string | null;
+  created_at: string;
+};
+
 function describeSupabaseError(error: unknown) {
   if (!error || typeof error !== 'object') {
     return { code: null, message: String(error), details: null, hint: null };
@@ -141,6 +153,25 @@ export async function createLeagueInvite(leagueId: string) {
   const result = Array.isArray(data) ? data[0] : data;
   if (!result) throw new Error('The invite could not be created.');
   return result as { invite_code: string };
+}
+
+export async function getMyNotifications(): Promise<AppNotification[]> {
+  const { data, error } = await getSupabase().rpc('get_my_notifications', { p_limit: 50 });
+  if (error) throw error;
+  return (data ?? []) as AppNotification[];
+}
+
+export async function getUnreadNotificationCount(): Promise<number> {
+  const { data, error } = await getSupabase().rpc('get_my_unread_notification_count');
+  if (error) throw error;
+  return Number(data ?? 0);
+}
+
+export async function markNotificationRead(notificationId: string) {
+  const { error } = await getSupabase().rpc('mark_notification_read', {
+    p_notification_id: notificationId,
+  });
+  if (error) throw error;
 }
 
 export async function getLeagueDashboard(leagueId: string): Promise<LeagueDashboard> {
