@@ -24,17 +24,6 @@ create index if not exists pub_reviews_pub_identity_idx
 create index if not exists pub_reviews_user_idx
   on public.pub_reviews(user_id, created_at desc);
 
-create table if not exists public.pub_review_photos (
-  id uuid primary key default gen_random_uuid(),
-  review_id uuid not null references public.pub_reviews(id) on delete cascade,
-  user_id uuid not null references public.profiles(id) on delete cascade,
-  storage_path text not null unique check (char_length(storage_path) between 1 and 500),
-  created_at timestamptz not null default now()
-);
-
-create index if not exists pub_review_photos_review_idx
-  on public.pub_review_photos(review_id, created_at);
-
 create table if not exists public.pub_review_reports (
   id uuid primary key default gen_random_uuid(),
   review_id uuid not null references public.pub_reviews(id) on delete cascade,
@@ -48,91 +37,9 @@ create index if not exists pub_review_reports_review_idx
   on public.pub_review_reports(review_id, created_at desc);
 
 alter table public.pub_reviews enable row level security;
-alter table public.pub_review_photos enable row level security;
 alter table public.pub_review_reports enable row level security;
 revoke all on public.pub_reviews from anon, authenticated;
-revoke all on public.pub_review_photos from anon, authenticated;
 revoke all on public.pub_review_reports from anon, authenticated;
-
-insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values (
-  'pub-review-photos',
-  'pub-review-photos',
-  false,
-  10485760,
-  array['image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp']
-)
-on conflict (id) do update
-set public = false,
-    file_size_limit = excluded.file_size_limit,
-    allowed_mime_types = excluded.allowed_mime_types;
-
-create or replace function public.can_upload_pub_review_photo(
-  p_review_id uuid,
-  p_user_id uuid,
-  p_storage_path text
-)
-returns boolean
-language sql
-stable
-security definer
-set search_path = ''
-as $$
-  select auth.uid() = p_user_id
-    and exists (
-      select 1
-      from public.pub_review_photos as photo
-      join public.pub_reviews as review on review.id = photo.review_id
-      where photo.review_id = p_review_id
-        and photo.user_id = p_user_id
-        and photo.storage_path = p_storage_path
-        and review.user_id = p_user_id
-    );
-$$;
-
-create or replace function public.can_read_pub_review_photo(p_storage_path text)
-returns boolean
-language sql
-stable
-security definer
-set search_path = ''
-as $$
-  select auth.uid() is not null
-    and exists (
-      select 1
-      from public.pub_review_photos as photo
-      where photo.storage_path = p_storage_path
-    );
-$$;
-
-drop policy if exists "review authors can upload review photos" on storage.objects;
-create policy "review authors can upload review photos"
-  on storage.objects for insert to authenticated
-  with check (
-    bucket_id = 'pub-review-photos'
-    and (storage.foldername(name))[1] = auth.uid()::text
-    and public.can_upload_pub_review_photo(
-      ((storage.foldername(name))[2])::uuid,
-      auth.uid(),
-      name
-    )
-  );
-
-drop policy if exists "signed-in users can read review photos" on storage.objects;
-create policy "signed-in users can read review photos"
-  on storage.objects for select to authenticated
-  using (
-    bucket_id = 'pub-review-photos'
-    and public.can_read_pub_review_photo(name)
-  );
-
-drop policy if exists "review authors can delete review photos" on storage.objects;
-create policy "review authors can delete review photos"
-  on storage.objects for delete to authenticated
-  using (
-    bucket_id = 'pub-review-photos'
-    and (storage.foldername(name))[1] = auth.uid()::text
-  );
 
 create or replace function public.can_review_pub(
   p_pub_provider text,

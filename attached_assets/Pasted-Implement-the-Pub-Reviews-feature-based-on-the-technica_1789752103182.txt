@@ -1,0 +1,129 @@
+Implement the Pub Reviews feature based on the technical plan you just produced, with the following scope correction:
+
+DO NOT implement review photos in this stage.
+Do not create pub_review_photos, photo storage, signed photo URLs, photo upload/remove functionality, or photo UI.
+
+Use the existing Pint Wars master specification as the source of truth.
+
+Implement:
+
+1. Database
+- Create public.pub_reviews.
+- One current review per user per Google Places pub.
+- Required ratings:
+  - Atmosphere 1–5
+  - Pints/Drinks 1–5
+  - Staff 1–5
+  - Music 1–5
+- Optional:
+  - Food 1–5
+  - Value 1–5
+  - Written review
+- Would Return is required Yes/No.
+- Keep written review length-limited.
+- Store created_at and updated_at.
+
+2. Security
+- Enable RLS.
+- Do not allow clients to directly insert/update/delete reviews.
+- Use secure SECURITY DEFINER RPCs with fixed search_path.
+- user_id must always come from auth.uid().
+- A user may create a review only if they have a confirmed pint log for that exact Google Places pub.
+- Only the review author may edit or delete their review.
+- Revalidate review eligibility when updating.
+- All authenticated users may read public reviews and summaries.
+- Add secure reporting of reviews with one report per user per review.
+- Do not expose the report table directly to normal clients.
+
+3. Passport
+Extend get_my_pub_passport() while preserving every existing field and existing behaviour.
+
+Add:
+- pub_provider
+- pub_place_id
+- review_count
+- average_atmosphere
+- average_pints_drinks
+- average_staff
+- average_music
+- average_food
+- average_value
+- current_user_review_id
+
+Do not break the existing identified-pub grouping or coordinate-only fallback entries.
+
+Coordinate-only entries must remain non-reviewable.
+
+4. Client
+Implement the review service and hooks required by the plan.
+
+Create/use the Pub Detail screen for identified Google Places pubs.
+
+The Pub Detail screen should show:
+- Pub name
+- Address
+- Review count
+- Rating summaries
+- Reviews
+- Would Return values
+- Written reviews
+
+The review form should contain:
+Required:
+- Atmosphere
+- Pints/Drinks
+- Staff
+- Music
+- Would you return?
+
+Optional:
+- Food
+- Value
+- Written review
+
+Allow the author to edit and delete their review.
+
+Allow authenticated users to report another user's review.
+
+5. Passport
+For identified pubs:
+- Show review count/summary where appropriate.
+- Allow the user to open Pub Detail.
+- Show Write a Review when eligible.
+- Show Edit Your Review when they already have one.
+
+For coordinate-only entries:
+- Preserve the current appearance and behaviour.
+- Do not show review controls.
+- Do not run review eligibility checks.
+
+6. Do not alter existing Pint War functionality.
+Do not change:
+- Pint scoring
+- Leaderboards
+- Camera flow
+- GPS flow
+- Google Places pub selection
+- pint logging
+- free-trial rules
+- paid league rules
+
+7. Do not add packages unless absolutely required.
+Do not change the existing navigation architecture unnecessarily.
+
+8. Verification
+After implementation:
+- Run TypeScript typecheck.
+- Run appropriate tests.
+- Review all SQL/RLS/security changes.
+- Confirm the existing four-argument log_pint() overload remains intact.
+- Confirm existing leaderboard/pint totals are unchanged.
+- Confirm duplicate reviews are rejected.
+- Confirm a user cannot review a pub where they have not logged a confirmed pint.
+- Confirm users can only edit/delete their own review.
+- Confirm coordinate-only Passport entries cannot be reviewed.
+- Confirm account switching does not leak review state through cached queries.
+
+Before making changes, inspect the existing review-oriented files already present in the workspace and reuse them where appropriate rather than creating duplicate implementations.
+
+Implement the feature completely, then report exactly what files and database migrations were changed and what verification passed.
