@@ -14,7 +14,7 @@ export default function WarsScreen() {
     <Screen>
       <ScrollView contentContainerStyle={[uiStyles.content, { paddingTop: 22, gap: 22 }]} showsVerticalScrollIndicator={false}>
         <Title eyebrow="Your competitions">Pint Wars</Title>
-        <Button label="Create a free 8-player war" onPress={() => router.push('/war/create')} />
+        <Button label="Create a free 4-player trial" onPress={() => router.push('/war/create')} />
         <Button label="Join a war" variant="secondary" onPress={() => router.push('/war/join')} />
         {query.isLoading ? <ActivityIndicator color={colors.accent} /> : null}
         {query.isError ? <Text style={{ color: colors.destructive }}>Could not load your wars.</Text> : null}
@@ -28,7 +28,9 @@ export default function WarsScreen() {
                 <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_500Medium' }}>{item.role === 'host' ? 'Host' : 'Player'}</Text>
               </View>
               <Text style={[styles.name, { color: colors.foreground }]}>{item.league.name}</Text>
-              <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular' }}>8-player free league</Text>
+              <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular' }}>
+                {item.league.capacity}-player {item.league.is_free ? 'free' : 'paid'} league
+              </Text>
             </Card>
           </Pressable>
         ))}

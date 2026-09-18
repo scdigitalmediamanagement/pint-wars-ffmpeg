@@ -12,11 +12,12 @@ import { useColors } from '@/hooks/useColors';
 import type { LeagueDashboard } from '@/src/types/league';
 
 function dayNumber(startsAt: string, endsAt: string, status: string) {
-  if (status === 'completed') return 30;
   const start = new Date(startsAt).getTime();
   const end = new Date(endsAt).getTime();
+  const durationDays = Math.max(1, Math.ceil((end - start) / 86400000));
+  if (status === 'completed') return durationDays;
   const now = Date.now();
-  return Math.max(1, Math.min(30, Math.floor((Math.min(now, end) - start) / 86400000) + 1));
+  return Math.max(1, Math.min(durationDays, Math.floor((Math.min(now, end) - start) / 86400000) + 1));
 }
 
 type PendingPint = {
@@ -258,7 +259,7 @@ export default function LeagueDashboardScreen() {
               <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>TOTAL PINTS</Text>
             </View>
             <View>
-              <Text style={[styles.metricValue, { color: colors.foreground }]}>8</Text>
+              <Text style={[styles.metricValue, { color: colors.foreground }]}>{league.capacity}</Text>
               <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>MAX PLAYERS</Text>
             </View>
           </View>

@@ -38,7 +38,7 @@ export default function InviteScreen() {
             {inviteMutation.isPending ? '······' : inviteCode}
           </Text>
           <Text style={{ color: colors.mutedForeground, textAlign: 'center', fontFamily: 'Inter_400Regular', lineHeight: 21 }}>
-            Share this code with up to 7 friends. They will join your free 8-player Pint War.
+            Share this code with up to 3 friends. They will join your free 4-player Pint War.
           </Text>
         </Card>
         <Button label={shared ? 'Invite shared' : 'Share invite'} variant="secondary" onPress={shareInvite} disabled={!inviteCode || inviteMutation.isPending} />

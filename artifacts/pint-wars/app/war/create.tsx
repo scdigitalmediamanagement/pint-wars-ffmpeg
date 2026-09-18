@@ -17,42 +17,42 @@ type LeaguePlan = {
 
 const leaguePlans: LeaguePlan[] = [
   {
-    id: 'free-8',
-    capacity: 8,
+    id: 'free-4',
+    capacity: 4,
     price: 'Free',
     title: 'Free Pint War',
-    description: 'Your one free league for up to 8 players.',
+    description: 'One free trial per group, for up to 4 players over 10 days.',
     kind: 'free',
   },
   {
-    id: 'paid-8',
-    capacity: 8,
+    id: 'paid-6',
+    capacity: 6,
     price: '£2.99',
-    title: '8-player Pint War',
-    description: 'A paid league for a second group or another 30-day war.',
+    title: '6-player Pint War',
+    description: 'A 10-day Pint War for a small group.',
     kind: 'paid',
   },
   {
-    id: 'paid-12',
-    capacity: 12,
+    id: 'paid-10',
+    capacity: 10,
     price: '£3.99',
-    title: '12-player Pint War',
-    description: 'Bring a bigger group into the competition.',
+    title: '10-player Pint War',
+    description: 'A 10-day Pint War with room for more mates.',
+    kind: 'paid',
+  },
+  {
+    id: 'paid-14',
+    capacity: 14,
+    price: '£4.99',
+    title: '14-player Pint War',
+    description: 'Room for a large crew of friends.',
     kind: 'paid',
   },
   {
     id: 'paid-16',
     capacity: 16,
-    price: '£4.99',
-    title: '16-player Pint War',
-    description: 'Room for a large crew of friends.',
-    kind: 'paid',
-  },
-  {
-    id: 'paid-20',
-    capacity: 20,
     price: '£5.99',
-    title: '20-player Pint War',
+    title: '16-player Pint War',
     description: 'The biggest Pint War option.',
     kind: 'paid',
   },
@@ -62,7 +62,7 @@ export default function CreateWarScreen() {
   const colors = useColors();
   const client = useQueryClient();
   const [name, setName] = useState('');
-  const [selectedPlanId, setSelectedPlanId] = useState('free-8');
+  const [selectedPlanId, setSelectedPlanId] = useState('free-4');
   const [error, setError] = useState('');
   const selectedPlan = leaguePlans.find((plan) => plan.id === selectedPlanId) ?? leaguePlans[0];
   const mutation = useMutation({
@@ -94,7 +94,7 @@ export default function CreateWarScreen() {
         <Title eyebrow="New competition">Create a Pint War</Title>
         <Card style={{ gap: 16 }}>
           <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 22 }}>
-            Choose your league size. Every Pint War starts as soon as it is created and runs for 30 days.
+            Choose your league size. Every Pint War starts as soon as it is created and runs for 10 days.
           </Text>
           <View style={styles.planList}>
             <Text style={[styles.sectionLabel, { color: colors.foreground }]}>League size</Text>
@@ -138,7 +138,7 @@ export default function CreateWarScreen() {
           <Field label="League name" value={name} onChangeText={setName} placeholder="Exmouth Pint Wars" maxLength={80} autoFocus />
           {selectedPlan.kind === 'paid' ? (
             <Text style={[styles.paymentNote, { color: colors.mutedForeground }]}>
-              Payments are not enabled yet. Choose the free 8-player league to create a Pint War today.
+              Payments are not enabled yet. Choose the free 4-player trial to create a Pint War today.
             </Text>
           ) : null}
           {error ? <ErrorText>{error}</ErrorText> : null}
@@ -150,7 +150,7 @@ export default function CreateWarScreen() {
           />
         </Card>
         <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 21 }}>
-          Your account includes one free 8-player Pint War. Paid league sizes will be available after Apple and Google in-app purchases are added.
+          Each group gets one free 4-player trial. Paid league sizes will be available after payments are added.
         </Text>
       </ScrollView>
     </Screen>
