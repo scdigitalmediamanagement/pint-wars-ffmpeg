@@ -1,6 +1,7 @@
 import { fetch as expoFetch } from 'expo/fetch';
 import { getSupabase } from '@/src/lib/supabase';
 import type { LeagueDashboard, LeagueMembership, MyLeague } from '@/src/types/league';
+import type { NearbyPub } from '@/src/lib/pub-service';
 
 type LeagueRow = MyLeague['league'];
 const PINT_PROOF_BUCKET = 'pint-proofs';
@@ -197,6 +198,7 @@ type LogPintInput = {
   mimeType: string | null;
   latitude: number | null;
   longitude: number | null;
+  pub: NearbyPub | null;
 };
 
 function photoExtension(mimeType: string | null) {
@@ -221,6 +223,7 @@ export async function logPint({
   mimeType,
   latitude,
   longitude,
+  pub,
 }: LogPintInput) {
   const client = getSupabase();
   const extension = photoExtension(mimeType);
@@ -247,6 +250,12 @@ export async function logPint({
     p_photo_path: photoPath,
     p_latitude: latitude,
     p_longitude: longitude,
+    p_pub_provider: pub?.provider ?? null,
+    p_pub_place_id: pub?.placeId ?? null,
+    p_pub_name: pub?.name ?? null,
+    p_pub_address: pub?.address ?? null,
+    p_pub_latitude: pub?.coordinates.latitude ?? null,
+    p_pub_longitude: pub?.coordinates.longitude ?? null,
   });
 
   if (error) {

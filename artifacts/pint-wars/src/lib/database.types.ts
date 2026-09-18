@@ -86,6 +86,12 @@ export type Database = {
           logged_at: string;
           latitude: number | null;
           longitude: number | null;
+          pub_provider: string | null;
+          pub_place_id: string | null;
+          pub_name: string | null;
+          pub_address: string | null;
+          pub_latitude: number | null;
+          pub_longitude: number | null;
         };
         Insert: never;
         Update: never;
@@ -115,12 +121,25 @@ export type Database = {
         Returns: undefined;
       };
       log_pint: {
-        Args: {
-          p_league_id: string;
-          p_photo_path: string;
-          p_latitude?: number | null;
-          p_longitude?: number | null;
-        };
+        Args:
+          | {
+              p_league_id: string;
+              p_photo_path: string;
+              p_latitude?: number | null;
+              p_longitude?: number | null;
+            }
+          | {
+              p_league_id: string;
+              p_photo_path: string;
+              p_latitude: number | null;
+              p_longitude: number | null;
+              p_pub_provider: string | null;
+              p_pub_place_id: string | null;
+              p_pub_name: string | null;
+              p_pub_address: string | null;
+              p_pub_latitude: number | null;
+              p_pub_longitude: number | null;
+            };
         Returns: { pint_id: string; logged_at: string }[];
       };
       get_league_pint_totals: {

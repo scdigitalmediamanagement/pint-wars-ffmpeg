@@ -1,0 +1,36 @@
+Implement the Google Places pub-identification integration based on your review.
+
+Requirements:
+- Use the existing Express API server as the secure Google proxy.
+- Google API key must ONLY be read server-side from process.env.GOOGLE_PLACES_API_KEY.
+- Never expose the key to Expo, EXPO_PUBLIC_, app.json, client code, API responses, logs, or the mobile bundle.
+- Add authenticated POST /api/pubs/nearby.
+- Validate the Supabase bearer token before making any Google request.
+- Request body should contain only latitude and longitude.
+- Server controls the search radius (500m), maximum results (10), and pub type.
+- Use Google Places API (New) Nearby Search with includedTypes: ["pub"] and rankPreference: "DISTANCE".
+- Request only the minimum fields required: place ID, display name, formatted address and location.
+- Calculate distanceMeters server-side.
+- Normalize the response to the existing NearbyPub interface.
+- Do not add Google Maps SDK, maps, reviews, photos, ratings, opening hours, or unnecessary Google fields.
+- Use the existing OpenAPI-driven API architecture and regenerate the client rather than manually editing generated client files.
+- Configure the Expo API client to send the current Supabase access token.
+- Replace the existing pub-service.ts provider stub with the internal API call.
+- Keep the existing Continue without a pub option working.
+- When a user selects a pub, persist the selected Google place identity with the pint log so Pub Passport can use the actual pub rather than only GPS coordinates.
+- Add the minimum required database migration and update the log_pint RPC securely.
+- Existing old pint logs must continue working.
+- Passport should use pub_provider + pub_place_id as the primary identity for newly identified pubs, while retaining the existing coordinate fallback for old/location-only logs.
+- Do not change Pint War scoring, leaderboard behaviour, pricing, payment logic, free-trial rules, or league rules.
+- Do not create fake pub data.
+- Handle missing API key, Google errors, authentication errors and no nearby pubs gracefully.
+- Do not make any payment-provider changes.
+- Do not change Google Cloud configuration.
+
+Before finishing, run typecheck and appropriate tests/build validation.
+
+Report every file changed, every database migration created, and any manual Supabase steps I need to perform.
+
+Do not apply any Supabase migration automatically. Create the migration file and tell me exactly when I need to paste it into Supabase.
+
+Do not make any unrelated changes.

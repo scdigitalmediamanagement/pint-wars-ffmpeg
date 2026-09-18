@@ -36,7 +36,7 @@ export default function PassportScreen() {
           <Text style={[styles.summaryNumber, { color: colors.foreground }]}>{entries.length}</Text>
           <Text style={[styles.summaryLabel, { color: colors.mutedForeground }]}>unique pubs visited</Text>
           <Text style={[styles.summaryNote, { color: colors.mutedForeground }]}>
-            This first version groups your location-tagged pint logs. Pub names and addresses will appear when pub identification is connected.
+            Selected pubs are grouped by their Google place identity. Older location-only pint logs remain grouped by recorded coordinates.
           </Text>
         </Card>
 

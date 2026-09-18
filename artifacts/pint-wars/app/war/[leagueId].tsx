@@ -54,6 +54,7 @@ export default function LeagueDashboardScreen() {
       mimeType: string | null;
       latitude: number | null;
       longitude: number | null;
+      pub: NearbyPub | null;
     }) => {
       if (!user || !leagueId) throw new Error('You must be signed in to log a pint.');
       return logPint({
@@ -85,24 +86,27 @@ export default function LeagueDashboardScreen() {
     },
   });
 
-  function continueWithPintLog(pint: Omit<PendingPint, 'location'>) {
+  function continueWithPintLog(
+    pint: Omit<PendingPint, 'location'>,
+    pub: NearbyPub | null,
+  ) {
     setPubPickerVisible(false);
     setPendingPint(null);
     setSelectedPub(null);
     setIsPreparingPint(true);
-    logMutation.mutate(pint);
+    logMutation.mutate({ ...pint, pub });
   }
 
   function continueWithoutPub() {
     if (!pendingPint) return;
     const { location: _location, ...pint } = pendingPint;
-    continueWithPintLog(pint);
+    continueWithPintLog(pint, null);
   }
 
   function confirmSelectedPub() {
     if (!pendingPint || !selectedPub) return;
     const { location: _location, ...pint } = pendingPint;
-    continueWithPintLog(pint);
+    continueWithPintLog(pint, selectedPub);
   }
 
   async function getOptionalLocation(): Promise<Coordinates | null> {
@@ -183,7 +187,7 @@ export default function LeagueDashboardScreen() {
         ...capturedPhoto,
         latitude: null,
         longitude: null,
-      });
+      }, null);
       return;
     }
 
@@ -365,7 +369,7 @@ export default function LeagueDashboardScreen() {
                       <View style={{ flex: 1, gap: 4 }}>
                         <Text style={[styles.pubName, { color: colors.foreground }]}>{pub.name}</Text>
                         <Text style={[styles.pubAddress, { color: colors.mutedForeground }]}>
-                          {pub.address}
+                          {pub.address || 'Address unavailable'}
                         </Text>
                       </View>
                       <Text style={[styles.pubDistance, { color: colors.accent }]}>

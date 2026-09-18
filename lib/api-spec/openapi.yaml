@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: pubs
+    description: Pub identification operations
 paths:
   /healthz:
     get:
@@ -24,7 +26,63 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /pubs/nearby:
+    post:
+      operationId: findNearbyPubs
+      tags: [pubs]
+      summary: Find nearby pubs
+      description: Returns Google Places pubs near an authenticated player's current location.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NearbyPubsRequest"
+      responses:
+        "200":
+          description: Nearby pubs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NearbyPubSearch"
+        "400":
+          description: Invalid coordinates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Missing or invalid Supabase session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: Too many nearby-pub searches
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Google Places request failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Places provider is not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +91,78 @@ components:
           type: string
       required:
         - status
+    NearbyPubsRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+      required:
+        - latitude
+        - longitude
+    Coordinates:
+      type: object
+      additionalProperties: false
+      properties:
+        latitude:
+          type: number
+        longitude:
+          type: number
+      required:
+        - latitude
+        - longitude
+    NearbyPub:
+      type: object
+      additionalProperties: false
+      properties:
+        provider:
+          type: string
+          enum: [google_places]
+        placeId:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+        address:
+          type: string
+        distanceMeters:
+          type: number
+          minimum: 0
+        coordinates:
+          $ref: "#/components/schemas/Coordinates"
+      required:
+        - provider
+        - placeId
+        - name
+        - address
+        - distanceMeters
+        - coordinates
+    NearbyPubSearch:
+      type: object
+      additionalProperties: false
+      properties:
+        pubs:
+          type: array
+          items:
+            $ref: "#/components/schemas/NearbyPub"
+        providerConfigured:
+          type: boolean
+      required:
+        - pubs
+        - providerConfigured
+    ApiError:
+      type: object
+      additionalProperties: false
+      properties:
+        message:
+          type: string
+      required:
+        - message
 
