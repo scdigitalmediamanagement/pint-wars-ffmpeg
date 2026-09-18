@@ -3,9 +3,9 @@ import { ActivityIndicator, Linking, Modal, Platform, Pressable, ScrollView, Sty
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
-import * as Location from 'expo-location';
 import { Button, Card, ErrorText, Screen, Title, uiStyles } from '@/components/AppUi';
 import { getLeagueDashboard, logPint } from '@/src/lib/league-service';
+import { getCurrentLocation } from '@/src/lib/location-service';
 import { findNearbyPubs, type Coordinates, type NearbyPub } from '@/src/lib/pub-service';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { useColors } from '@/hooks/useColors';
@@ -120,20 +120,8 @@ export default function LeagueDashboardScreen() {
   }
 
   async function getOptionalLocation(): Promise<Coordinates | null> {
-    const existingPermission = await Location.getForegroundPermissionsAsync();
-    const permission = existingPermission.granted
-      ? existingPermission
-      : await Location.requestForegroundPermissionsAsync();
-
-    if (!permission.granted) return null;
-
-    const position = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
-    });
-    return {
-      latitude: position.coords.latitude,
-      longitude: position.coords.longitude,
-    };
+    const result = await getCurrentLocation();
+    return result.status === 'success' ? result.coordinates : null;
   }
 
   async function takePintPhoto() {

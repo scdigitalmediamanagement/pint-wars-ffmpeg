@@ -25,6 +25,10 @@ function NativeTabLayout() {
         <NativeTabs.Trigger.Icon sf={{ default: 'flag', selected: 'flag.fill' }} />
         <NativeTabs.Trigger.Label>Wars</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="map">
+        <NativeTabs.Trigger.Icon sf={{ default: 'map', selected: 'map.fill' }} />
+        <NativeTabs.Trigger.Label>Map</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="passport">
         <NativeTabs.Trigger.Icon sf={{ default: 'book.closed', selected: 'book.closed.fill' }} />
         <NativeTabs.Trigger.Label>Passport</NativeTabs.Trigger.Label>
@@ -93,6 +97,14 @@ function ClassicTabLayout() {
           title: 'Wars',
           tabBarIcon: ({ color }) =>
             isIOS ? <SymbolView name="flag" tintColor={color} size={24} /> : <Feather name="flag" size={22} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="map"
+        options={{
+          title: 'Map',
+          tabBarIcon: ({ color }) =>
+            isIOS ? <SymbolView name="map" tintColor={color} size={24} /> : <Feather name="map" size={22} color={color} />,
         }}
       />
       <Tabs.Screen
