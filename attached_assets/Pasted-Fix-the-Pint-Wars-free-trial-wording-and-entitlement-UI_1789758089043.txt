@@ -1,0 +1,67 @@
+Fix the Pint Wars free-trial wording and entitlement UI.
+
+Use FREE mode.
+
+The locked Pint Wars rule is:
+
+- Every account receives one free-trial participation.
+- Creating OR joining a free Pint War consumes that account's free-trial entitlement.
+- The free trial is:
+  - 4 players
+  - 10 days
+- After the account has used its free trial:
+  - It cannot create another free Pint War.
+  - It can still join paid Pint Wars when paid leagues are available.
+- Do not change this server-side rule. The existing database enforcement is authoritative.
+
+Current problem:
+The UI says "One free trial per group", which is incorrect.
+The Wars/Create UI also continues presenting "Create a free 4-player trial" even after the account has already used its entitlement.
+
+Make the smallest necessary UI changes.
+
+Requirements:
+
+1. Replace all user-facing wording that says:
+   "One free trial per group"
+   with wording that accurately describes:
+   "One free trial per account"
+
+2. On the Wars tab and/or Create Pint War screen, determine the user's existing free-trial entitlement using the existing data/functionality. Do not create a new database system.
+
+3. If the account has NOT used its free trial:
+   - Clearly show that the account has one free 4-player, 10-day trial available.
+   - Keep the existing free creation flow.
+
+4. If the account HAS used its free trial:
+   - Clearly show that the free trial has already been used.
+   - Do not present the free creation button as if another free trial is available.
+   - Do not imply the user has been banned from Pint Wars.
+   - Make clear that paid leagues can still be joined when available.
+
+5. Do NOT change:
+   - server-side free-trial enforcement
+   - database schema
+   - paid pricing
+   - paid league creation
+   - league duration
+   - scoring
+   - Map
+   - Passport
+   - Reviews
+   - camera/GPS
+   - invite/join logic
+
+6. Do not add new migrations.
+7. Do not install packages.
+8. Do not redesign the entire Wars/Create screen.
+
+9. Search the project for any remaining user-facing "one free trial per group" wording and correct it where relevant.
+
+10. Run:
+   - typecheck
+   - git diff --check
+
+11. Report exactly which files changed.
+
+Do not make any other product changes.

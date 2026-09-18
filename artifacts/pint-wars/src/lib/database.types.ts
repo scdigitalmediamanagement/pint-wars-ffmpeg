@@ -14,6 +14,7 @@ export type Database = {
           id: string;
           display_name: string;
           avatar_url: string | null;
+          free_trial_used_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -21,6 +22,7 @@ export type Database = {
           id: string;
           display_name?: string;
           avatar_url?: string | null;
+          free_trial_used_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

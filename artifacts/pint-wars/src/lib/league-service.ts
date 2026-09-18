@@ -332,7 +332,7 @@ export async function getMyPubPassport(): Promise<PubPassportEntry[]> {
 export async function getMyProfile(userId: string) {
   const { data, error } = await getSupabase()
     .from('profiles')
-    .select('id, display_name, avatar_url, created_at, updated_at')
+    .select('id, display_name, avatar_url, free_trial_used_at, created_at, updated_at')
     .eq('id', userId)
     .single();
   if (error) throw error;
@@ -344,7 +344,7 @@ export async function updateMyProfile(userId: string, displayName: string) {
     .from('profiles')
     .update({ display_name: displayName.trim(), updated_at: new Date().toISOString() })
     .eq('id', userId)
-    .select('id, display_name, avatar_url, created_at, updated_at')
+    .select('id, display_name, avatar_url, free_trial_used_at, created_at, updated_at')
     .single();
   if (error) throw error;
   return data;

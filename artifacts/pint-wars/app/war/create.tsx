@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Card, ErrorText, Field, Screen, Title, uiStyles } from '@/components/AppUi';
-import { createFreeLeague } from '@/src/lib/league-service';
+import { createFreeLeague, getMyProfile } from '@/src/lib/league-service';
+import { useAuth } from '@/src/providers/AuthProvider';
 import { useColors } from '@/hooks/useColors';
 
 type LeaguePlan = {
@@ -21,7 +22,7 @@ const leaguePlans: LeaguePlan[] = [
     capacity: 4,
     price: 'Free',
     title: 'Free Pint War',
-    description: 'One free trial per group, for up to 4 players over 10 days.',
+    description: 'One free trial per account, for 4 players over 10 days.',
     kind: 'free',
   },
   {
@@ -60,12 +61,19 @@ const leaguePlans: LeaguePlan[] = [
 
 export default function CreateWarScreen() {
   const colors = useColors();
+  const { user } = useAuth();
   const client = useQueryClient();
+  const profileQuery = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: () => getMyProfile(user?.id as string),
+    enabled: Boolean(user?.id),
+  });
   const [name, setName] = useState('');
   const [selectedPlanId, setSelectedPlanId] = useState('free-4');
   const [isPaidConfirmation, setIsPaidConfirmation] = useState(false);
   const [error, setError] = useState('');
   const selectedPlan = leaguePlans.find((plan) => plan.id === selectedPlanId) ?? leaguePlans[0];
+  const freeTrialUsed = profileQuery.data?.free_trial_used_at != null;
   const mutation = useMutation({
     mutationFn: () => createFreeLeague(name),
     onSuccess: async (result) => {
@@ -172,6 +180,8 @@ export default function CreateWarScreen() {
                           <Text style={[styles.planTitle, { color: colors.foreground }]}>{plan.title}</Text>
                           {plan.kind === 'paid' ? (
                             <Text style={[styles.comingSoon, { color: colors.accent }]}>COMING SOON</Text>
+                          ) : freeTrialUsed ? (
+                            <Text style={[styles.comingSoon, { color: colors.mutedForeground }]}>USED</Text>
                           ) : null}
                         </View>
                         <Text style={[styles.planDescription, { color: colors.mutedForeground }]}>{plan.description}</Text>
@@ -186,15 +196,28 @@ export default function CreateWarScreen() {
               </View>
               <Field label="League name" value={name} onChangeText={setName} placeholder="Exmouth Pint Wars" maxLength={80} autoFocus />
               {error ? <ErrorText>{error}</ErrorText> : null}
-              <Button
-                label="Create free war"
-                onPress={() => mutation.mutate()}
-                loading={mutation.isPending}
-                disabled={!name.trim()}
-              />
+              {profileQuery.isLoading ? (
+                <ActivityIndicator color={colors.accent} />
+              ) : profileQuery.isError ? (
+                <ErrorText>Could not check your free-trial entitlement.</ErrorText>
+              ) : freeTrialUsed ? (
+                <Card style={styles.trialCard}>
+                  <Text style={[styles.trialTitle, { color: colors.foreground }]}>Free trial already used</Text>
+                  <Text style={[styles.paymentNote, { color: colors.mutedForeground }]}>
+                    Each account gets one 4-player, 10-day trial. You can still join paid Pint Wars when they are available.
+                  </Text>
+                </Card>
+              ) : (
+                <Button
+                  label="Create your free 4-player trial"
+                  onPress={() => mutation.mutate()}
+                  loading={mutation.isPending}
+                  disabled={!name.trim() || profileQuery.isLoading || profileQuery.isError}
+                />
+              )}
             </Card>
             <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 21 }}>
-              Each group gets one free 4-player trial. Paid league sizes will be available after payments are added.
+              Each account gets one free 4-player, 10-day trial. Paid league sizes will be available after payments are added.
             </Text>
           </>
         )}
@@ -220,4 +243,6 @@ const styles = StyleSheet.create({
   summaryLabel: { fontFamily: 'Inter_400Regular', fontSize: 14 },
   summaryValue: { flex: 1, fontFamily: 'Inter_600SemiBold', fontSize: 14, textAlign: 'right' },
   paymentNote: { fontFamily: 'Inter_400Regular', fontSize: 13, lineHeight: 19 },
+  trialCard: { gap: 8 },
+  trialTitle: { fontFamily: 'Inter_700Bold', fontSize: 17 },
 });

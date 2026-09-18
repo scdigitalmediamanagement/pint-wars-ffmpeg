@@ -47,7 +47,7 @@ export default function HomeScreen() {
           <Card style={{ gap: 14 }}>
             <Text style={[styles.leagueName, { color: colors.foreground }]}>No active war yet</Text>
             <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 21 }}>
-              Start a free 4-player trial or join a Pint War with an invite code.
+              Create a Pint War if your free trial is available, or join one with an invite code.
             </Text>
             <View style={{ gap: 10 }}>
               <Button label="Create a Pint War" onPress={() => router.push('/war/create')} />
