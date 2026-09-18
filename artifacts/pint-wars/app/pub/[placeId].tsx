@@ -279,8 +279,8 @@ function ReviewFormModal({
   const [pintsDrinks, setPintsDrinks] = useState(0);
   const [staff, setStaff] = useState(0);
   const [music, setMusic] = useState(0);
-  const [food, setFood] = useState(0);
-  const [value, setValue] = useState(0);
+  const [food, setFood] = useState<number | null>(null);
+  const [value, setValue] = useState<number | null>(null);
   const [wouldReturn, setWouldReturn] = useState<boolean | null>(null);
   const [reviewText, setReviewText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -291,8 +291,8 @@ function ReviewFormModal({
       setPintsDrinks(existingReview?.pints_drinks_rating || 0);
       setStaff(existingReview?.staff_rating || 0);
       setMusic(existingReview?.music_rating || 0);
-      setFood(existingReview?.food_rating || 0);
-      setValue(existingReview?.value_rating || 0);
+      setFood(existingReview?.food_rating ?? null);
+      setValue(existingReview?.value_rating ?? null);
       setWouldReturn(existingReview?.would_return ?? null);
       setReviewText(existingReview?.review_text || '');
     }
@@ -315,8 +315,8 @@ function ReviewFormModal({
         pintsDrinksRating: pintsDrinks,
         staffRating: staff,
         musicRating: music,
-        foodRating: food || null,
-        valueRating: value || null,
+        foodRating: food,
+        valueRating: value,
         wouldReturn,
         reviewText
       };
@@ -354,15 +354,15 @@ function ReviewFormModal({
             <RatingInput label="Music *" rating={music} onChange={setMusic} />
             
             <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 18, color: colors.foreground, marginTop: 12 }}>Optional Ratings</Text>
-            <RatingInput label="Food" rating={food} onChange={setFood} />
+            <RatingInput label="Food" rating={food ?? 0} onChange={setFood} />
             {food ? (
-              <Pressable onPress={() => setFood(0)}>
+              <Pressable onPress={() => setFood(null)}>
                 <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_600SemiBold', textAlign: 'right' }}>Clear food rating</Text>
               </Pressable>
             ) : null}
-            <RatingInput label="Value" rating={value} onChange={setValue} />
+            <RatingInput label="Value" rating={value ?? 0} onChange={setValue} />
             {value ? (
-              <Pressable onPress={() => setValue(0)}>
+              <Pressable onPress={() => setValue(null)}>
                 <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_600SemiBold', textAlign: 'right' }}>Clear value rating</Text>
               </Pressable>
             ) : null}
