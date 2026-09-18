@@ -1,5 +1,20 @@
 -- Lock new leagues to the 10-day pricing model while allowing historical
 -- 8-player leagues to remain readable until they complete.
+alter table public.profiles
+  add column if not exists free_trial_used_at timestamptz;
+
+-- Existing participation in any free league counts as the account's one
+-- free-trial entitlement.
+update public.profiles as profile
+set free_trial_used_at = coalesce(profile.free_trial_used_at, now())
+where exists (
+  select 1
+  from public.league_memberships as membership
+  join public.leagues as league on league.id = membership.league_id
+  where membership.user_id = profile.id
+    and league.is_free = true
+);
+
 alter table public.leagues
   alter column capacity set default 4,
   alter column ends_at set default (now() + interval '10 days');
@@ -16,6 +31,35 @@ alter table public.leagues
     or
     (is_free = false and capacity in (6, 10, 14, 16))
   ) not valid;
+
+create or replace function public.consume_free_trial(p_user_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  consumed_user_id uuid;
+begin
+  if auth.uid() is null or p_user_id is distinct from auth.uid() then
+    raise exception 'You must be signed in to use a free trial';
+  end if;
+
+  update public.profiles
+  set free_trial_used_at = now()
+  where id = p_user_id
+    and free_trial_used_at is null
+  returning id into consumed_user_id;
+
+  if consumed_user_id is null then
+    if exists (select 1 from public.profiles where id = p_user_id) then
+      raise exception 'You have already used your free trial';
+    end if;
+
+    raise exception 'Your profile could not be found';
+  end if;
+end;
+$$;
 
 create or replace function public.create_free_league(p_name text)
 returns table (league_id uuid, invite_code text)
@@ -35,14 +79,7 @@ begin
     raise exception 'League name must be between 1 and 80 characters';
   end if;
 
-  if exists (
-    select 1
-    from public.leagues as league
-    where league.host_id = auth.uid()
-      and league.is_free = true
-  ) then
-    raise exception 'You have already used your free trial';
-  end if;
+  perform public.consume_free_trial(auth.uid());
 
   insert into public.leagues (name, host_id, capacity, is_free, status, starts_at, ends_at)
   values (trim(p_name), auth.uid(), 4, true, 'active', now(), now() + interval '10 days')
@@ -96,6 +133,7 @@ declare
   active_count integer;
   existing_status public.membership_status;
   league_capacity integer;
+  league_is_free boolean;
 begin
   if auth.uid() is null then
     raise exception 'You must be signed in';
@@ -112,6 +150,11 @@ begin
   if not found then
     raise exception 'Invite code is invalid or expired';
   end if;
+
+  select league.capacity, league.is_free
+  into league_capacity, league_is_free
+  from public.leagues as league
+  where league.id = invite_row.league_id;
 
   if exists (
     select 1
@@ -132,9 +175,9 @@ begin
     raise exception 'You are no longer an active member of this league';
   end if;
 
-  select league.capacity into league_capacity
-  from public.leagues as league
-  where league.id = invite_row.league_id;
+  if league_is_free then
+    perform public.consume_free_trial(auth.uid());
+  end if;
 
   select count(*) into active_count
   from public.league_memberships as membership
@@ -151,3 +194,6 @@ begin
   return query select invite_row.league_id;
 end;
 $$;
+
+revoke execute on function public.consume_free_trial(uuid) from public;
+revoke execute on function public.consume_free_trial(uuid) from authenticated;
