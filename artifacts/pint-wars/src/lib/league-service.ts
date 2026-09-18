@@ -1,7 +1,9 @@
+import { fetch as expoFetch } from 'expo/fetch';
 import { getSupabase } from '@/src/lib/supabase';
 import type { LeagueDashboard, LeagueMembership, MyLeague } from '@/src/types/league';
 
 type LeagueRow = MyLeague['league'];
+const PINT_PROOF_BUCKET = 'pint-proofs';
 
 function describeSupabaseError(error: unknown) {
   if (!error || typeof error !== 'object') {
@@ -146,7 +148,11 @@ export async function getLeagueDashboard(leagueId: string): Promise<LeagueDashbo
     p_league_id: leagueId,
   });
   if (refreshError) throw refreshError;
-  const [{ data: league, error: leagueError }, { data: members, error: memberError }] =
+  const [
+    { data: league, error: leagueError },
+    { data: members, error: memberError },
+    { data: pintTotals, error: pintTotalsError },
+  ] =
     await Promise.all([
       client.from('leagues').select('*').eq('id', leagueId).single(),
       client
@@ -154,10 +160,16 @@ export async function getLeagueDashboard(leagueId: string): Promise<LeagueDashbo
         .select('id, league_id, user_id, role, status, joined_at, retired_at, removed_at, profile:profiles(display_name)')
         .eq('league_id', leagueId)
         .order('joined_at', { ascending: true }),
+      client.rpc('get_league_pint_totals', { p_league_id: leagueId }),
     ]);
 
   if (leagueError) throw leagueError;
   if (memberError) throw memberError;
+  if (pintTotalsError) throw pintTotalsError;
+
+  const totalsByUser = new Map(
+    (pintTotals ?? []).map((total) => [total.user_id, Number(total.pint_total)]),
+  );
 
   const normalizedMembers = ((members ?? []) as unknown as Array<
     Omit<LeagueMembership, 'display_name' | 'pint_total'> & {
@@ -168,7 +180,7 @@ export async function getLeagueDashboard(leagueId: string): Promise<LeagueDashbo
     return {
       ...member,
       display_name: profile?.display_name || 'Player',
-      pint_total: 0,
+      pint_total: totalsByUser.get(member.user_id) ?? 0,
     };
   });
 
@@ -176,6 +188,79 @@ export async function getLeagueDashboard(leagueId: string): Promise<LeagueDashbo
     league: league as LeagueDashboard['league'],
     members: normalizedMembers,
   };
+}
+
+type LogPintInput = {
+  leagueId: string;
+  userId: string;
+  photoUri: string;
+  mimeType: string | null;
+  latitude: number | null;
+  longitude: number | null;
+};
+
+function photoExtension(mimeType: string | null) {
+  switch (mimeType) {
+    case 'image/png':
+      return 'png';
+    case 'image/heic':
+      return 'heic';
+    case 'image/heif':
+      return 'heif';
+    case 'image/webp':
+      return 'webp';
+    default:
+      return 'jpg';
+  }
+}
+
+export async function logPint({
+  leagueId,
+  userId,
+  photoUri,
+  mimeType,
+  latitude,
+  longitude,
+}: LogPintInput) {
+  const client = getSupabase();
+  const extension = photoExtension(mimeType);
+  const uniquePart = `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+  const photoPath = `${userId}/${leagueId}/${uniquePart}.${extension}`;
+  const photoResponse = await expoFetch(photoUri);
+
+  if (!photoResponse.ok) {
+    throw new Error('The pint photo could not be prepared for upload.');
+  }
+
+  const photoBytes = await photoResponse.arrayBuffer();
+  const { error: uploadError } = await client.storage
+    .from(PINT_PROOF_BUCKET)
+    .upload(photoPath, photoBytes, {
+      contentType: mimeType ?? 'image/jpeg',
+      upsert: false,
+    });
+
+  if (uploadError) throw uploadError;
+
+  const { data, error } = await client.rpc('log_pint', {
+    p_league_id: leagueId,
+    p_photo_path: photoPath,
+    p_latitude: latitude,
+    p_longitude: longitude,
+  });
+
+  if (error) {
+    await client.storage.from(PINT_PROOF_BUCKET).remove([photoPath]);
+    throw error;
+  }
+
+  const result = Array.isArray(data) ? data[0] : data;
+  if (!result) {
+    await client.storage.from(PINT_PROOF_BUCKET).remove([photoPath]);
+    throw new Error('The pint could not be logged.');
+  }
+
+  return result;
 }
 
 export async function getMyProfile(userId: string) {

@@ -1,11 +1,14 @@
-import React from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
-import { Button, Card, Screen, Title, uiStyles } from '@/components/AppUi';
-import { getLeagueDashboard } from '@/src/lib/league-service';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
+import { Button, Card, ErrorText, Screen, Title, uiStyles } from '@/components/AppUi';
+import { getLeagueDashboard, logPint } from '@/src/lib/league-service';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { useColors } from '@/hooks/useColors';
+import type { LeagueDashboard } from '@/src/types/league';
 
 function dayNumber(startsAt: string, endsAt: string, status: string) {
   if (status === 'completed') return 30;
@@ -19,11 +22,108 @@ export default function LeagueDashboardScreen() {
   const colors = useColors();
   const { user } = useAuth();
   const { leagueId } = useLocalSearchParams<{ leagueId: string }>();
+  const queryClient = useQueryClient();
+  const [cameraError, setCameraError] = useState('');
+  const [cameraBlocked, setCameraBlocked] = useState(false);
+  const [logError, setLogError] = useState('');
   const query = useQuery({
     queryKey: ['league-dashboard', leagueId],
     queryFn: () => getLeagueDashboard(leagueId as string),
     enabled: Boolean(leagueId),
   });
+  const logMutation = useMutation({
+    mutationFn: (input: {
+      photoUri: string;
+      mimeType: string | null;
+      latitude: number | null;
+      longitude: number | null;
+    }) => {
+      if (!user || !leagueId) throw new Error('You must be signed in to log a pint.');
+      return logPint({
+        leagueId,
+        userId: user.id,
+        ...input,
+      });
+    },
+    onSuccess: () => {
+      queryClient.setQueryData<LeagueDashboard>(['league-dashboard', leagueId], (current) => {
+        if (!current || !user) return current;
+        return {
+          ...current,
+          members: current.members.map((member) =>
+            member.user_id === user.id
+              ? { ...member, pint_total: member.pint_total + 1 }
+              : member,
+          ),
+        };
+      });
+      void queryClient.invalidateQueries({ queryKey: ['league-dashboard', leagueId] });
+      setLogError('');
+    },
+    onError: (error) => {
+      setLogError(error instanceof Error ? error.message : 'The pint could not be logged. Try again.');
+    },
+  });
+
+  async function takePintPhoto() {
+    setCameraError('');
+    setCameraBlocked(false);
+    setLogError('');
+
+    let permission: ImagePicker.PermissionResponse;
+    try {
+      permission = await ImagePicker.requestCameraPermissionsAsync();
+    } catch {
+      setCameraError('The camera could not be opened. Please try again.');
+      return;
+    }
+    if (!permission.granted) {
+      setCameraBlocked(!permission.canAskAgain);
+      setCameraError(
+        permission.canAskAgain
+          ? 'Camera access is required to photograph your fresh pint. Tap “Try camera again” to retry.'
+          : 'Camera access is turned off. Enable it in your device settings, then try again.',
+      );
+      return;
+    }
+
+    let photo: ImagePicker.ImagePickerResult;
+    try {
+      photo = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        allowsEditing: false,
+        quality: 0.8,
+        cameraType: ImagePicker.CameraType.front,
+      });
+    } catch {
+      setCameraError('The camera could not take a photo. Please try again.');
+      return;
+    }
+    if (photo.canceled || !photo.assets[0]) return;
+
+    let latitude: number | null = null;
+    let longitude: number | null = null;
+
+    try {
+      const locationPermission = await Location.requestForegroundPermissionsAsync();
+      if (locationPermission.granted) {
+        const position = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        latitude = position.coords.latitude;
+        longitude = position.coords.longitude;
+      }
+    } catch {
+      // Location is optional for Stage 2, so logging continues without it.
+    }
+
+    logMutation.mutate({
+      photoUri: photo.assets[0].uri,
+      mimeType: photo.assets[0].mimeType ?? null,
+      latitude,
+      longitude,
+    });
+  }
 
   if (query.isLoading || !query.data) {
     return (
@@ -49,6 +149,7 @@ export default function LeagueDashboardScreen() {
   const { league, members } = query.data;
   const day = dayNumber(league.starts_at, league.ends_at, league.status);
   const sortedMembers = [...members].sort((a, b) => b.pint_total - a.pint_total || a.joined_at.localeCompare(b.joined_at));
+  const totalPints = members.reduce((total, member) => total + member.pint_total, 0);
 
   return (
     <Screen>
@@ -64,7 +165,7 @@ export default function LeagueDashboardScreen() {
               <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>PLAYERS</Text>
             </View>
             <View>
-              <Text style={[styles.metricValue, { color: colors.foreground }]}>0</Text>
+              <Text style={[styles.metricValue, { color: colors.foreground }]}>{totalPints}</Text>
               <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>TOTAL PINTS</Text>
             </View>
             <View>
@@ -91,9 +192,27 @@ export default function LeagueDashboardScreen() {
             })}
           </Card>
         </View>
-        <Button label="Log Pint" disabled onPress={() => undefined} />
+        <Button
+          label={cameraError ? 'Try camera again' : 'Log Pint'}
+          disabled={league.status !== 'active'}
+          loading={logMutation.isPending}
+          onPress={() => void takePintPhoto()}
+        />
+        {cameraError ? <ErrorText>{cameraError}</ErrorText> : null}
+        {cameraBlocked && Platform.OS !== 'web' ? (
+          <Button
+            label="Open device settings"
+            variant="quiet"
+            onPress={() => {
+              void Linking.openSettings().catch(() => {
+                setCameraError('Open your device settings and allow camera access for Pint Wars.');
+              });
+            }}
+          />
+        ) : null}
+        {logError ? <ErrorText>{logError}</ErrorText> : null}
         <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 21 }}>
-          Pint logging is reserved for Stage 2. No points can be added in this stage.
+          Take a fresh photo with your pint. Each logged pint adds exactly one point.
         </Text>
         {members.some((member) => member.user_id === user?.id && member.role === 'host') ? (
           <Pressable onPress={() => router.push({ pathname: '/war/invite', params: { leagueId: league.id } })}>

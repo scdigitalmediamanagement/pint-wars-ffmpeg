@@ -77,6 +77,20 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      pint_logs: {
+        Row: {
+          id: string;
+          league_id: string;
+          user_id: string;
+          photo_path: string;
+          logged_at: string;
+          latitude: number | null;
+          longitude: number | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -99,6 +113,19 @@ export type Database = {
       complete_expired_league: {
         Args: { p_league_id: string };
         Returns: undefined;
+      };
+      log_pint: {
+        Args: {
+          p_league_id: string;
+          p_photo_path: string;
+          p_latitude?: number | null;
+          p_longitude?: number | null;
+        };
+        Returns: { pint_id: string; logged_at: string }[];
+      };
+      get_league_pint_totals: {
+        Args: { p_league_id: string };
+        Returns: { user_id: string; pint_total: number }[];
       };
     };
     Enums: Record<string, never>;

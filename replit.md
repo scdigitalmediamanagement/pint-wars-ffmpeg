@@ -29,6 +29,7 @@ Pint Wars is a mobile app foundation for private 30-day pub competitions between
 - Stage 1 profile backfill migration: `artifacts/pint-wars/supabase/migrations/202609170001_stage1_profile_backfill.sql`
 - Stage 1 pgcrypto schema repair: `artifacts/pint-wars/supabase/migrations/202609170002_stage1_pgcrypto_schema_fix.sql`
 - Stage 1 join RPC ambiguity repair: `artifacts/pint-wars/supabase/migrations/202609180001_stage1_join_league_id_ambiguity_fix.sql`
+- Stage 2 pint logging migration: `artifacts/pint-wars/supabase/migrations/202609180002_stage2_log_pint.sql`
 - Supabase client and auth: `artifacts/pint-wars/src/lib/supabase.ts`, `artifacts/pint-wars/src/providers/AuthProvider.tsx`
 - League operations: `artifacts/pint-wars/src/lib/league-service.ts`
 
@@ -37,11 +38,11 @@ Pint Wars is a mobile app foundation for private 30-day pub competitions between
 - Free Stage 1 league creation is a database RPC; clients cannot insert leagues or memberships directly.
 - Invite joining is a database RPC that validates the invite, capacity, and membership state.
 - League status is server-normalized when a member loads their leagues or dashboard.
-- Pint logging is intentionally not present yet; dashboard totals remain zero and the disabled button cannot award points.
+- Pint logging stores private proof photos and awards exactly one point per authenticated pint log.
 
 ## Product
 
-Stage 1 supports account creation, free 8-player Pint War creation, invite-code joining, host invites, a 30-day league dashboard, and profile management.
+The app supports account creation, free 8-player Pint War creation, invite-code joining, host invites, a 30-day league dashboard, profile management, and photo-backed pint logging.
 
 ## User preferences
 
