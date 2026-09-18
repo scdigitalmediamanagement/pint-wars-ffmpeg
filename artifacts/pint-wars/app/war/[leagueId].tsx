@@ -76,6 +76,7 @@ export default function LeagueDashboardScreen() {
         };
       });
       void queryClient.invalidateQueries({ queryKey: ['league-dashboard', leagueId] });
+      void queryClient.invalidateQueries({ queryKey: ['pub-passport'] });
       setLogError('');
     },
     onError: (error) => {

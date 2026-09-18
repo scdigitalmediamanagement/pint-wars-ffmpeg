@@ -13,7 +13,7 @@ returns table (
 language plpgsql
 stable
 security definer
-set search_path = public
+set search_path = ''
 as $$
 begin
   if auth.uid() is null then
@@ -45,4 +45,5 @@ end;
 $$;
 
 revoke execute on function public.get_my_pub_passport() from public;
+revoke execute on function public.get_my_pub_passport() from anon;
 grant execute on function public.get_my_pub_passport() to authenticated;
