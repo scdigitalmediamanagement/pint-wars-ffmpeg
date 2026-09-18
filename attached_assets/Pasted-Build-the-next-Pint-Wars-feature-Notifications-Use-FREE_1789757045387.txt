@@ -1,0 +1,94 @@
+Build the next Pint Wars feature: Notifications.
+
+Use FREE mode.
+
+Before changing anything, inspect the existing Pint Wars architecture for authentication, league membership, pint logging, league timing, Supabase database functions, and the current app navigation.
+
+The goal is to create the foundation for useful Pint Wars notifications without adding unnecessary complexity.
+
+Implement these notification events:
+
+1. PLAYER JOINED
+When another player successfully joins a Pint War:
+- Notify the league host.
+- Include the player's display name and league name.
+
+2. PINT LOGGED
+When another player logs a pint:
+- Notify the other members of that active Pint War.
+- Do not notify the player who logged the pint.
+- Include the player's display name and league name.
+- Do not expose the proof photo through the notification.
+
+3. WAR ENDING SOON
+For an active Pint War approaching its server-side end time:
+- Notify participating players that the war is ending soon.
+- Use the existing server-side league timing.
+- Do not rely on the phone clock.
+- Avoid sending duplicate notifications for the same league/event.
+
+4. WAR FINISHED
+When a Pint War becomes completed:
+- Notify its participating players.
+- Tell them the Pint War has finished.
+- The notification should allow them to open the completed league.
+
+5. WINNER
+When a Pint War finishes:
+- Notify the winner.
+- If there is a tie, notify all tied winners.
+- Do not arbitrarily select a winner in a tie.
+
+NOTIFICATION INFRASTRUCTURE
+
+Create a simple in-app notification system first.
+
+Requirements:
+- Store notifications securely in Supabase.
+- Each notification belongs to a user.
+- Include notification type, title/body, related league ID where appropriate, read/unread state, and server-created timestamp.
+- Users must only be able to read/update their own notifications.
+- Use server-side logic/RPCs for creating notifications so clients cannot create fake notifications for other users.
+- Avoid exposing unnecessary personal information.
+
+UI:
+- Add a notification indicator to the appropriate existing app UI.
+- Provide a simple Notifications screen.
+- Show unread/read state.
+- Tapping a league-related notification should open the relevant Pint War.
+- Allow notifications to be marked read.
+- Include a sensible empty state.
+
+IMPORTANT:
+- Do NOT implement push notifications yet.
+- Do NOT add Expo push tokens.
+- Do NOT add Firebase.
+- Do NOT add OneSignal.
+- Do NOT add email/SMS notifications.
+- Do NOT add a third-party notification service.
+- This first stage is in-app notifications only.
+- Do NOT change Pint War scoring.
+- Do NOT change league pricing or free-trial rules.
+- Do NOT change Map, Passport or Pub Reviews.
+- Do NOT change camera/photo behaviour.
+- Do NOT create fake notification data.
+
+Use the existing server-side league timing and secure database architecture.
+
+If a database migration is required:
+- Create the migration.
+- DO NOT apply it.
+- Report the exact migration filename and what it does so I can review it before applying it.
+
+After implementation:
+- Run typecheck.
+- Run git diff --check.
+- Verify the Expo workflow bundles successfully.
+- Report:
+  1. Files changed.
+  2. Migration created, if any.
+  3. Migration applied: yes/no.
+  4. Tests performed and results.
+  5. Anything that still requires manual iPhone testing.
+
+Keep the implementation focused and do not refactor unrelated code.
