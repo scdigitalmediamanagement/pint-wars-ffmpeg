@@ -2,6 +2,7 @@ import React from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Card, Screen, Title, uiStyles } from '@/components/AppUi';
 import { NotificationBell } from '@/components/NotificationBell';
 import { getMyLeagues } from '@/src/lib/league-service';
@@ -9,12 +10,19 @@ import { useColors } from '@/hooks/useColors';
 
 export default function HomeScreen() {
   const colors = useColors();
+  const insets = useSafeAreaInsets();
   const query = useQuery({ queryKey: ['my-leagues'], queryFn: getMyLeagues });
   const activeLeague = query.data?.find((item) => item.league.status === 'active' && item.membershipStatus === 'active');
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={[uiStyles.content, { paddingTop: 22, gap: 22 }]} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          uiStyles.content,
+          { paddingTop: Math.max(22, insets.top + 8), gap: 22 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.headerRow}>
           <View style={styles.greeting}>
             <Text style={[styles.kicker, { color: colors.accent }]}>WEDNESDAY NIGHT PLANS</Text>
@@ -48,9 +56,9 @@ export default function HomeScreen() {
           </Card>
         )}
         <View style={{ gap: 10 }}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Stage 1</Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Your Pint Wars toolkit</Text>
           <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 22 }}>
-            Build your crew, start the clock, and keep an eye on the table. Pint logging arrives in the next stage.
+            Log pints with photo proof and location, discover nearby pubs, and keep your Passport, reviews, and league progress together.
           </Text>
         </View>
       </ScrollView>
