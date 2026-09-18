@@ -127,6 +127,18 @@ export type Database = {
         Args: { p_league_id: string };
         Returns: { user_id: string; pint_total: number }[];
       };
+      get_my_pub_passport: {
+        Args: Record<string, never>;
+        Returns: {
+          location_key: string;
+          pub_name: string | null;
+          address: string | null;
+          latitude: number;
+          longitude: number;
+          pint_count: number;
+          most_recent_visit: string;
+        }[];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

@@ -25,6 +25,10 @@ function NativeTabLayout() {
         <NativeTabs.Trigger.Icon sf={{ default: 'flag', selected: 'flag.fill' }} />
         <NativeTabs.Trigger.Label>Wars</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="passport">
+        <NativeTabs.Trigger.Icon sf={{ default: 'book.closed', selected: 'book.closed.fill' }} />
+        <NativeTabs.Trigger.Label>Passport</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
         <NativeTabs.Trigger.Icon sf={{ default: 'person', selected: 'person.fill' }} />
         <NativeTabs.Trigger.Label>Profile</NativeTabs.Trigger.Label>
@@ -97,6 +101,14 @@ function ClassicTabLayout() {
           title: 'Profile',
           tabBarIcon: ({ color }) =>
             isIOS ? <SymbolView name="person" tintColor={color} size={24} /> : <Feather name="user" size={22} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="passport"
+        options={{
+          title: 'Passport',
+          tabBarIcon: ({ color }) =>
+            isIOS ? <SymbolView name="book" tintColor={color} size={24} /> : <Feather name="book-open" size={22} color={color} />,
         }}
       />
     </Tabs>

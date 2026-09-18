@@ -263,6 +263,22 @@ export async function logPint({
   return result;
 }
 
+export type PubPassportEntry = {
+  location_key: string;
+  pub_name: string | null;
+  address: string | null;
+  latitude: number;
+  longitude: number;
+  pint_count: number;
+  most_recent_visit: string;
+};
+
+export async function getMyPubPassport(): Promise<PubPassportEntry[]> {
+  const { data, error } = await getSupabase().rpc('get_my_pub_passport');
+  if (error) throw error;
+  return (data ?? []) as PubPassportEntry[];
+}
+
 export async function getMyProfile(userId: string) {
   const { data, error } = await getSupabase()
     .from('profiles')
