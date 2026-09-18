@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { Button, Card, ErrorText, Screen, Title, uiStyles } from '@/components/AppUi';
 import { getLeagueDashboard, logPint } from '@/src/lib/league-service';
+import { findNearbyPubs, type Coordinates, type NearbyPub } from '@/src/lib/pub-service';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { useColors } from '@/hooks/useColors';
 import type { LeagueDashboard } from '@/src/types/league';
@@ -18,6 +19,14 @@ function dayNumber(startsAt: string, endsAt: string, status: string) {
   return Math.max(1, Math.min(30, Math.floor((Math.min(now, end) - start) / 86400000) + 1));
 }
 
+type PendingPint = {
+  photoUri: string;
+  mimeType: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  location: Coordinates;
+};
+
 export default function LeagueDashboardScreen() {
   const colors = useColors();
   const { user } = useAuth();
@@ -26,6 +35,13 @@ export default function LeagueDashboardScreen() {
   const [cameraError, setCameraError] = useState('');
   const [cameraBlocked, setCameraBlocked] = useState(false);
   const [logError, setLogError] = useState('');
+  const [isPreparingPint, setIsPreparingPint] = useState(false);
+  const [pubPickerVisible, setPubPickerVisible] = useState(false);
+  const [isSearchingPubs, setIsSearchingPubs] = useState(false);
+  const [nearbyPubs, setNearbyPubs] = useState<NearbyPub[]>([]);
+  const [selectedPub, setSelectedPub] = useState<NearbyPub | null>(null);
+  const [nearbyPubMessage, setNearbyPubMessage] = useState('');
+  const [pendingPint, setPendingPint] = useState<PendingPint | null>(null);
   const query = useQuery({
     queryKey: ['league-dashboard', leagueId],
     queryFn: () => getLeagueDashboard(leagueId as string),
@@ -46,6 +62,7 @@ export default function LeagueDashboardScreen() {
       });
     },
     onSuccess: () => {
+      setIsPreparingPint(false);
       queryClient.setQueryData<LeagueDashboard>(['league-dashboard', leagueId], (current) => {
         if (!current || !user) return current;
         return {
@@ -61,11 +78,38 @@ export default function LeagueDashboardScreen() {
       setLogError('');
     },
     onError: (error) => {
+      setIsPreparingPint(false);
       setLogError(error instanceof Error ? error.message : 'The pint could not be logged. Try again.');
     },
   });
 
+  function continueWithPintLog(pint: Omit<PendingPint, 'location'>) {
+    setPubPickerVisible(false);
+    setPendingPint(null);
+    setSelectedPub(null);
+    setIsPreparingPint(true);
+    logMutation.mutate(pint);
+  }
+
+  async function getOptionalLocation(): Promise<Coordinates | null> {
+    const existingPermission = await Location.getForegroundPermissionsAsync();
+    const permission = existingPermission.granted
+      ? existingPermission
+      : await Location.requestForegroundPermissionsAsync();
+
+    if (!permission.granted) return null;
+
+    const position = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Balanced,
+    });
+    return {
+      latitude: position.coords.latitude,
+      longitude: position.coords.longitude,
+    };
+  }
+
   async function takePintPhoto() {
+    setIsPreparingPint(true);
     setCameraError('');
     setCameraBlocked(false);
     setLogError('');
@@ -74,6 +118,7 @@ export default function LeagueDashboardScreen() {
     try {
       permission = await ImagePicker.requestCameraPermissionsAsync();
     } catch {
+      setIsPreparingPint(false);
       setCameraError('The camera could not be opened. Please try again.');
       return;
     }
@@ -84,6 +129,7 @@ export default function LeagueDashboardScreen() {
           ? 'Camera access is required to photograph your fresh pint. Tap “Try camera again” to retry.'
           : 'Camera access is turned off. Enable it in your device settings, then try again.',
       );
+      setIsPreparingPint(false);
       return;
     }
 
@@ -96,33 +142,64 @@ export default function LeagueDashboardScreen() {
         cameraType: ImagePicker.CameraType.front,
       });
     } catch {
+      setIsPreparingPint(false);
       setCameraError('The camera could not take a photo. Please try again.');
       return;
     }
-    if (photo.canceled || !photo.assets[0]) return;
-
-    let latitude: number | null = null;
-    let longitude: number | null = null;
-
-    try {
-      const locationPermission = await Location.requestForegroundPermissionsAsync();
-      if (locationPermission.granted) {
-        const position = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
-        latitude = position.coords.latitude;
-        longitude = position.coords.longitude;
-      }
-    } catch {
-      // Location is optional for Stage 2, so logging continues without it.
+    if (photo.canceled || !photo.assets[0]) {
+      setIsPreparingPint(false);
+      return;
     }
 
-    logMutation.mutate({
+    const capturedPhoto = {
       photoUri: photo.assets[0].uri,
       mimeType: photo.assets[0].mimeType ?? null,
-      latitude,
-      longitude,
-    });
+    };
+
+    let location: Coordinates | null = null;
+    try {
+      location = await getOptionalLocation();
+    } catch {
+      location = null;
+    }
+
+    if (!location) {
+      setIsPreparingPint(false);
+      continueWithPintLog({
+        ...capturedPhoto,
+        latitude: null,
+        longitude: null,
+      });
+      return;
+    }
+
+    const nextPendingPint = {
+      ...capturedPhoto,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      location,
+    };
+    setPendingPint(nextPendingPint);
+    setNearbyPubs([]);
+    setSelectedPub(null);
+    setNearbyPubMessage('');
+    setPubPickerVisible(true);
+    setIsSearchingPubs(true);
+
+    try {
+      const search = await findNearbyPubs(location);
+      setNearbyPubs(search.pubs);
+      if (!search.providerConfigured) {
+        setNearbyPubMessage('Nearby pub search will appear here when a places provider is connected.');
+      } else if (!search.pubs.length) {
+        setNearbyPubMessage('No nearby pubs were found. You can continue without selecting one.');
+      }
+    } catch {
+      setNearbyPubMessage('Nearby pubs could not be loaded. You can continue without selecting one.');
+    } finally {
+      setIsSearchingPubs(false);
+      setIsPreparingPint(false);
+    }
   }
 
   if (query.isLoading || !query.data) {
