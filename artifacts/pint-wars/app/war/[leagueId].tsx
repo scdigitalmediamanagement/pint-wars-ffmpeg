@@ -11,13 +11,28 @@ import { useAuth } from '@/src/providers/AuthProvider';
 import { useColors } from '@/hooks/useColors';
 import type { LeagueDashboard } from '@/src/types/league';
 
+function leagueDurationDays(startsAt: string, endsAt: string) {
+  const start = new Date(startsAt).getTime();
+  const end = new Date(endsAt).getTime();
+  return Math.max(1, Math.ceil((end - start) / 86400000));
+}
+
 function dayNumber(startsAt: string, endsAt: string, status: string) {
   const start = new Date(startsAt).getTime();
   const end = new Date(endsAt).getTime();
-  const durationDays = Math.max(1, Math.ceil((end - start) / 86400000));
+  const durationDays = leagueDurationDays(startsAt, endsAt);
   if (status === 'completed') return durationDays;
   const now = Date.now();
   return Math.max(1, Math.min(durationDays, Math.floor((Math.min(now, end) - start) / 86400000) + 1));
+}
+
+function endTimeLabel(endsAt: string) {
+  const end = new Date(endsAt);
+  if (Number.isNaN(end.getTime())) return null;
+  return `Ends ${end.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} at ${end.toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  })}`;
 }
 
 type PendingPint = {
@@ -242,6 +257,8 @@ export default function LeagueDashboardScreen() {
 
   const { league, members } = query.data;
   const day = dayNumber(league.starts_at, league.ends_at, league.status);
+  const durationDays = leagueDurationDays(league.starts_at, league.ends_at);
+  const leagueEndLabel = endTimeLabel(league.ends_at);
   const sortedMembers = [...members].sort((a, b) => b.pint_total - a.pint_total || a.joined_at.localeCompare(b.joined_at));
   const totalPints = members.reduce((total, member) => total + member.pint_total, 0);
   const highestPintTotal = sortedMembers[0]?.pint_total ?? 0;
@@ -251,7 +268,10 @@ export default function LeagueDashboardScreen() {
     <Screen>
       <ScrollView contentContainerStyle={[uiStyles.content, { paddingTop: 28, gap: 18 }]} showsVerticalScrollIndicator={false}>
         <View style={styles.heading}>
-          <Text style={[styles.kicker, { color: colors.accent }]}>{league.status === 'active' ? `DAY ${day} / 30` : 'WAR OVER'}</Text>
+          <Text style={[styles.kicker, { color: colors.accent }]}>{league.status === 'active' ? `DAY ${day} / ${durationDays}` : 'WAR OVER'}</Text>
+          {league.status === 'active' && leagueEndLabel ? (
+            <Text style={[styles.endTime, { color: colors.mutedForeground }]}>{leagueEndLabel}</Text>
+          ) : null}
           <Title>{league.name}</Title>
         </View>
         <Card style={styles.summary}>
@@ -471,6 +491,7 @@ export default function LeagueDashboardScreen() {
 const styles = StyleSheet.create({
   heading: { gap: 3 },
   kicker: { fontFamily: 'Inter_700Bold', fontSize: 12, letterSpacing: 1.5 },
+  endTime: { fontFamily: 'Inter_400Regular', fontSize: 13 },
   summary: { gap: 12 },
   resultCard: { gap: 7 },
   resultNames: { fontFamily: 'Inter_700Bold', fontSize: 22, lineHeight: 28 },
