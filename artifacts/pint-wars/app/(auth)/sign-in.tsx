@@ -38,7 +38,7 @@ export default function SignInScreen() {
           <Text style={{ color: colors.accent, fontFamily: 'Inter_700Bold', fontSize: 14, letterSpacing: 2 }}>PINT WARS</Text>
           <Title>Bring your mates. Chase the leaderboard.</Title>
           <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', fontSize: 16, lineHeight: 24 }}>
-            Create a private 10-day war, invite your friends, and make every pint count.
+            Create a private Pint War, invite your friends, and make every pint count.
           </Text>
         </View>
         {!isConfigured ? (
