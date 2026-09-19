@@ -1,0 +1,85 @@
+PINT WARS — AUDIT PUB REVIEW SCORING FLOW
+
+AUDIT ONLY. Do not modify files, database objects, migrations, or app behavior.
+
+We are now preparing to implement the locked +3 PUB_REVIEW scoring rule.
+
+LOCKED RULES:
+
+- A qualifying pub review = +3 points.
+- The review bonus is awarded only once per player per pub EVER, globally across all Pint Wars.
+- Editing a review = 0 additional points.
+- Deleting and recreating a review = 0 additional points.
+- Reporting a review = 0 points.
+- The review bonus must be permanently retained in the scoring ledger even if the review is later deleted.
+- A review must be based on a qualifying Pint Wars pub visit/pint.
+- Pub Passport visit counts remain separate from league scoring.
+
+The scoring ledger is already LIVE:
+
+public.league_score_events
+
+Existing event types:
+
+PINT_LOGGED = 1
+NEW_PUB = 2
+PUB_REVIEW = 3
+
+The +1 pint and +2 new-pub scoring are already working.
+
+IMPORTANT:
+Do NOT implement the review scoring yet.
+Do NOT create a migration.
+Do NOT change the database.
+Do NOT change the review UI.
+Do NOT change leaderboard calculations.
+Do NOT change notifications.
+Do NOT change Passport.
+
+AUDIT the existing pub review system in detail.
+
+Inspect:
+
+1. pub_reviews table and constraints.
+2. pub_review_reports.
+3. can_review_pub().
+4. create_pub_review().
+5. update_pub_review().
+6. delete_pub_review().
+7. report_pub_review().
+8. All review-related frontend/service code.
+9. How pub_provider and pub_place_id are stored and validated.
+10. How a review is linked to a qualifying pint.
+11. Whether the review flow currently knows which league the qualifying pint came from.
+12. Whether a review can currently be created after a historical pint from a previous league.
+13. Whether a deleted review can currently be recreated.
+14. Any existing review-related uniqueness constraints.
+15. Any existing RLS/security-definer protections.
+16. How the new league_score_events ledger can safely be connected to review creation.
+
+Pay particular attention to the fact that:
+
+- PUB_REVIEW uniqueness is GLOBAL per player/pub.
+- The score event needs to belong to a specific league because leaderboard points are league-specific.
+- The permanent bonus must survive review deletion.
+- A player may participate in multiple Pint Wars.
+- A player may already have reviewed a pub in the past.
+- A player may already have received the +3 review bonus before joining a new league.
+
+Determine exactly how the system should identify the qualifying league for a new +3 review event.
+
+Do not invent a rule if the current code does not provide enough information.
+
+At the end report:
+
+A. Current review flow.
+B. Current review eligibility rules.
+C. Current delete/recreate behavior.
+D. Current security/RLS protections.
+E. Exactly where +3 scoring should be inserted.
+F. How the league_id for the review score should be determined.
+G. How to permanently prevent repeat review bonuses.
+H. Any edge cases or ambiguities that must be resolved before implementation.
+I. A safe implementation order.
+
+STOP after the audit.
