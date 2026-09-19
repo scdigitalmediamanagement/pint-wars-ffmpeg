@@ -1,0 +1,70 @@
+PINT WARS — DEBUG PUB REVIEW SAVE FAILURE
+
+MODE: FREE
+
+The Pub Review +3 migrations have now been applied to Supabase.
+
+The app successfully reaches the Pub Review screen from the Pint logging flow, but tapping "Save Review" produces:
+
+"Could Not Save Review"
+"Could not save review"
+
+I cannot currently go to a pub, so this must be diagnosed from the code/database flow only.
+
+DO NOT modify any files yet.
+DO NOT create a migration.
+DO NOT change the database.
+DO NOT apply anything to Supabase.
+
+AUDIT ONLY.
+
+Trace the complete current review submission flow:
+
+1. app/pub/[placeId].tsx
+2. review-service.ts
+3. the exact create_pub_review RPC call
+4. the current Supabase function signature
+5. the new p_pint_log_id value being passed from the Pint logging flow
+6. the RPC parameters and their order/types
+7. the RPC return type
+8. the database checks introduced by:
+
+202609190007_pub_review_scoring.sql
+
+202609190008_guard_historical_pub_review_bonus.sql
+
+Determine the most likely exact reason the Save Review request is failing.
+
+Pay particular attention to:
+
+- whether the correct pint_log_id is actually reaching the review screen;
+- whether the route parameter name matches what the review screen reads;
+- whether review-service.ts passes the UUID in the correct RPC parameter;
+- whether the Supabase function signature exactly matches the client call;
+- whether the active league check is rejecting the test pint;
+- whether the pub_provider/pub_place_id values match;
+- whether the historical guard logic is incorrectly blocking the review;
+- whether the PUB_REVIEW ledger insert is failing;
+- whether the guard insert is failing;
+- whether the database function return shape matches the frontend expectation.
+
+IMPORTANT:
+
+Do not guess.
+
+Use the actual repository code and migration SQL to identify the failure.
+
+If the exact runtime error is available in existing logs, report it.
+
+If it is not available, identify the precise database/client mismatch that is most likely responsible and explain what evidence supports that conclusion.
+
+At the end report:
+
+A. Exact failure point.
+B. Exact error/message if available.
+C. Relevant file and line.
+D. Whether the problem is frontend, RPC signature, database logic, or data.
+E. The smallest safe fix.
+F. Whether a new migration is actually required.
+
+STOP after the audit.
