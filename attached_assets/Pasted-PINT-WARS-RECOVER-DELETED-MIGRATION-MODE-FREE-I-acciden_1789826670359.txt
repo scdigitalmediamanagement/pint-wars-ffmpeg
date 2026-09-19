@@ -1,0 +1,70 @@
+PINT WARS — RECOVER DELETED MIGRATION
+
+MODE: FREE
+
+I accidentally deleted this migration file from the Replit project:
+
+202609190008_guard_historical_pub_review_bonus.sql
+
+DO NOT apply anything to Supabase.
+
+First check the repository/Git history for the deleted file.
+
+If the exact file exists in Git history, restore the exact original file:
+
+artifacts/pint-wars/supabase/migrations/202609190008_guard_historical_pub_review_bonus.sql
+
+Do not rewrite or redesign it if an exact historical version can be restored.
+
+If it is NOT available in Git history, reconstruct the migration from the implementation you just completed and from the current repository state.
+
+The recovered migration must preserve the implementation that was previously audited:
+
+- create public.pub_review_bonus_guards
+- key: user_id + pub_provider + pub_place_id
+- guard types:
+  historical_review
+  scored_review
+- seed existing PUB_REVIEW ledger events as scored_review guards
+- seed existing live pub_reviews as historical_review guards
+- existing scored events take precedence
+- no fake PUB_REVIEW score events for historical reviews
+- replace create_pub_review using p_pint_log_id
+- require authenticated user
+- verify qualifying pint belongs to auth.uid()
+- verify pint belongs to an active Pint War
+- verify Google Places identity
+- verify pub identity matches
+- derive league_id from pint_log
+- create review atomically
+- create +3 PUB_REVIEW event for an unguarded player/pub
+- create scored_review guard atomically
+- existing guard prevents another +3
+- delete/recreate cannot earn another +3 after a guard exists
+- update_pub_review remains score-neutral
+- delete_pub_review remains score-neutral
+- report_pub_review remains score-neutral
+- Passport remains unchanged
+- existing PINT_LOGGED and NEW_PUB scoring remains unchanged
+- immutable score ledger remains unchanged
+
+IMPORTANT:
+
+Do not modify any other files.
+
+Do not create another migration with a different filename.
+
+Do not apply anything to Supabase.
+
+After restoring/recreating the file, run:
+
+git diff --check
+
+Then report:
+
+1. Whether the exact file was recovered from Git history or reconstructed.
+2. The file path.
+3. Whether any other files were changed.
+4. Whether git diff --check passed.
+
+STOP.
