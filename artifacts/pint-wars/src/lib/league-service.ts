@@ -347,11 +347,18 @@ export async function logPint({
     }
 
     if (!response.ok) {
+      const responseCode =
+        responseBody
+        && typeof responseBody === 'object'
+        && 'code' in responseBody
+        && typeof responseBody.code === 'string'
+          ? responseBody.code
+          : null;
       console.warn('[pint-proof-diagnostic] rpc-failure', {
         attemptId,
         photoPath,
         responseStatus: response.status,
-        responseCode: responseBody?.code ?? null,
+        responseCode,
       });
        if (
          responseBody

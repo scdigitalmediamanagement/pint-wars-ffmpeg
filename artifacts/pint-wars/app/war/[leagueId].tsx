@@ -64,7 +64,7 @@ export default function LeagueDashboardScreen() {
   const [selectedPub, setSelectedPub] = useState<NearbyPub | null>(null);
   const [nearbyPubMessage, setNearbyPubMessage] = useState('');
   const [pendingPint, setPendingPint] = useState<PendingPint | null>(null);
-  const [justLoggedPub, setJustLoggedPub] = useState<NearbyPub | null>(null);
+  const [justLoggedPub, setJustLoggedPub] = useState<JustLoggedPub | null>(null);
   const query = useQuery({
     queryKey: ['league-dashboard', leagueId],
     queryFn: () => getLeagueDashboard(leagueId as string),
