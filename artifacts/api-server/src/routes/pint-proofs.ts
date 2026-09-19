@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { Router, type IRouter } from "express";
 import { authenticateSupabaseBearer } from "../lib/supabase-auth";
 
@@ -21,6 +21,19 @@ type LogPintProofBody = {
   latitude: number | null;
   longitude: number | null;
   pub: PubInput | null;
+  diagnostics: DiagnosticInput | null;
+};
+
+type DiagnosticInput = {
+  attemptId: string | null;
+  localUriFingerprint: string | null;
+  localByteLength: number | null;
+  localSha256: string | null;
+};
+
+type PintLogReference = {
+  id: string;
+  photo_path: string;
 };
 
 type SupabaseErrorPayload = {
@@ -50,6 +63,28 @@ function nullableString(value: unknown) {
       : undefined;
 }
 
+function diagnosticValue(value: unknown, pattern: RegExp, maxLength: number) {
+  return typeof value === "string" && value.length <= maxLength && pattern.test(value) ? value : null;
+}
+
+function parseDiagnostics(value: unknown): DiagnosticInput | null {
+  if (!isRecord(value)) return null;
+
+  const localByteLength =
+    typeof value.localByteLength === "number"
+      && Number.isSafeInteger(value.localByteLength)
+      && value.localByteLength >= 0
+      ? value.localByteLength
+      : null;
+
+  return {
+    attemptId: diagnosticValue(value.attemptId, /^[A-Za-z0-9_-]+$/, 80),
+    localUriFingerprint: diagnosticValue(value.localUriFingerprint, /^[0-9a-f]{16}$/, 16),
+    localByteLength,
+    localSha256: diagnosticValue(value.localSha256, /^[0-9a-f]{64}$/, 64),
+  };
+}
+
 function parseBody(body: unknown): LogPintProofBody | null {
   if (!isRecord(body)) return null;
 
@@ -70,7 +105,14 @@ function parseBody(body: unknown): LogPintProofBody | null {
   }
 
   if (body.pub === null || body.pub === undefined) {
-    return { leagueId, photoPath, latitude, longitude, pub: null };
+    return {
+      leagueId,
+      photoPath,
+      latitude,
+      longitude,
+      pub: null,
+      diagnostics: parseDiagnostics(body.diagnostics),
+    };
   }
 
   if (!isRecord(body.pub)) return null;
@@ -106,6 +148,7 @@ function parseBody(body: unknown): LogPintProofBody | null {
       latitude: pubLatitude,
       longitude: pubLongitude,
     },
+    diagnostics: parseDiagnostics(body.diagnostics),
   };
 }
 
@@ -155,6 +198,78 @@ function duplicateExistingPath(payload: SupabaseErrorPayload | string) {
   return typeof payload.details === "string" ? payload.details : null;
 }
 
+function diagnosticFingerprint(value: string) {
+  return createHash("sha256").update(value).digest("hex").slice(0, 16);
+}
+
+async function findPintLogReference(
+  url: string,
+  serviceRoleKey: string,
+  filters: Record<string, string>,
+): Promise<PintLogReference | null> {
+  const queryUrl = new URL(`${url}/rest/v1/pint_logs`);
+  queryUrl.searchParams.set("select", "id,photo_path");
+  queryUrl.searchParams.set("limit", "1");
+  for (const [column, value] of Object.entries(filters)) {
+    queryUrl.searchParams.set(column, `eq.${value}`);
+  }
+
+  const response = await fetch(queryUrl, {
+    headers: serviceHeaders(serviceRoleKey),
+  });
+  if (!response.ok) return null;
+
+  const payload: unknown = await response.json().catch(() => null);
+  if (!Array.isArray(payload)) return null;
+  const reference = payload[0];
+  if (!isRecord(reference)) return null;
+  if (typeof reference.id !== "string" || typeof reference.photo_path !== "string") return null;
+  return { id: reference.id, photo_path: reference.photo_path };
+}
+
+async function classifyDuplicateFailure(
+  url: string,
+  serviceRoleKey: string,
+  userId: string,
+  leagueId: string,
+  photoPath: string,
+  contentSha256: string,
+) {
+  const sharedFilters = {
+    user_id: userId,
+    league_id: leagueId,
+  };
+  const contentMatch = await findPintLogReference(url, serviceRoleKey, {
+    ...sharedFilters,
+    content_sha256: contentSha256,
+  });
+  if (contentMatch) {
+    return {
+      cause: "content_sha256" as const,
+      existingPintIdFingerprint: diagnosticFingerprint(contentMatch.id),
+      existingPhotoPathFingerprint: diagnosticFingerprint(contentMatch.photo_path),
+    };
+  }
+
+  const pathMatch = await findPintLogReference(url, serviceRoleKey, {
+    ...sharedFilters,
+    photo_path: photoPath,
+  });
+  if (pathMatch) {
+    return {
+      cause: "photo_path" as const,
+      existingPintIdFingerprint: diagnosticFingerprint(pathMatch.id),
+      existingPhotoPathFingerprint: diagnosticFingerprint(pathMatch.photo_path),
+    };
+  }
+
+  return {
+    cause: "unknown_unique_violation" as const,
+    existingPintIdFingerprint: null,
+    existingPhotoPathFingerprint: null,
+  };
+}
+
 async function removeUploadedProof(url: string, serviceRoleKey: string, photoPath: string) {
   await fetch(storageObjectUrl(url, photoPath), {
     method: "DELETE",
@@ -181,6 +296,15 @@ router.post("/pint-proofs/log", async (req, res) => {
     return;
   }
 
+  const attemptId = body.diagnostics?.attemptId ?? randomUUID();
+  console.info("[pint-proof-diagnostic] attempt-start", {
+    attemptId,
+    photoPath: body.photoPath,
+    localUriFingerprint: body.diagnostics?.localUriFingerprint ?? null,
+    localByteLength: body.diagnostics?.localByteLength ?? null,
+    localSha256: body.diagnostics?.localSha256 ?? null,
+  });
+
   const expectedPrefix = `${auth.userId}/${body.leagueId}/`;
   if (
     !body.photoPath.startsWith(expectedPrefix) ||
@@ -198,6 +322,11 @@ router.post("/pint-proofs/log", async (req, res) => {
     });
 
     if (!proofResponse.ok) {
+      console.warn("[pint-proof-diagnostic] storage-read-failure", {
+        attemptId,
+        photoPath: body.photoPath,
+        responseStatus: proofResponse.status,
+      });
       await removeUploadedProof(config.url, config.serviceRoleKey, body.photoPath);
       res.status(400).json({ message: "The pint proof photo could not be found." });
       return;
@@ -207,6 +336,15 @@ router.post("/pint-proofs/log", async (req, res) => {
     const contentSha256 = createHash("sha256")
       .update(Buffer.from(photoBytes))
       .digest("hex");
+    console.info("[pint-proof-diagnostic] storage-object", {
+      attemptId,
+      photoPath: body.photoPath,
+      serverByteLength: photoBytes.byteLength,
+      serverSha256: contentSha256,
+      localByteLength: body.diagnostics?.localByteLength ?? null,
+      localSha256: body.diagnostics?.localSha256 ?? null,
+      hashesMatch: body.diagnostics?.localSha256 === contentSha256,
+    });
     const pub = body.pub;
 
     const rpcResponse = await fetch(rpcUrl(config.url), {
@@ -236,6 +374,20 @@ router.post("/pint-proofs/log", async (req, res) => {
         (typeof payload !== "string" && payload.code === "P0001");
 
       if (isDuplicate) {
+        const duplicateClassification = await classifyDuplicateFailure(
+          config.url,
+          config.serviceRoleKey,
+          auth.userId,
+          body.leagueId,
+          body.photoPath,
+          contentSha256,
+        );
+        console.warn("[pint-proof-diagnostic] duplicate-classification", {
+          attemptId,
+          photoPath: body.photoPath,
+          rpcCode: typeof payload === "string" ? null : payload.code ?? null,
+          duplicateClassification,
+        });
         const existingPath = duplicateExistingPath(payload);
         if (existingPath !== body.photoPath) {
           await removeUploadedProof(config.url, config.serviceRoleKey, body.photoPath);
@@ -255,6 +407,11 @@ router.post("/pint-proofs/log", async (req, res) => {
     }
 
     proofPersisted = true;
+    console.info("[pint-proof-diagnostic] rpc-success", {
+      attemptId,
+      photoPath: body.photoPath,
+      serverSha256: contentSha256,
+    });
     res.json(await rpcResponse.json());
   } catch {
     if (!proofPersisted) {

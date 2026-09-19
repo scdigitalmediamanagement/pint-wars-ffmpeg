@@ -7,6 +7,7 @@ import { Button, Card, ErrorText, Screen, Title, uiStyles } from '@/components/A
 import { getLeagueDashboard, logPint } from '@/src/lib/league-service';
 import { getCurrentLocation } from '@/src/lib/location-service';
 import { findNearbyPubs, type Coordinates, type NearbyPub } from '@/src/lib/pub-service';
+import { diagnosticAttemptId, diagnosticStringFingerprint } from '@/src/lib/diagnostic-hash';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { useColors } from '@/hooks/useColors';
 
@@ -35,6 +36,7 @@ function endTimeLabel(endsAt: string) {
 }
 
 type PendingPint = {
+  attemptId: string;
   photoUri: string;
   mimeType: string | null;
   latitude: number | null;
@@ -66,6 +68,7 @@ export default function LeagueDashboardScreen() {
   });
   const logMutation = useMutation({
     mutationFn: (input: {
+      attemptId: string;
       photoUri: string;
       mimeType: string | null;
       latitude: number | null;
@@ -172,9 +175,14 @@ export default function LeagueDashboardScreen() {
     }
 
     const capturedPhoto = {
+      attemptId: diagnosticAttemptId(),
       photoUri: photo.assets[0].uri,
       mimeType: photo.assets[0].mimeType ?? null,
     };
+    console.info('[pint-proof-diagnostic] camera-capture', {
+      attemptId: capturedPhoto.attemptId,
+      localUriFingerprint: diagnosticStringFingerprint(capturedPhoto.photoUri),
+    });
 
     let location: Coordinates | null = null;
     try {

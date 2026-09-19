@@ -1,5 +1,9 @@
 import { fetch as expoFetch } from 'expo/fetch';
 import { getSupabase } from '@/src/lib/supabase';
+import {
+  diagnosticSha256,
+  diagnosticStringFingerprint,
+} from '@/src/lib/diagnostic-hash';
 import type { LeagueDashboard, LeagueMembership, MyLeague } from '@/src/types/league';
 import type { NearbyPub } from '@/src/lib/pub-service';
 
@@ -224,6 +228,7 @@ export async function getLeagueDashboard(leagueId: string): Promise<LeagueDashbo
 }
 
 type LogPintInput = {
+  attemptId: string;
   leagueId: string;
   userId: string;
   photoUri: string;
@@ -249,6 +254,7 @@ function photoExtension(mimeType: string | null) {
 }
 
 export async function logPint({
+  attemptId,
   leagueId,
   userId,
   photoUri,
@@ -268,6 +274,15 @@ export async function logPint({
   }
 
   const photoBytes = await photoResponse.arrayBuffer();
+  const localSha256 = diagnosticSha256(photoBytes);
+  const localUriFingerprint = diagnosticStringFingerprint(photoUri);
+  console.info('[pint-proof-diagnostic] local-file', {
+    attemptId,
+    localUriFingerprint,
+    localByteLength: photoBytes.byteLength,
+    localSha256,
+    photoPath,
+  });
   const { error: uploadError } = await client.storage
     .from(PINT_PROOF_BUCKET)
     .upload(photoPath, photoBytes, {
@@ -295,6 +310,12 @@ export async function logPint({
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        diagnostics: {
+          attemptId,
+          localUriFingerprint,
+          localByteLength: photoBytes.byteLength,
+          localSha256,
+        },
         leagueId,
         photoPath,
         latitude,
@@ -321,6 +342,12 @@ export async function logPint({
     }
 
     if (!response.ok) {
+      console.warn('[pint-proof-diagnostic] rpc-failure', {
+        attemptId,
+        photoPath,
+        responseStatus: response.status,
+        responseCode: responseBody?.code ?? null,
+      });
       if (responseBody?.code === 'DUPLICATE_PROOF') {
         shouldCleanup = false;
       }
@@ -333,6 +360,10 @@ export async function logPint({
     }
 
     shouldCleanup = false;
+    console.info('[pint-proof-diagnostic] rpc-success', {
+      attemptId,
+      photoPath,
+    });
     return result;
   } finally {
     if (shouldCleanup) {
