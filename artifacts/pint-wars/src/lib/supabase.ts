@@ -8,6 +8,8 @@ const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 export const supabaseIsConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
+export const AUTH_RECOVERY_REDIRECT_URI = 'pint-wars://auth/callback';
+
 export const supabase = supabaseIsConfigured
   ? createClient<Database>(supabaseUrl as string, supabaseAnonKey as string, {
       auth: {

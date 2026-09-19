@@ -41,6 +41,7 @@ function RootLayoutNav() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="war" options={{ headerShown: false }} />
       <Stack.Screen name="invite" options={{ headerShown: false }} />
+      <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
       <Stack.Screen name="notifications" options={{ headerShown: false }} />
     </Stack>
   );

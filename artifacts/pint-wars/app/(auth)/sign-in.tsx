@@ -47,6 +47,9 @@ export default function SignInScreen() {
         <View style={{ gap: 15 }}>
           <Field label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" />
           <Field label="Password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="password" />
+          <Link href="/(auth)/forgot-password" style={{ color: colors.primary, fontFamily: 'Inter_600SemiBold' }}>
+            Forgot password?
+          </Link>
           {error ? <ErrorText>{error}</ErrorText> : null}
           <Button label="Sign in" onPress={submit} loading={loading} disabled={!isConfigured} />
         </View>
