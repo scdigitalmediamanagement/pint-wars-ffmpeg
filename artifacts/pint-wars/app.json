@@ -8,9 +8,12 @@
     "scheme": "pint-wars",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.pintwars.app"
     },
-    "android": {},
+    "android": {
+      "package": "com.pintwars.app"
+    },
     "web": {
       "favicon": "./assets/images/icon.png"
     },
