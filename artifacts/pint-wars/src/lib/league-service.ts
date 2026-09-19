@@ -326,12 +326,12 @@ export async function logPint({
       throw new Error(responseBody?.message || 'The pint could not be logged.');
     }
 
-    shouldCleanup = false;
     const result = responseBody;
     if (!result) {
       throw new Error('The pint could not be logged.');
     }
 
+    shouldCleanup = false;
     return result;
   } finally {
     if (shouldCleanup) {

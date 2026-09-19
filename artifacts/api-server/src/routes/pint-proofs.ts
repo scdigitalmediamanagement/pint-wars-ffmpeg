@@ -191,6 +191,7 @@ router.post("/pint-proofs/log", async (req, res) => {
     return;
   }
 
+  let proofPersisted = false;
   try {
     const proofResponse = await fetch(storageObjectUrl(config.url, body.photoPath), {
       headers: serviceHeaders(config.serviceRoleKey),
@@ -253,9 +254,12 @@ router.post("/pint-proofs/log", async (req, res) => {
       return;
     }
 
+    proofPersisted = true;
     res.json(await rpcResponse.json());
   } catch {
-    await removeUploadedProof(config.url, config.serviceRoleKey, body.photoPath);
+    if (!proofPersisted) {
+      await removeUploadedProof(config.url, config.serviceRoleKey, body.photoPath);
+    }
     res.status(502).json({ message: "The pint could not be logged right now." });
   }
 });
