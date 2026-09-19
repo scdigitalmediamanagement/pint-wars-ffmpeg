@@ -1,0 +1,103 @@
+PINT WARS — CONNECT PINT LOGGING TO THE NEW SCORING LEDGER
+
+We have already created the scoring-foundation migration:
+
+artifacts/pint-wars/supabase/migrations/202609190004_create_league_score_events.sql
+
+IMPORTANT:
+That migration has NOT been applied to Supabase yet.
+
+For this task, modify the code/migration needed to make the trusted pint logging path award scoring events correctly.
+
+LOCKED SCORING:
+
+- Every qualifying pint = +1 PINT_LOGGED.
+- A player's first-ever qualifying visit to a pub = additional +2 NEW_PUB.
+- NEW_PUB is once per player per pub globally across all Pint Wars.
+- Later visits to the same pub = +1 only.
+- Historical pint logs keep their existing +1.
+- Do NOT award historical NEW_PUB bonuses.
+- Do NOT implement the +3 review bonus yet.
+- Do NOT change review functionality in this task.
+
+IMPORTANT SECURITY RULES:
+
+- Scoring must happen server-side / inside the trusted database RPC.
+- The client must never be trusted to award points.
+- PINT_LOGGED and NEW_PUB events must be created atomically with the successful pint log.
+- A failed pint log must create no scoring events.
+- A duplicate proof must create no scoring events.
+- Concurrent first visits to the same pub must result in only ONE NEW_PUB event.
+- The existing duplicate-proof protection must remain intact.
+- Existing pub identity validation must remain intact.
+
+IMPLEMENTATION:
+
+Modify the trusted `log_pint_verified` path so that after a valid pint is accepted:
+
+1. Insert the pint_log.
+2. Create exactly one PINT_LOGGED score event worth 1 point.
+3. If the pint has a qualifying Google Places pub identity:
+   - Attempt to create a NEW_PUB event worth 2 points.
+   - The NEW_PUB uniqueness rule is user_id + pub_provider + pub_place_id.
+   - If that player has already received the NEW_PUB event for that pub, do not create another.
+4. All of this must occur atomically in the same database transaction.
+
+IMPORTANT:
+The +2 NEW_PUB event must reference the pint_log that caused the first-ever discovery.
+
+Do not award NEW_PUB when:
+- pub identity is missing;
+- pub_provider is not google_places;
+- pub_place_id is missing;
+- the pub identity is invalid;
+- the pint log itself fails.
+
+Do NOT change leaderboard totals yet.
+
+Do NOT change winner/tie calculations yet.
+
+Do NOT change notifications yet.
+
+Do NOT change the frontend leaderboard yet.
+
+Do NOT implement review scoring yet.
+
+Do NOT apply any Supabase migration.
+
+Because the scoring-foundation migration is not yet applied, make the implementation depend on that new table/function structure but do not attempt to deploy it.
+
+If the current `log_pint_verified` RPC cannot safely perform the scoring because the ledger table does not yet exist in the live database, create/update the required SQL migration for the next deployment rather than modifying the live database.
+
+Preserve all existing security checks:
+- authenticated user
+- active league membership
+- active league dates/status
+- proof ownership/path validation
+- duplicate content hash protection
+- pub identity validation
+- existing removed-member protections where applicable.
+
+Also ensure the legacy client-callable `log_pint` RPCs remain non-authoritative and cannot bypass the trusted scoring path.
+
+VALIDATION:
+
+Run:
+- Pint Wars typecheck
+- API server typecheck
+- git diff --check
+- any relevant tests
+
+Do NOT apply SQL to Supabase.
+
+At the end report:
+
+1. Files changed.
+2. Exact RPC/function changed.
+3. How PINT_LOGGED is guaranteed exactly once.
+4. How NEW_PUB is guaranteed exactly once globally per player/pub.
+5. How concurrent first visits are handled.
+6. Confirmation that reviews, leaderboards, notifications and UI were NOT changed.
+7. Test/typecheck results.
+
+STOP after this task.
