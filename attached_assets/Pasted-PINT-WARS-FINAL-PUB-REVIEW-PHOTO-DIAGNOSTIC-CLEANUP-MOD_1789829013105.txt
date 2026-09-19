@@ -1,0 +1,104 @@
+PINT WARS — FINAL PUB REVIEW + PHOTO DIAGNOSTIC CLEANUP
+
+MODE: FREE
+
+We have now manually tested the Pub Review scoring flow on the iPhone.
+
+Confirmed working:
+
+- New qualifying review awards +3.
+- Editing a review awards +0.
+- Deleting a review awards +0.
+- Recreating a previously scored review awards +0.
+- The review remains visible and editable.
+- Leaderboard points update correctly.
+- Historical-review guard is working.
+- No Supabase migration changes are required.
+
+We also previously added temporary diagnostic logging to investigate the photo/duplicate issue.
+
+The user has now confirmed that photo capture and upload are working correctly.
+
+TASK 1 — REMOVE TEMPORARY PHOTO DIAGNOSTICS
+
+Inspect these files:
+
+- artifacts/pint-wars/app/war/[leagueId].tsx
+- artifacts/pint-wars/src/lib/league-service.ts
+- artifacts/pint-wars/src/lib/diagnostic-hash.ts
+- artifacts/api-server/src/routes/pint-proofs.ts
+
+Identify the temporary diagnostic logging that was added specifically to investigate the photo duplicate issue.
+
+Remove ONLY those temporary diagnostics.
+
+IMPORTANT:
+
+Do NOT remove or weaken the actual duplicate-photo protection.
+
+Keep:
+
+- server-side SHA-256 verification
+- duplicate detection
+- duplicate rejection
+- cleanup of rejected duplicate uploads
+- successful proof handling
+- existing pint scoring
+- existing security checks
+
+If diagnostic-hash.ts exists only for temporary diagnostics and is no longer required by production behavior, remove it. If any part is still required by actual production logic, preserve the required part.
+
+TASK 2 — FINAL AUDIT
+
+After cleanup, audit the current Pint Wars implementation for the complete scoring flow:
+
+PINT_LOGGED = +1
+NEW_PUB = +2 once globally per player/pub
+PUB_REVIEW = +3 once globally per player/pub
+
+Confirm:
+
+- historical PINT_LOGGED events remain unchanged
+- historical NEW_PUB events remain unchanged
+- historical reviews do not receive retroactive +3
+- existing live reviews are protected by the historical guard
+- delete/recreate cannot farm +3
+- editing gives 0
+- reporting gives 0
+- Passport gives 0
+- league_id for review scoring comes from the qualifying pint
+- client cannot choose an arbitrary league for review scoring
+- score events remain immutable
+- leaderboard totals use score events
+- removed players remain excluded from active totals
+- retired players remain visible in completed historical standings
+
+Do not redesign anything.
+
+Do not create a migration.
+
+Do not modify Supabase.
+
+Do not change scoring rules.
+
+Do not change the review UI.
+
+TASK 3 — VALIDATION
+
+Run:
+
+pnpm --filter @workspace/pint-wars run typecheck
+pnpm --filter @workspace/api-server run typecheck
+git diff --check
+
+At the end report:
+
+1. Exactly which temporary diagnostic code was removed.
+2. Whether duplicate-photo protection remains intact.
+3. Files changed.
+4. Typecheck results.
+5. git diff --check result.
+6. Final scoring-flow audit result.
+7. Any remaining P0 or P1 issue discovered.
+
+STOP after the audit and cleanup.
