@@ -1,0 +1,204 @@
+PINT WARS — FINAL PRODUCTION READINESS AUDIT
+
+AUDIT ONLY.
+
+Do not modify any files.
+Do not create migrations.
+Do not change the database.
+Do not change app behaviour.
+Do not apply anything to Supabase.
+Do not create or modify cron jobs.
+
+We have now completed and verified:
+
+- Pint scoring:
+  PINT_LOGGED = +1
+  NEW_PUB = +2 once globally per player/pub
+  PUB_REVIEW = +3 once globally per player/pub
+
+- Immutable league_score_events ledger.
+- Leaderboards use score-event points.
+- Duplicate-photo SHA-256 protection.
+- Google Places pub identity.
+- Pub Passport.
+- Pub Reviews and historical review bonus guards.
+- Automatic league completion.
+- Completion winner/tie calculation uses league_score_events.
+- League-row locking around pint/review scoring and completion.
+- Supabase pg_cron automatic completion job:
+  pint-wars-automatic-completion
+  every minute
+- Cron execution has been verified successfully.
+
+The production database currently has the automatic completion system live.
+
+Now perform a COMPLETE production-readiness audit of the CURRENT repository and CURRENT architecture.
+
+IMPORTANT:
+Do not simply repeat previous audits.
+Inspect the actual current code and migrations.
+
+Review:
+
+1. Authentication
+2. Account creation/login/logout
+3. Session persistence
+4. Profile/display-name handling
+5. Pint War creation
+6. Free trial enforcement
+7. Paid league preparation
+8. Join-by-code
+9. League capacity/concurrency
+10. Membership states
+11. Pint logging
+12. Camera/photo capture
+13. Fresh-photo protection
+14. Duplicate-photo protection
+15. Private proof storage
+16. Proof access/security
+17. GPS/location handling
+18. Google Places integration
+19. Pub identity validation
+20. Pub distance validation
+21. Pub Passport
+22. Pub reviews
+23. Review eligibility
+24. Review scoring
+25. Historical review guards
+26. Review edit/delete/recreate behaviour
+27. Review reporting
+28. Score ledger
+29. Leaderboards
+30. Removed/retired members
+31. League completion
+32. Automatic pg_cron completion
+33. Winner/tie calculation
+34. Completion notifications
+35. Notification idempotency
+36. Push notification readiness
+37. Navigation
+38. Deep links/invite links
+39. Error handling
+40. Loading states
+41. Offline/network failure behaviour
+42. API authentication
+43. API rate limiting
+44. API input validation
+45. Supabase RLS
+46. SECURITY DEFINER functions
+47. Function permissions/grants/revokes
+48. Storage policies
+49. Secrets/environment variables
+50. Google Places API key security
+51. Service-role key security
+52. Android configuration
+53. iOS configuration
+54. Expo production configuration
+55. App-store readiness
+56. Privacy/data handling
+57. User deletion/account deletion
+58. Password reset/recovery
+59. Crash/error monitoring
+60. Production logging
+61. Database migration consistency
+62. Existing historical/test data
+63. Completed-league result stability
+64. Payment/IAP readiness
+65. Any remaining architectural weaknesses.
+
+For every issue found, classify it:
+
+P0 = Must fix before real users / production launch.
+
+P1 = Should fix before launch if practical.
+
+P2 = Can safely wait until after launch.
+
+P3 = Future enhancement / nice to have.
+
+Also identify:
+
+- Already complete
+- No action required
+- Not yet implemented
+- Needs manual Supabase/App Store configuration
+- Needs actual device testing
+- Needs a future feature rather than a launch blocker
+
+For every P0/P1 issue provide:
+
+A. Exact problem.
+B. Why it matters.
+C. Exact file/migration/function involved.
+D. Recommended fix.
+E. Whether the fix requires:
+   - Replit code
+   - Supabase SQL migration
+   - Supabase dashboard
+   - Apple Developer configuration
+   - Google Play configuration
+   - Device testing
+F. Whether FREE Agent mode is sufficient or POWER is genuinely required.
+
+Do NOT make changes.
+
+Also specifically verify that automatic completion is compatible with the current live architecture:
+
+- complete_all_expired_leagues()
+- pg_cron job pint-wars-automatic-completion
+- league status trigger
+- notify_league_completed()
+- league_score_events
+- log_pint_verified()
+- create_pub_review()
+
+Check that there are no old functions, permissions, overloads, or client paths that undermine the new architecture.
+
+Also check for any issue where a user could:
+
+- score the same photo twice
+- score without a valid pint photo
+- score without being a league member
+- score after a league ends
+- obtain multiple NEW_PUB bonuses for the same pub
+- obtain multiple PUB_REVIEW bonuses for the same pub
+- manipulate the pub identity
+- manipulate the league ID
+- manipulate another player's score
+- access another user's private proof photo
+- access another user's private data
+- bypass league capacity
+- join an expired/completed league
+- abuse the free trial
+- create duplicate reviews
+- farm points through deleting/recreating reviews
+- cause duplicate completion notifications
+- cause incorrect winner/tie results
+
+Do not assume a security control works merely because a frontend check exists.
+Trace the server/database enforcement.
+
+Finally produce a concise summary table:
+
+| Priority | Issue | Status | Required action |
+| P0 | ... | ... | ... |
+| P1 | ... | ... | ... |
+| P2 | ... | ... | ... |
+| P3 | ... | ... | ... |
+
+Then give:
+
+FINAL STATUS:
+READY FOR REAL-WORLD TESTING
+or
+NOT READY FOR REAL-WORLD TESTING
+
+Do not modify anything.
+
+Run these checks if available:
+
+pnpm --filter @workspace/pint-wars run typecheck
+pnpm --filter @workspace/api-server run typecheck
+git diff --check
+
+STOP after the audit.
