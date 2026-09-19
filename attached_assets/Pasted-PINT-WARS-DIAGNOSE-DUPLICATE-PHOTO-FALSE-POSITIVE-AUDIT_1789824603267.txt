@@ -1,0 +1,83 @@
+PINT WARS — DIAGNOSE DUPLICATE PHOTO FALSE POSITIVE
+
+AUDIT/DIAGNOSTIC ONLY.
+
+Do NOT change the scoring system.
+Do NOT change SHA-256 duplicate protection.
+Do NOT weaken duplicate detection.
+Do NOT change the database schema.
+Do NOT create or apply a migration.
+Do NOT change leaderboard calculations.
+Do NOT change review functionality.
+
+We have confirmed that:
+
+- First-ever pub scoring works correctly.
+- A new pub awarded +3 total.
+- Leaderboard correctly displays points.
+- A subsequent attempt to log another pint was rejected with:
+  "This photo has already been used in this Pint War."
+
+The user states that the second attempt was a genuinely new photo at a different pub.
+
+The previous audit identified that the code does not obviously reuse the previous photo, but there is currently insufficient runtime information to prove where the duplicate is occurring.
+
+Add TEMPORARY diagnostic logging only.
+
+We need to trace one complete camera attempt through:
+
+CAMERA CAPTURE
+→ LOCAL FILE
+→ LOCAL HASH
+→ UPLOAD
+→ STORAGE OBJECT
+→ SERVER HASH
+→ log_pint_verified
+→ DUPLICATE CHECK
+
+For each pint-photo attempt, log:
+
+1. A unique attempt/correlation ID.
+2. A safe fingerprint of the local URI — do NOT print the full URI if it contains sensitive information.
+3. Local file byte length.
+4. Local SHA-256 hash.
+5. Generated storage photo path.
+6. Server-downloaded storage byte length.
+7. Server-computed SHA-256 hash.
+8. RPC success/failure.
+9. If duplicate occurs, identify whether it was:
+   - content_sha256 duplicate, OR
+   - photo_path unique violation, OR
+   - another unique constraint.
+10. If content_sha256 duplicate occurs, log the existing matching pint_log ID/photo path in a safe diagnostic form.
+
+IMPORTANT:
+Do not log the actual photograph.
+Do not log image contents.
+Do not expose authentication tokens.
+Do not expose Supabase keys.
+Do not permanently store the diagnostic hashes anywhere in the database.
+
+Also inspect the existing exception handling in log_pint_verified.
+
+Currently a broad unique_violation handler may convert different unique constraint failures into the same "duplicate photo" error.
+
+Improve the diagnostic information internally so we can distinguish the constraint that actually failed, but DO NOT change the user-facing behavior yet.
+
+After implementing the temporary diagnostics:
+
+- Run Pint Wars typecheck.
+- Run API server typecheck.
+- Run git diff --check.
+
+Do NOT apply anything to Supabase.
+
+At the end report:
+
+A. Exactly where the diagnostic logging was added.
+B. What each log will tell us.
+C. Whether the duplicate constraint can now be distinguished from photo_path collision.
+D. Whether any production behavior was changed.
+E. Test/typecheck results.
+
+STOP after this task.
