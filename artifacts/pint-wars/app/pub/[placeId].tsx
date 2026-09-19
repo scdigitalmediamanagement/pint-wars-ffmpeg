@@ -348,6 +348,25 @@ function ReviewFormModal({
       ]);
       onClose();
     } catch (error) {
+      if (__DEV__) {
+        const diagnosticError = error as {
+          message?: unknown;
+          code?: unknown;
+          details?: unknown;
+          hint?: unknown;
+        };
+
+        console.error('[Pint Wars] pub review save failed', {
+          message:
+            typeof diagnosticError?.message === 'string'
+              ? diagnosticError.message
+              : String(error),
+          code: diagnosticError?.code ?? null,
+          details: diagnosticError?.details ?? null,
+          hint: diagnosticError?.hint ?? null,
+        });
+      }
+
       Alert.alert(
         'Could Not Save Review',
         error instanceof Error ? error.message : 'Could not save review',
