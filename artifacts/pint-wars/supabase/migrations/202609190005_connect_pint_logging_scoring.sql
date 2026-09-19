@@ -124,7 +124,7 @@ begin
     or char_length(p_pub_name) not between 1 and 500
     or char_length(p_pub_address) not between 0 and 1000
     or p_pub_latitude not between -90 and 90
-    or p_pub_longitude not between -90 and 90
+    or p_pub_longitude not between -180 and 180
   ) then
     raise exception 'The selected pub is invalid';
   elsif (
