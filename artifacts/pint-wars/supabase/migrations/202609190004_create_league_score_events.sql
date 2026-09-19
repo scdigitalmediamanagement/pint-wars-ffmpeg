@@ -89,7 +89,7 @@ create index league_score_events_user_pub_idx
   on public.league_score_events(user_id, pub_provider, pub_place_id)
   where event_type in ('NEW_PUB', 'PUB_REVIEW');
 
-create or replace function public.reject_league_score_event_mutation()
+create function public.reject_league_score_event_mutation()
 returns trigger
 language plpgsql
 security definer
