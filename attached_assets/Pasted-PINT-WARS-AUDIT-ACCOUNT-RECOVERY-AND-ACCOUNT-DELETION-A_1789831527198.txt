@@ -1,0 +1,141 @@
+PINT WARS — AUDIT ACCOUNT RECOVERY AND ACCOUNT DELETION
+
+AUDIT ONLY.
+
+Do not modify files.
+Do not create migrations.
+Do not change the database.
+Do not change app behaviour.
+Do not apply anything to Supabase.
+
+We are now addressing the remaining production-readiness P1 around account lifecycle.
+
+Inspect the CURRENT Pint Wars repository and migrations in detail.
+
+AUDIT:
+
+1. Supabase Auth configuration used by the app.
+2. Current sign-in screen.
+3. Current sign-up screen.
+4. AuthProvider/auth context.
+5. Session persistence and restoration.
+6. Existing profile table and profile relationships.
+7. All foreign keys referencing auth.users.
+8. All foreign keys referencing profiles.
+9. All ON DELETE behaviours.
+10. Pint logs.
+11. Score events.
+12. League memberships.
+13. Pub reviews.
+14. Pub review reports.
+15. Notifications.
+16. Pub Passport data.
+17. Pint proof storage objects.
+18. Any paid-purchase/payment records.
+19. Any other user-owned data.
+20. Existing RLS/security-definer functions relevant to account deletion.
+
+Specifically determine:
+
+A. Is password reset already implemented anywhere?
+
+B. If not, exactly where should:
+- "Forgot password?"
+- password recovery email
+- password reset screen
+be added?
+
+C. What happens when a user clicks a Supabase password-reset link?
+Check the existing Expo scheme/deep-link configuration and determine whether the app can correctly receive the recovery session.
+
+D. What data belongs to a user and what should happen to each item if the account is deleted?
+
+Create a table in the audit:
+
+| Data | User-owned? | Current FK | Current delete behaviour | Recommended behaviour |
+| ... | ... | ... | ... | ... |
+
+E. Identify every foreign-key constraint that currently prevents deleting a user.
+
+F. Determine whether account deletion should:
+- physically delete the user's account and associated personal data;
+- anonymise some historical records;
+- retain score/league history;
+- retain reviews;
+- remove private proof photos;
+- retain notifications;
+- handle payment records separately.
+
+Do NOT invent a product policy where the current architecture does not make the answer obvious.
+
+G. Pay particular attention to Pint Wars' competitive history.
+
+We need to preserve completed league results and score integrity while still allowing a user to exercise account deletion.
+
+Determine whether the current schema can safely support this without breaking:
+- completed league standings;
+- score events;
+- winner/tie history;
+- pub reviews;
+- Passport history.
+
+H. Inspect whether deleting an account could accidentally:
+- delete another user's data;
+- break league totals;
+- break completed standings;
+- orphan score events;
+- orphan proof objects;
+- leave personally identifiable data behind;
+- allow a deleted user to recreate/farm a previous bonus;
+- break notification triggers.
+
+I. Determine the safest implementation architecture.
+
+Separate the work into:
+
+PHASE 1 — Password recovery
+PHASE 2 — Account deletion
+PHASE 3 — Data cleanup/privacy
+PHASE 4 — Testing
+
+For each phase specify:
+
+- exact files;
+- exact migrations/functions required;
+- whether frontend changes are required;
+- whether Supabase Dashboard configuration is required;
+- whether Apple/Google configuration is required;
+- FREE or POWER Agent mode.
+
+IMPORTANT:
+
+Do not implement anything yet.
+
+Do not create a migration.
+
+Do not change existing scoring rules.
+
+Do not change:
+PINT_LOGGED = +1
+NEW_PUB = +2
+PUB_REVIEW = +3
+
+Do not change league completion or cron.
+
+At the end give:
+
+1. CURRENT STATUS
+2. PASSWORD RECOVERY GAP
+3. ACCOUNT DELETION GAP
+4. DATA RETENTION RECOMMENDATION
+5. EXACT IMPLEMENTATION ORDER
+6. RISKS
+7. Whether any P0/P1 issue exists specifically in this area
+
+Run:
+
+pnpm --filter @workspace/pint-wars run typecheck
+pnpm --filter @workspace/api-server run typecheck
+git diff --check
+
+STOP after the audit.
