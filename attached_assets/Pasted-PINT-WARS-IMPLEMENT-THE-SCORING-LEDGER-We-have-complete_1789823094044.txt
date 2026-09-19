@@ -1,0 +1,90 @@
+PINT WARS — IMPLEMENT THE SCORING LEDGER
+
+We have completed the scoring audit. Now implement ONLY the scoring foundation.
+
+LOCKED SCORING RULES:
+
+1. Every qualifying logged pint = +1 point.
+2. A player's FIRST-EVER qualifying visit to a pub = an additional +2 NEW PUB bonus.
+3. Every later visit to that same pub = +1 pint only.
+4. The NEW PUB bonus is global across all Pint Wars, not once per league.
+5. A qualifying pub review = +3 REVIEW bonus.
+6. The REVIEW bonus is awarded only once per player per pub, globally across all Pint Wars.
+7. Editing a review never awards additional points.
+8. Deleting and recreating a review must never allow another +3 REVIEW bonus.
+9. Reporting a review awards 0 points.
+10. Existing historical pint logs keep their existing +1 base scoring.
+11. Do NOT retroactively award NEW PUB or REVIEW bonuses to historical data.
+12. Pub Passport visit counts remain separate from league scoring.
+
+IMPORTANT:
+Do NOT change the visual design of the app in this task.
+Do NOT redesign screens.
+Do NOT implement paid leagues.
+Do NOT implement pub business/monetisation features.
+Do NOT change Google Places functionality.
+Do NOT change the camera flow unless required to connect it to the new scoring ledger.
+Do NOT remove or alter existing historical pint data.
+
+IMPLEMENTATION:
+
+Create ONE new, unapplied Supabase migration for the immutable scoring ledger.
+
+Use a table such as:
+
+public.league_score_events
+
+It must support these event types:
+
+- PINT_LOGGED = 1 point
+- NEW_PUB = 2 points
+- PUB_REVIEW = 3 points
+
+The ledger must preserve the source of each event and enough information to enforce the permanent once-per-player/per-pub rules.
+
+Required protections:
+
+- One PINT_LOGGED event per accepted pint_log.
+- At most one NEW_PUB event per player/pub globally.
+- At most one PUB_REVIEW event per player/pub globally.
+- Review deletion must never delete the historical scoring event.
+- Review editing must never create another scoring event.
+- Concurrent requests must not be able to award duplicate NEW_PUB or PUB_REVIEW events.
+- Score events must be immutable after creation.
+
+IMPORTANT HISTORICAL RULE:
+
+Existing pint_logs must retain their existing +1 scoring.
+
+Therefore, create the base PINT_LOGGED ledger events for existing valid pint_logs so current historical league scores remain unchanged.
+
+Do NOT create historical NEW_PUB or PUB_REVIEW events.
+
+Also make the migration safe to run once and fail clearly rather than silently corrupting data.
+
+DO NOT yet change the live scoring RPCs, leaderboard calculations, notifications, or frontend.
+
+This task is specifically:
+
+1. Create the new migration.
+2. Add the scoring ledger table.
+3. Add the required constraints/indexes/RLS/security.
+4. Backfill PINT_LOGGED events for existing pint_logs.
+5. Add comments/documentation explaining the scoring rules.
+6. Run typecheck/tests if available.
+7. Show me exactly what the migration does.
+
+Do NOT apply the migration to Supabase.
+
+Do NOT modify any other migration.
+
+At the end, report:
+- migration filename
+- table structure
+- uniqueness protections
+- RLS/security approach
+- number/type of historical events it would create
+- files changed
+- tests/typecheck result
+
+STOP after this task. Do not proceed to the next scoring implementation step.
