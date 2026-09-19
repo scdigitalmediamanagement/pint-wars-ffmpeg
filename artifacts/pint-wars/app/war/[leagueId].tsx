@@ -44,6 +44,11 @@ type PendingPint = {
   location: Coordinates;
 };
 
+type JustLoggedPub = {
+  pub: NearbyPub;
+  pintLogId: string;
+};
+
 export default function LeagueDashboardScreen() {
   const colors = useColors();
   const { user } = useAuth();
@@ -82,7 +87,7 @@ export default function LeagueDashboardScreen() {
         ...input,
       });
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (result, variables) => {
       setIsPreparingPint(false);
       void queryClient.invalidateQueries({ queryKey: ['league-dashboard', leagueId] });
       void queryClient.invalidateQueries({ queryKey: ['pub-passport'] });
@@ -94,7 +99,10 @@ export default function LeagueDashboardScreen() {
       setLogError('');
 
       if (variables.pub) {
-         setJustLoggedPub(variables.pub);
+          setJustLoggedPub({
+            pub: variables.pub,
+            pintLogId: result.pintLogId,
+          });
       }
     },
     onError: (error) => {
@@ -363,13 +371,22 @@ export default function LeagueDashboardScreen() {
           <View style={[styles.pubSheet, { backgroundColor: colors.background, alignItems: 'center', paddingVertical: 40 }]}>
             <Title>Pint Logged!</Title>
             <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', textAlign: 'center', marginBottom: 24, fontSize: 16, lineHeight: 24 }}>
-              Your score has been updated for visiting {justLoggedPub?.name}.
+               Your score has been updated for visiting {justLoggedPub?.pub.name}.
             </Text>
             <View style={{ width: '100%', gap: 12 }}>
               <Button label="Review this pub" onPress={() => {
-                 const pub = justLoggedPub;
+                  const loggedPub = justLoggedPub;
                  setJustLoggedPub(null);
-                 router.push({ pathname: '/pub/[placeId]', params: { placeId: pub!.placeId, provider: pub!.provider, name: pub!.name, address: pub!.address } });
+                  router.push({
+                    pathname: '/pub/[placeId]',
+                    params: {
+                      placeId: loggedPub!.pub.placeId,
+                      provider: loggedPub!.pub.provider,
+                      name: loggedPub!.pub.name,
+                      address: loggedPub!.pub.address,
+                      pintLogId: loggedPub!.pintLogId,
+                    },
+                  });
               }} />
               <Button label="Done" variant="quiet" onPress={() => setJustLoggedPub(null)} />
             </View>

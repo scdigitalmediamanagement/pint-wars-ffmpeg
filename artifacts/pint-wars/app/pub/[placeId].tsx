@@ -55,7 +55,13 @@ function ReportModal({ visible, onClose, onSubmit }: { visible: boolean; onClose
 }
 
 export default function PubScreen() {
-  const { placeId, provider, name, address } = useLocalSearchParams<{ placeId: string; provider: string; name?: string; address?: string }>();
+  const { placeId, provider, name, address, pintLogId } = useLocalSearchParams<{
+    placeId: string;
+    provider: string;
+    name?: string;
+    address?: string;
+    pintLogId?: string;
+  }>();
   const colors = useColors();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -172,7 +178,11 @@ export default function PubScreen() {
                    : 'Write a Review'
              }
              onPress={handleWritePress} 
-             disabled={eligibilityQuery.isLoading || eligibilityQuery.data === false}
+              disabled={
+                eligibilityQuery.isLoading
+                || eligibilityQuery.data === false
+                || (!summaryQuery.data?.current_user_review_id && !pintLogId)
+              }
            />
            {eligibilityQuery.isError ? (
              <ErrorText>Review eligibility could not be checked. Try again later.</ErrorText>
@@ -249,6 +259,7 @@ export default function PubScreen() {
         onClose={() => setIsFormVisible(false)} 
         pubProvider={provider as string} 
         pubPlaceId={placeId as string} 
+        qualifyingPintLogId={pintLogId}
         existingReview={editingReview} 
       />
       <ReportModal 
@@ -265,12 +276,14 @@ function ReviewFormModal({
   onClose,
   pubProvider,
   pubPlaceId,
+  qualifyingPintLogId,
   existingReview,
 }: {
   visible: boolean;
   onClose: () => void;
   pubProvider: string;
   pubPlaceId: string;
+  qualifyingPintLogId?: string;
   existingReview: ReviewRow | null;
 }) {
   const colors = useColors();
@@ -321,10 +334,13 @@ function ReviewFormModal({
         reviewText
       };
       
-      if (existingReview?.id) {
+       if (existingReview?.id) {
         await updatePubReview(existingReview.id, input);
       } else {
-        await createPubReview(input);
+         if (!qualifyingPintLogId) {
+           throw new Error('Log a pint from an active Pint War before reviewing this pub.');
+         }
+         await createPubReview({ ...input, pintLogId: qualifyingPintLogId });
       }
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: reviewKeys.all }),

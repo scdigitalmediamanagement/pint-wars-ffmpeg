@@ -1,0 +1,174 @@
+PINT WARS — IMPLEMENT PUB REVIEW +3 SCORING
+
+MODE: FREE
+
+Implement the locked Pub Review scoring system based on the completed audit.
+
+IMPORTANT:
+Make the changes carefully and minimally.
+Do not redesign unrelated features.
+Do not change Passport behavior.
+Do not change notification behavior.
+Do not change the existing +1 Pint or +2 New Pub scoring.
+Do not modify historical scoring events.
+
+LOCKED PRODUCT RULES:
+
+1. A qualifying pub review awards +3 points.
+
+2. The +3 bonus is GLOBAL and can only ever be awarded once per player per Google Places pub.
+
+3. Editing a review awards 0 additional points.
+
+4. Deleting a review awards 0 additional points.
+
+5. Deleting and recreating a review awards 0 additional points if the player has previously received the review bonus.
+
+6. Reporting a review awards 0 points.
+
+7. Existing reviews from BEFORE this scoring implementation receive NO retroactive +3 event.
+
+8. A review must be based on a qualifying Pint Wars pint.
+
+9. The qualifying pint must come from an ACTIVE Pint War.
+
+10. The +3 score event must belong to the league that contains the qualifying pint.
+
+11. NEVER trust a client-supplied league_id for scoring attribution.
+
+12. The server/database must derive league_id from the qualifying pint_log row.
+
+13. The qualifying pint must belong to auth.uid().
+
+14. The qualifying pint's pub_provider and pub_place_id must exactly match the pub being reviewed.
+
+15. Passport remains separate from league scoring.
+A review opened from Passport must NOT silently generate a league +3 bonus from an arbitrary historical pint.
+
+16. A review created from the normal "Review this pub" flow should carry the exact qualifying pint_log_id.
+
+17. If a user already has a PUB_REVIEW score event for that player/pub, no second +3 event may ever be created, even if the review itself was deleted and recreated.
+
+18. The existing immutable league_score_events ledger must remain the authoritative scoring ledger.
+
+19. The existing global uniqueness protection for:
+   user_id + pub_provider + pub_place_id
+   where event_type = PUB_REVIEW
+must remain in place.
+
+IMPLEMENTATION REQUIREMENTS:
+
+A. DATABASE
+
+Create ONE new migration for the Pub Review scoring connection.
+
+Do not modify historical score events.
+
+Update create_pub_review so it accepts the qualifying pint_log_id.
+
+The database must:
+
+- authenticate the caller;
+- verify the pint_log belongs to auth.uid();
+- verify the pint is from an ACTIVE Pint War;
+- verify the pint has the expected Google Places pub identity;
+- verify the pint's provider/place_id matches the review pub;
+- derive league_id from the pint_log;
+- create the review;
+- create the PUB_REVIEW score event with:
+  league_id = derived from pint_log
+  user_id = auth.uid()
+  event_type = PUB_REVIEW
+  points = 3
+  pint_log_id = qualifying pint
+  review_id = newly created review
+  pub_provider = review pub provider
+  pub_place_id = review pub place ID
+
+The review insertion and score-event insertion MUST happen atomically in the same database transaction.
+
+If the PUB_REVIEW score event already exists for that player/pub, do NOT award another +3.
+
+The existing ledger event must never be deleted or modified when the review is edited or deleted.
+
+Do NOT add scoring to:
+
+- update_pub_review
+- delete_pub_review
+- report_pub_review
+- pint logging
+- Passport
+
+B. FRONTEND
+
+Update the existing "Review this pub" flow from the Pint War dashboard so it passes the exact qualifying pint_log_id into the pub review screen.
+
+Do not invent a pint ID.
+
+Use the actual pint_log_id created by the successful pint logging operation.
+
+The review screen should pass that ID into create_pub_review.
+
+C. PASSPORT / GENERIC PUB PAGES
+
+Do not make Passport or a generic pub page generate a +3 review score.
+
+If the review screen can currently be opened without a qualifying pint_log_id, preserve the ability to view reviews but make the review submission unavailable unless a valid qualifying pint is supplied.
+
+Do not silently choose an arbitrary historical pint.
+
+D. EXISTING REVIEW BEHAVIOUR
+
+Preserve:
+
+- review ratings;
+- review editing;
+- review deletion;
+- review reporting;
+- existing review uniqueness;
+- existing RLS/security-definer protections;
+- existing public review display;
+- existing review summaries.
+
+Only connect the new scoring behavior.
+
+E. DUPLICATE / CONCURRENCY SAFETY
+
+The implementation must be safe if two review submissions happen concurrently.
+
+The database constraints/transaction must ensure:
+
+- maximum one review per player/pub;
+- maximum one PUB_REVIEW score event per player/pub;
+- no duplicate +3 points.
+
+F. HISTORICAL DATA
+
+Do NOT backfill PUB_REVIEW events for existing reviews.
+
+Do NOT change existing PINT_LOGGED events.
+
+Do NOT change existing NEW_PUB events.
+
+G. TESTING
+
+After implementation, run typecheck/tests available in the repository.
+
+Then report exactly:
+
+1. Files changed.
+2. Migration filename.
+3. Database function(s) changed.
+4. Frontend flow changed.
+5. How league_id is derived.
+6. How repeat +3 bonuses are prevented.
+7. How delete/recreate is handled.
+8. How historical reviews are handled.
+9. Test/typecheck result.
+10. Any remaining risks or ambiguities.
+
+IMPORTANT:
+Do not apply anything to live Supabase automatically.
+Create the migration only and show me the exact migration filename so I can apply it manually.
+
+STOP after implementation and verification.

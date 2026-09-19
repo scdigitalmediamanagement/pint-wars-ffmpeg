@@ -238,6 +238,11 @@ type LogPintInput = {
   pub: NearbyPub | null;
 };
 
+export type LoggedPintResult = {
+  pintLogId: string;
+  loggedAt: string;
+};
+
 function photoExtension(mimeType: string | null) {
   switch (mimeType) {
     case 'image/png':
@@ -334,7 +339,7 @@ export async function logPint({
     });
 
     const responseText = await response.text();
-    let responseBody: { code?: string; message?: string } | null = null;
+    let responseBody: unknown = null;
     try {
       responseBody = responseText ? JSON.parse(responseText) : null;
     } catch {
@@ -348,14 +353,33 @@ export async function logPint({
         responseStatus: response.status,
         responseCode: responseBody?.code ?? null,
       });
-      if (responseBody?.code === 'DUPLICATE_PROOF') {
+       if (
+         responseBody
+         && typeof responseBody === 'object'
+         && 'code' in responseBody
+         && responseBody.code === 'DUPLICATE_PROOF'
+       ) {
         shouldCleanup = false;
       }
-      throw new Error(responseBody?.message || 'The pint could not be logged.');
+       throw new Error(
+         responseBody
+         && typeof responseBody === 'object'
+         && 'message' in responseBody
+         && typeof responseBody.message === 'string'
+           ? responseBody.message
+           : 'The pint could not be logged.',
+       );
     }
 
-    const result = responseBody;
-    if (!result) {
+     const result = Array.isArray(responseBody) ? responseBody[0] : responseBody;
+     if (
+       !result
+       || typeof result !== 'object'
+       || !('pint_id' in result)
+       || typeof result.pint_id !== 'string'
+       || !('logged_at' in result)
+       || typeof result.logged_at !== 'string'
+     ) {
       throw new Error('The pint could not be logged.');
     }
 
@@ -364,7 +388,10 @@ export async function logPint({
       attemptId,
       photoPath,
     });
-    return result;
+     return {
+       pintLogId: result.pint_id,
+       loggedAt: result.logged_at,
+     } satisfies LoggedPintResult;
   } finally {
     if (shouldCleanup) {
       await client.storage.from(PINT_PROOF_BUCKET).remove([photoPath]);

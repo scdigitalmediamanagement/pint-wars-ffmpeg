@@ -260,6 +260,7 @@ export type Database = {
         Args: {
           p_pub_provider: string;
           p_pub_place_id: string;
+          p_pint_log_id: string;
           p_atmosphere_rating: number;
           p_pints_drinks_rating: number;
           p_staff_rating: number;

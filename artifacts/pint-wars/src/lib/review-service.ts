@@ -14,6 +14,10 @@ export type ReviewRatingInput = {
   reviewText?: string | null;
 };
 
+export type CreateReviewInput = ReviewRatingInput & {
+  pintLogId: string;
+};
+
 export type ReviewRow = ReviewRpcRow;
 
 export type ReviewSummary = {
@@ -74,10 +78,11 @@ export async function getPubReviewDetail(reviewId: string) {
   return (result ?? null) as ReviewRow | null;
 }
 
-export async function createPubReview(input: ReviewRatingInput) {
+export async function createPubReview(input: CreateReviewInput) {
   const { data, error } = await getSupabase().rpc('create_pub_review', {
     p_pub_provider: input.pubProvider,
     p_pub_place_id: input.pubPlaceId,
+    p_pint_log_id: input.pintLogId,
     p_atmosphere_rating: input.atmosphereRating,
     p_pints_drinks_rating: input.pintsDrinksRating,
     p_staff_rating: input.staffRating,
