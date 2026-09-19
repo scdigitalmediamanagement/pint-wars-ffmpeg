@@ -1,0 +1,59 @@
+PINT WARS — INVESTIGATE FRESH PHOTO BEING FLAGGED AS DUPLICATE
+
+AUDIT ONLY. DO NOT MODIFY ANY FILES.
+
+We have just successfully tested the new scoring system.
+
+A new pub was logged and the player's score increased from 6 points to 9 points.
+
+That confirms:
+- PINT_LOGGED = +1 works.
+- NEW_PUB = +2 works.
+- Total first-ever pub visit = +3 works.
+
+However, when attempting to log another pint at a different pub with what should be a completely fresh camera photo, the app displays:
+
+"This photo has already been used in this Pint War."
+
+We need to determine why.
+
+IMPORTANT:
+Do NOT change code.
+Do NOT create a migration.
+Do NOT change the duplicate-proof protection.
+Do NOT weaken or remove SHA-256 duplicate detection.
+Do NOT change scoring.
+Do NOT change the database.
+Do NOT apply anything to Supabase.
+
+Inspect the entire camera → photo → upload → content hash → log_pint_verified flow.
+
+Specifically check:
+
+1. Where the camera photo is captured.
+2. Whether the camera component can return/reuse the previous image URI.
+3. Whether the camera is actually being remounted/reset between attempts.
+4. Whether the captured image is copied or transformed before upload.
+5. Where the SHA-256 hash is generated.
+6. Whether the hash is calculated from the actual newly captured file bytes.
+7. Whether the same local URI can remain in state after a successful submission.
+8. Whether the upload code could be uploading the previous image instead of the newly captured image.
+9. Whether the camera flow has any caching behavior.
+10. Whether the app waits for the new photo capture before continuing to upload.
+11. Whether the duplicate-proof response is definitely coming from the server-side content hash check.
+12. Check whether the problem could instead be caused by the test procedure rather than the code.
+
+Also inspect whether the first successful +3 test and the subsequent failed attempt used different local image URIs and different file hashes.
+
+Do not invent test results. If the code alone cannot prove the cause, clearly state what cannot be verified without runtime logging.
+
+At the end report:
+
+A. Most likely cause.
+B. Exact file/function responsible if identifiable.
+C. Whether the camera is reusing an old URI.
+D. Whether the uploaded bytes could be identical despite a new camera capture.
+E. The safest fix.
+F. Any additional logging needed to prove it.
+
+STOP. Do not make changes.
