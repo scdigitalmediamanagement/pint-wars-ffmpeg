@@ -1,0 +1,52 @@
+We now have the complete read-only investigation.
+
+Prepare the exact cleanup procedure for the two test users and the test league only.
+
+Target users:
+- Steve: c88a8930-3bd4-43db-b47a-121d7e92c6dc
+- Tall Paul: c59912dd-7f43-4918-b725-88e26791606f
+
+Target league:
+- Exmouth Pint Wars
+- aa8c8249-0cc2-452d-b97f-cdde67998491
+
+I want a SAFE, fail-closed cleanup.
+
+Requirements:
+
+1. Do NOT execute anything yet.
+2. Do NOT change any foreign keys or schema.
+3. Do NOT touch any other users, leagues, reviews, or production data.
+4. Before deleting anything, verify:
+   - exactly the expected league exists;
+   - the league belongs to Steve;
+   - both expected users exist;
+   - the league's memberships contain only the expected test users;
+   - all identified dependent rows belong to this test league and/or these two test users;
+   - no unexpected user or league would be affected.
+5. The database cleanup must follow the dependency order already identified:
+   - pub_review_photos
+   - pub_review_reports
+   - league_score_events
+   - pub_review_bonus_guards
+   - notifications
+   - pint_logs
+   - league_invites
+   - league_memberships
+   - pub_reviews
+   - leagues
+   - auth.users last
+6. Do NOT manually delete profiles; auth.users deletion should cascade to profiles.
+7. Include the 16 pint-proofs storage objects under:
+   <user_id>/aa8c8249-0cc2-452d-b97f-cdde67998491/<filename>
+8. Because storage objects cannot safely be assumed to disappear when pint_logs are deleted, provide the exact safe method for deleting those 16 storage objects as a separate step.
+9. The final procedure must verify that all targeted database rows and storage objects are gone.
+10. If any safety check fails, the procedure must abort before deleting anything.
+
+Give me:
+A. The exact SQL cleanup script for the database.
+B. The exact separate storage cleanup step for the 16 pint-proofs files.
+C. A short explanation of what each step deletes.
+D. Do not execute either cleanup.
+
+We will review the script before running it.
