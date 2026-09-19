@@ -1,0 +1,187 @@
+PINT WARS — BUILD AUTOMATIC LEAGUE COMPLETION
+
+Use FREE mode.
+
+We have now enabled pg_cron in the live Supabase project.
+
+Implement the next stage of Pint Wars automatic league completion.
+
+IMPORTANT:
+Do NOT create or schedule a pg_cron job yet.
+Do NOT change payment functionality.
+Do NOT change Passport.
+Do NOT change the scoring values.
+Do NOT change the existing +1 PINT_LOGGED, +2 NEW_PUB, or +3 PUB_REVIEW rules.
+Do NOT change the review UI.
+Do NOT change notifications except where required to correct the completion winner/tie calculation.
+Do NOT modify historical scoring events.
+
+FIRST: inspect the current database migrations and application code carefully before making changes.
+
+We need an authoritative database-side completion mechanism that can complete ALL expired active Pint Wars even when nobody opens the app.
+
+LOCKED COMPLETION RULE:
+
+A league becomes Completed when:
+
+status = 'active'
+AND ends_at <= now()
+
+The completion mechanism must be global and must NOT depend on the authenticated user being a member of the league.
+
+REQUIREMENTS:
+
+1. Create ONE new Supabase migration for the automatic completion system.
+
+Use the next migration number after the currently restored/applied migrations.
+
+2. Create a privileged database function, for example:
+
+public.complete_all_expired_leagues()
+
+The exact name may differ if the existing naming conventions require it.
+
+The function must:
+
+- be SECURITY DEFINER
+- use a fixed safe search_path
+- require no authenticated user
+- operate globally across all leagues
+- complete every league where:
+    status = 'active'
+    AND ends_at <= now()
+- set:
+    status = 'completed'
+    completed_at = coalesce(completed_at, now())
+- leave already completed leagues untouched
+- be safe to run repeatedly
+- return useful completion information if appropriate
+
+It must NOT directly create duplicate notifications.
+
+The existing league status transition trigger should remain responsible for creating completion notifications.
+
+3. IMPORTANT — winner/tie calculation
+
+Audit the existing completion notification trigger.
+
+It currently calculates winners from raw pint_logs.
+
+That is now WRONG.
+
+Change the completion winner/tie calculation so it uses:
+
+public.league_score_events
+
+and the same scoring totals used by the leaderboard.
+
+Winner calculation must:
+
+- start from league memberships
+- exclude members with membership status = 'removed'
+- include retired members
+- left join league_score_events using league_id and user_id
+- sum score_event.points
+- treat players with no score events as 0 points
+- identify EVERY player tied for the highest final score
+- create the existing winner notification for each winner
+- preserve the existing notification event keys and idempotency
+- do not create retroactive score events
+
+4. COMPLETION RACE SAFETY
+
+Inspect the current pint scoring and pub review scoring functions.
+
+Near the exact league end boundary, completion and scoring must not race.
+
+Use a consistent league-row locking strategy.
+
+The intended rule is:
+
+- If the league row is locked and checked while ends_at > now(), the pint/review operation may proceed.
+- If the league has reached ends_at, the operation must be rejected.
+- If completion acquires the league lock first after ends_at, later pint/review attempts must see the completed status and be rejected.
+- Completion must not allow scoring after the end time.
+
+Do NOT change the scoring point values.
+
+Make the smallest safe database changes necessary to achieve this.
+
+5. IMPORTANT — result stability
+
+Do NOT invent a new final-results architecture.
+
+First inspect whether existing completed-league membership/status behavior already prevents result changes.
+
+If a final-results snapshot is genuinely required, report that as a separate issue instead of implementing it automatically in this task.
+
+Do not add unnecessary tables.
+
+6. EXISTING CLIENT COMPLETION
+
+Do not remove the existing client-side completion calls yet.
+
+They can remain as an idempotent fallback while the new authoritative scheduled mechanism is introduced.
+
+7. CRON
+
+Do NOT create the pg_cron job in this migration.
+
+We will create the actual scheduled job manually only AFTER the migration has been reviewed and applied successfully.
+
+8. SECURITY
+
+The global completion function must NOT be executable by normal authenticated users.
+
+Only the database scheduler/privileged execution path should be able to call it.
+
+Do not expose a client RPC that allows ordinary users to complete arbitrary leagues.
+
+9. HISTORICAL DATA
+
+Do not modify historical leagues that are already completed.
+
+Do not recalculate historical score events.
+
+Do not create historical bonus events.
+
+The new function may complete currently-active leagues whose ends_at has already passed. That is required.
+
+10. VALIDATION
+
+After implementation run:
+
+pnpm --filter @workspace/pint-wars run typecheck
+
+pnpm --filter @workspace/api-server run typecheck
+
+git diff --check
+
+Also inspect the migration carefully for:
+
+- SECURITY DEFINER safety
+- correct search_path
+- correct permissions
+- correct winner/tie calculation
+- correct removed/retired handling
+- correct score-event totals
+- correct end-time locking
+- idempotency
+- no accidental changes to existing scoring rules
+
+DO NOT APPLY ANYTHING TO SUPABASE.
+
+At the end report:
+
+A. Migration filename.
+B. Exact database objects changed/created.
+C. Exact completion behavior.
+D. Exact winner/tie calculation.
+E. Exact race-condition protection.
+F. Permission/security model.
+G. Whether result stability required any additional changes.
+H. Typecheck results.
+I. git diff --check result.
+J. Confirm that NO Supabase changes were applied.
+
+STOP after implementation and audit.
