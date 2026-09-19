@@ -276,31 +276,68 @@ export async function logPint({
 
   if (uploadError) throw uploadError;
 
-  const { data, error } = await client.rpc('log_pint', {
-    p_league_id: leagueId,
-    p_photo_path: photoPath,
-    p_latitude: latitude,
-    p_longitude: longitude,
-    p_pub_provider: pub?.provider ?? null,
-    p_pub_place_id: pub?.placeId ?? null,
-    p_pub_name: pub?.name ?? null,
-    p_pub_address: pub?.address ?? null,
-    p_pub_latitude: pub?.coordinates.latitude ?? null,
-    p_pub_longitude: pub?.coordinates.longitude ?? null,
-  });
+  let shouldCleanup = true;
+  try {
+    const { data: sessionData, error: sessionError } = await client.auth.getSession();
+    if (sessionError) throw sessionError;
+    const accessToken = sessionData.session?.access_token;
+    const apiDomain = process.env.EXPO_PUBLIC_DOMAIN;
 
-  if (error) {
-    await client.storage.from(PINT_PROOF_BUCKET).remove([photoPath]);
-    throw error;
+    if (!accessToken || !apiDomain) {
+      throw new Error('Pint proof logging is not configured.');
+    }
+
+    const response = await expoFetch(`https://${apiDomain}/api/pint-proofs/log`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        leagueId,
+        photoPath,
+        latitude,
+        longitude,
+        pub: pub
+          ? {
+              provider: pub.provider,
+              placeId: pub.placeId,
+              name: pub.name,
+              address: pub.address,
+              latitude: pub.coordinates.latitude,
+              longitude: pub.coordinates.longitude,
+            }
+          : null,
+      }),
+    });
+
+    const responseText = await response.text();
+    let responseBody: { code?: string; message?: string } | null = null;
+    try {
+      responseBody = responseText ? JSON.parse(responseText) : null;
+    } catch {
+      responseBody = null;
+    }
+
+    if (!response.ok) {
+      if (responseBody?.code === 'DUPLICATE_PROOF') {
+        shouldCleanup = false;
+      }
+      throw new Error(responseBody?.message || 'The pint could not be logged.');
+    }
+
+    shouldCleanup = false;
+    const result = responseBody;
+    if (!result) {
+      throw new Error('The pint could not be logged.');
+    }
+
+    return result;
+  } finally {
+    if (shouldCleanup) {
+      await client.storage.from(PINT_PROOF_BUCKET).remove([photoPath]);
+    }
   }
-
-  const result = Array.isArray(data) ? data[0] : data;
-  if (!result) {
-    await client.storage.from(PINT_PROOF_BUCKET).remove([photoPath]);
-    throw new Error('The pint could not be logged.');
-  }
-
-  return result;
 }
 
 export type PubPassportEntry = {
