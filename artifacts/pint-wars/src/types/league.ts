@@ -24,7 +24,7 @@ export type LeagueMembership = {
   retired_at: string | null;
   removed_at: string | null;
   display_name: string;
-  pint_total: number;
+  points: number;
 };
 
 export type MyLeague = {

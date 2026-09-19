@@ -205,7 +205,7 @@ export async function getLeagueDashboard(leagueId: string): Promise<LeagueDashbo
   );
 
   const normalizedMembers = ((members ?? []) as unknown as Array<
-    Omit<LeagueMembership, 'display_name' | 'pint_total'> & {
+    Omit<LeagueMembership, 'display_name' | 'points'> & {
       profile: { display_name: string } | { display_name: string }[] | null;
     }
   >).map((member) => {
@@ -213,7 +213,7 @@ export async function getLeagueDashboard(leagueId: string): Promise<LeagueDashbo
     return {
       ...member,
       display_name: profile?.display_name || 'Player',
-      pint_total: totalsByUser.get(member.user_id) ?? 0,
+      points: totalsByUser.get(member.user_id) ?? 0,
     };
   });
 

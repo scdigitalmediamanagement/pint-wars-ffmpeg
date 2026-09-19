@@ -9,7 +9,6 @@ import { getCurrentLocation } from '@/src/lib/location-service';
 import { findNearbyPubs, type Coordinates, type NearbyPub } from '@/src/lib/pub-service';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { useColors } from '@/hooks/useColors';
-import type { LeagueDashboard } from '@/src/types/league';
 
 function leagueDurationDays(startsAt: string, endsAt: string) {
   const start = new Date(startsAt).getTime();
@@ -82,17 +81,6 @@ export default function LeagueDashboardScreen() {
     },
     onSuccess: (_, variables) => {
       setIsPreparingPint(false);
-      queryClient.setQueryData<LeagueDashboard>(['league-dashboard', leagueId], (current) => {
-        if (!current || !user) return current;
-        return {
-          ...current,
-          members: current.members.map((member) =>
-            member.user_id === user.id
-              ? { ...member, pint_total: member.pint_total + 1 }
-              : member,
-          ),
-        };
-      });
       void queryClient.invalidateQueries({ queryKey: ['league-dashboard', leagueId] });
       void queryClient.invalidateQueries({ queryKey: ['pub-passport'] });
       if (variables.pub && user) {
@@ -259,10 +247,10 @@ export default function LeagueDashboardScreen() {
   const day = dayNumber(league.starts_at, league.ends_at, league.status);
   const durationDays = leagueDurationDays(league.starts_at, league.ends_at);
   const leagueEndLabel = endTimeLabel(league.ends_at);
-  const sortedMembers = [...members].sort((a, b) => b.pint_total - a.pint_total || a.joined_at.localeCompare(b.joined_at));
-  const totalPints = members.reduce((total, member) => total + member.pint_total, 0);
-  const highestPintTotal = sortedMembers[0]?.pint_total ?? 0;
-  const winners = sortedMembers.filter((member) => member.pint_total === highestPintTotal);
+  const sortedMembers = [...members].sort((a, b) => b.points - a.points || a.joined_at.localeCompare(b.joined_at));
+  const totalPoints = members.reduce((total, member) => total + member.points, 0);
+  const highestPoints = sortedMembers[0]?.points ?? 0;
+  const winners = sortedMembers.filter((member) => member.points === highestPoints);
 
   return (
     <Screen>
@@ -281,8 +269,8 @@ export default function LeagueDashboardScreen() {
               <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>PLAYERS</Text>
             </View>
             <View>
-              <Text style={[styles.metricValue, { color: colors.foreground }]}>{totalPints}</Text>
-              <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>TOTAL PINTS</Text>
+              <Text style={[styles.metricValue, { color: colors.foreground }]}>{totalPoints}</Text>
+              <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>TOTAL POINTS</Text>
             </View>
             <View>
               <Text style={[styles.metricValue, { color: colors.foreground }]}>{league.capacity}</Text>
@@ -299,7 +287,7 @@ export default function LeagueDashboardScreen() {
               {winners.map((winner) => winner.display_name).join(' · ')}
             </Text>
             <Text style={[styles.resultText, { color: colors.mutedForeground }]}>
-              Final score: {highestPintTotal} {highestPintTotal === 1 ? 'pint' : 'pints'}
+              Final score: {highestPoints} {highestPoints === 1 ? 'point' : 'points'}
             </Text>
           </Card>
         ) : null}
@@ -308,7 +296,7 @@ export default function LeagueDashboardScreen() {
           <Card style={{ paddingVertical: 8 }}>
             {sortedMembers.map((member, index) => {
               const isCurrentUser = member.user_id === user?.id;
-              const isWinner = league.status === 'completed' && member.pint_total === highestPintTotal;
+              const isWinner = league.status === 'completed' && member.points === highestPoints;
               return (
                 <View key={member.id} style={[styles.playerRow, { borderBottomColor: colors.border }]}>
                   <Text style={[styles.rank, { color: colors.accent }]}>{index + 1}</Text>
@@ -321,7 +309,7 @@ export default function LeagueDashboardScreen() {
                       {winners.length === 1 ? 'WINNER' : 'TIED'}
                     </Text>
                   ) : null}
-                  <Text style={[styles.pints, { color: colors.foreground }]}>{member.pint_total}</Text>
+                  <Text style={[styles.pints, { color: colors.foreground }]}>{member.points} pts</Text>
                 </View>
               );
             })}
@@ -348,7 +336,7 @@ export default function LeagueDashboardScreen() {
             ) : null}
             {logError ? <ErrorText>{logError}</ErrorText> : null}
             <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 21 }}>
-              Take a fresh photo with your pint. Each logged pint adds exactly one point.
+              Take a fresh photo with your pint. Verified visits update your score, including eligible first-pub bonuses.
             </Text>
           </>
         ) : (
@@ -367,7 +355,7 @@ export default function LeagueDashboardScreen() {
           <View style={[styles.pubSheet, { backgroundColor: colors.background, alignItems: 'center', paddingVertical: 40 }]}>
             <Title>Pint Logged!</Title>
             <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', textAlign: 'center', marginBottom: 24, fontSize: 16, lineHeight: 24 }}>
-              You scored a point for visiting {justLoggedPub?.name}.
+              Your score has been updated for visiting {justLoggedPub?.name}.
             </Text>
             <View style={{ width: '100%', gap: 12 }}>
               <Button label="Review this pub" onPress={() => {

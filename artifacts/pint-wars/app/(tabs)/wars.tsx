@@ -16,28 +16,28 @@ function formatEndLabel(endsAt: string, status: 'active' | 'completed') {
   return `${status === 'completed' ? 'Ended' : 'Ends'} ${dateLabel} at ${timeLabel}`;
 }
 
-function scoreLabel(score: number) {
-  return `${score} ${score === 1 ? 'pint' : 'pints'}`;
+function pointsLabel(points: number) {
+  return `${points} ${points === 1 ? 'point' : 'points'}`;
 }
 
 function leaderboardSummary(members: LeagueMembership[], status: 'active' | 'completed') {
   if (!members.length) return null;
   const sortedMembers = [...members].sort(
-    (a, b) => b.pint_total - a.pint_total || a.joined_at.localeCompare(b.joined_at),
+    (a, b) => b.points - a.points || a.joined_at.localeCompare(b.joined_at),
   );
-  const topScore = sortedMembers[0].pint_total;
-  const topMembers = sortedMembers.filter((member) => member.pint_total === topScore);
+  const topScore = sortedMembers[0].points;
+  const topMembers = sortedMembers.filter((member) => member.points === topScore);
   const names = topMembers.map((member) => member.display_name).join(', ');
 
   if (status === 'completed') {
     return topMembers.length === 1
-      ? `Winner: ${names} · ${scoreLabel(topScore)}`
-      : `Tie: ${names} · ${scoreLabel(topScore)}`;
+      ? `Winner: ${names} · ${pointsLabel(topScore)}`
+      : `Tie: ${names} · ${pointsLabel(topScore)}`;
   }
 
   return topMembers.length === 1
-    ? `Leader: ${names} · ${scoreLabel(topScore)}`
-    : `Tied lead: ${names} · ${scoreLabel(topScore)}`;
+    ? `Leader: ${names} · ${pointsLabel(topScore)}`
+    : `Tied lead: ${names} · ${pointsLabel(topScore)}`;
 }
 
 export default function WarsScreen() {
