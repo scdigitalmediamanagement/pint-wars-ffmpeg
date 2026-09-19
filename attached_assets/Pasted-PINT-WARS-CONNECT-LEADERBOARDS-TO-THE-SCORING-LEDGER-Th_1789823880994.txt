@@ -1,0 +1,96 @@
+PINT WARS — CONNECT LEADERBOARDS TO THE SCORING LEDGER
+
+The new scoring ledger is now LIVE in Supabase.
+
+These migrations have both been successfully applied:
+
+202609190004_create_league_score_events.sql
+202609190005_connect_pint_logging_scoring.sql
+
+The trusted pint logging path now creates:
+- PINT_LOGGED = +1
+- NEW_PUB = +2 on the player's first-ever qualifying pub
+
+Now update the leaderboard/totals to use the scoring ledger.
+
+IMPORTANT:
+Do NOT modify the scoring ledger structure.
+Do NOT modify log_pint_verified.
+Do NOT modify review functionality.
+Do NOT implement the +3 review bonus yet.
+Do NOT modify Passport.
+Do NOT modify pricing.
+Do NOT modify join logic.
+Do NOT modify camera/photo functionality.
+
+TASK:
+
+1. Update the authoritative league score calculation so that a player's score is:
+
+SUM(league_score_events.points)
+
+for that league/player.
+
+2. Replace the current raw:
+
+count(pint_logs.id)
+
+score calculation used by:
+
+public.get_league_pint_totals()
+
+with the scoring-ledger total.
+
+3. Preserve the existing behavior that:
+- removed members are excluded from active/current leaderboard totals.
+- retired members remain visible for completed historical standings.
+- historical pint logs continue contributing their +1 base events.
+- NEW_PUB bonuses contribute their +2 points.
+
+4. Keep the existing RPC name and return structure if possible so the existing app can continue working with minimal changes.
+
+5. Update the league service only where necessary to consume the authoritative score returned by the RPC.
+
+6. Update the War leaderboard UI so that the score is clearly presented as POINTS rather than simply raw pints.
+
+7. Remove the current hard-coded optimistic assumption:
+
+pint_total + 1
+
+because a newly logged pint may award either:
+- +1
+- or +3 total if it is a first-ever pub.
+
+The authoritative database result must be the source of truth.
+
+8. Make sure winner/tie calculations in the War screen and Wars tab use the new authoritative points total.
+
+9. Do NOT update completed-war notification calculations yet. We will handle notifications separately after this task.
+
+10. Do NOT implement review scoring yet.
+
+IMPORTANT DEPLOYMENT RULE:
+
+Create a new migration for the database change.
+
+Do NOT modify or rewrite any existing migration.
+
+Do NOT apply the new migration to Supabase.
+
+After making the changes, run:
+- Pint Wars typecheck
+- API server typecheck
+- git diff --check
+
+At the end report:
+
+A. New migration filename.
+B. Exact changes to get_league_pint_totals().
+C. How removed and retired members are handled.
+D. How the frontend now receives the authoritative points total.
+E. How the optimistic +1 behavior was removed/replaced.
+F. Whether winner/tie calculations now use points.
+G. Confirm notifications and review scoring were NOT changed.
+H. Test/typecheck results.
+
+STOP after this task.
