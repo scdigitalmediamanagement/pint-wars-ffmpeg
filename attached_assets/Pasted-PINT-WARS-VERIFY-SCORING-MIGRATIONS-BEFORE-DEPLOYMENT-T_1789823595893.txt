@@ -1,0 +1,75 @@
+PINT WARS — VERIFY SCORING MIGRATIONS BEFORE DEPLOYMENT
+
+This is an AUDIT/VERIFICATION task only.
+
+Do NOT modify any files.
+Do NOT create a new migration.
+Do NOT apply anything to Supabase.
+Do NOT change app code.
+
+We have two unapplied migrations:
+
+1. artifacts/pint-wars/supabase/migrations/202609190004_create_league_score_events.sql
+
+2. artifacts/pint-wars/supabase/migrations/202609190005_connect_pint_logging_scoring.sql
+
+Review both migrations together as PostgreSQL/Supabase code.
+
+The migrations are intended to be applied in exactly this order:
+
+202609190004_create_league_score_events.sql
+202609190005_connect_pint_logging_scoring.sql
+
+Verify specifically:
+
+1. Does migration 202609190004 create the partial unique index for NEW_PUB correctly?
+
+2. Does migration 202609190005 use valid PostgreSQL syntax for:
+
+   ON CONFLICT (user_id, pub_provider, pub_place_id)
+     WHERE event_type = 'NEW_PUB'
+   DO NOTHING;
+
+3. Is that ON CONFLICT clause actually compatible with the partial unique index created by migration 202609190004?
+
+4. Does replacing public.log_pint_verified(...) preserve the existing function's exact argument signature and return type expected by the API?
+
+5. Does the new function remain service-role-only?
+
+6. Does the transaction correctly roll back the pint_log if a scoring event insert fails?
+
+7. Does the PINT_LOGGED unique index correctly prevent duplicate score events?
+
+8. Does the NEW_PUB unique index correctly enforce one first-ever bonus per user/pub across ALL leagues?
+
+9. Can concurrent first-ever visits to the same pub result in more than one NEW_PUB event?
+
+10. Does the migration accidentally award historical NEW_PUB bonuses?
+
+11. Does it accidentally change review behavior, leaderboard calculations, winner/tie calculations, notifications, Passport, or frontend behavior?
+
+12. Are there any PostgreSQL/Supabase errors that are likely to occur when these two migrations are applied in order?
+
+13. Check for any subtle security issue that could allow an authenticated user to bypass the trusted scoring path.
+
+14. Check whether the legacy log_pint overload revocation is valid and sufficient.
+
+15. Check whether the two migrations are compatible with the currently existing database objects/functions in the project.
+
+IMPORTANT:
+Do not assume the migrations are correct simply because typecheck passed.
+This is specifically a PostgreSQL/Supabase migration review.
+
+At the end give me one of these exact conclusions:
+
+SAFE TO APPLY
+
+or
+
+DO NOT APPLY — FIX REQUIRED
+
+If FIX REQUIRED, explain exactly what needs changing, but do not make the change yourself.
+
+Also list any remaining risks that are acceptable for this stage.
+
+STOP after the audit.
