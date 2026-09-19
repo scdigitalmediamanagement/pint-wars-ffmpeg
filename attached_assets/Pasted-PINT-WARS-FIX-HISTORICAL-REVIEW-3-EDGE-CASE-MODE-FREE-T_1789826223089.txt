@@ -1,0 +1,85 @@
+PINT WARS — FIX HISTORICAL REVIEW +3 EDGE CASE
+
+MODE: FREE
+
+The Pub Review +3 implementation is complete and typechecks successfully.
+
+DO NOT apply the migration to Supabase.
+
+Migration currently created:
+202609190007_pub_review_scoring.sql
+
+We identified one remaining product-integrity issue:
+
+LOCKED RULE:
+
+Existing reviews created BEFORE the Pub Review scoring system goes live must never become eligible for a first-time +3 bonus simply because the user deletes the old review and recreates it.
+
+Example:
+
+- User reviewed Pub A before scoring existed.
+- No PUB_REVIEW ledger event exists.
+- User deletes the old review.
+- User recreates the review after scoring deployment.
+- This MUST NOT award +3.
+
+We need to solve this without changing the locked global scoring rules.
+
+AUDIT THE CURRENT MIGRATION AND REVIEW SCHEMA.
+
+Determine the smallest safe database change that permanently identifies a player/pub combination as having had a review before scoring went live.
+
+Preferred approach, if compatible with the existing schema:
+
+- Add a durable historical-review marker/tombstone mechanism.
+- Existing reviews at migration time should be marked as already having consumed/blocked the review bonus.
+- Deleting such a review must not remove that historical marker.
+- Recreating the review must therefore produce 0 points.
+- New reviews created after scoring deployment should receive +3 normally.
+- The existing immutable league_score_events ledger must remain unchanged for actual scoring events.
+- Do not create fake +3 score events for historical reviews.
+
+IMPORTANT:
+
+Do not change:
+- +1 PINT_LOGGED scoring
+- +2 NEW_PUB scoring
+- leaderboard calculations
+- Passport
+- notifications
+- review ratings
+- review reporting
+- review editing behavior
+- review UI unless a tiny change is strictly required
+- Google Places identity rules
+
+Also preserve:
+- one live review per player/pub
+- immutable score events
+- global one-time PUB_REVIEW bonus
+- delete/recreate = 0 after a bonus has been consumed
+- historical reviews = no bonus
+
+First inspect the current migration and schema and determine the safest minimal implementation.
+
+Then modify the LOCAL migration/code only.
+
+Do NOT apply anything to Supabase.
+
+Run:
+
+pnpm --filter @workspace/pint-wars run typecheck
+pnpm --filter @workspace/api-server run typecheck
+git diff --check
+
+At the end report:
+
+1. Exactly what changed.
+2. How existing reviews are permanently prevented from earning +3 after deletion/recreation.
+3. How new reviews still receive +3.
+4. Whether any existing scoring behavior changed.
+5. Migration filename.
+6. Test/typecheck results.
+7. Any remaining issue that must be decided before applying the migration.
+
+STOP.
