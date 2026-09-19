@@ -191,6 +191,7 @@ export async function getLeagueDashboard(leagueId: string): Promise<LeagueDashbo
         .from('league_memberships')
         .select('id, league_id, user_id, role, status, joined_at, retired_at, removed_at, profile:profiles(display_name)')
         .eq('league_id', leagueId)
+        .neq('status', 'removed')
         .order('joined_at', { ascending: true }),
       client.rpc('get_league_pint_totals', { p_league_id: leagueId }),
     ]);
