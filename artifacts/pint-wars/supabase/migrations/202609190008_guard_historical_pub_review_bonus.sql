@@ -172,7 +172,7 @@ begin
   returning id into new_review_id;
 
   if not bonus_already_guarded then
-    insert into public.league_score_events (
+    insert into public.league_score_events as score_event (
       league_id,
       user_id,
       event_type,
@@ -192,11 +192,15 @@ begin
       p_pub_provider,
       p_pub_place_id
     )
-    on conflict (user_id, pub_provider, pub_place_id)
-      where event_type = 'PUB_REVIEW'
+    on conflict (
+      user_id,
+      (score_event.pub_provider),
+      (score_event.pub_place_id)
+    )
+      where score_event.event_type = 'PUB_REVIEW'
     do nothing;
 
-    insert into public.pub_review_bonus_guards (
+    insert into public.pub_review_bonus_guards as bonus_guard (
       user_id,
       pub_provider,
       pub_place_id,
@@ -208,7 +212,11 @@ begin
       p_pub_place_id,
       'scored_review'
     )
-    on conflict (user_id, pub_provider, pub_place_id)
+    on conflict (
+      user_id,
+      (bonus_guard.pub_provider),
+      (bonus_guard.pub_place_id)
+    )
     do nothing;
   end if;
 
