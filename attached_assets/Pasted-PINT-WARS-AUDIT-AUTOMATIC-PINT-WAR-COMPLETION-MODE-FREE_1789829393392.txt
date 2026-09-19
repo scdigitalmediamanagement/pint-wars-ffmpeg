@@ -1,0 +1,103 @@
+PINT WARS — AUDIT AUTOMATIC PINT WAR COMPLETION
+
+MODE: FREE
+
+AUDIT ONLY.
+Do not modify files.
+Do not create a migration.
+Do not change the database.
+Do not change app behaviour.
+
+We are now moving to the next core Pint Wars feature:
+
+AUTOMATIC PINT WAR COMPLETION
+
+LOCKED PRODUCT REQUIREMENT:
+
+When a Pint War reaches its exact stored ends_at time:
+
+1. The league must become COMPLETED automatically.
+2. This must happen even if nobody opens the app.
+3. Final leaderboard points must be based on the existing league_score_events ledger.
+4. The winner must be determined from final points.
+5. If multiple players have the same highest points, it must be recorded as a tie.
+6. A winner/tie in-app notification must be generated.
+7. The result must remain stable after completion.
+8. Completion must not award or remove points.
+9. Existing historical completed leagues must remain unchanged.
+10. Removed members must remain excluded from the final active standings.
+11. Retired members should remain visible in completed historical standings.
+12. No payment behaviour should be changed.
+13. Do not implement Apple/Google payments.
+14. Do not implement push notifications yet. This task is only automatic server-side completion and the existing in-app notification system.
+
+CURRENT SYSTEM CONTEXT:
+
+- Pint Wars have stored starts_at and ends_at timestamps.
+- The app currently has lazy expiry/completion behaviour.
+- Existing notifications infrastructure exists.
+- Existing score ledger exists:
+  public.league_score_events
+- Leaderboards already calculate totals from score events.
+- Existing functions/services may currently determine whether a league is active/completed.
+- We need true automatic completion independent of somebody opening the app.
+
+AUDIT THE REPOSITORY AND CURRENT DATABASE MIGRATIONS.
+
+Inspect:
+
+1. leagues table/schema.
+2. league membership/status fields.
+3. starts_at and ends_at handling.
+4. Existing league completion/expiry functions.
+5. Existing league-service.ts logic.
+6. Wars tab logic.
+7. War detail/dashboard logic.
+8. Existing notification table and notification functions.
+9. Existing winner/tie notification logic.
+10. Existing get_league_pint_totals() behaviour.
+11. Existing score event behaviour.
+12. Any existing Supabase cron/pg_cron/scheduled-job setup.
+13. Any existing Edge Functions or server jobs that could perform scheduled completion.
+14. Existing RLS/security-definer protections.
+15. Whether completion is currently client-triggered, database-triggered, or both.
+16. Whether any existing mechanism already runs periodically in the database.
+
+IMPORTANT:
+
+Do not assume Supabase Cron exists.
+Do not assume an external scheduler exists.
+Inspect the actual repository/migrations.
+
+We specifically need to know:
+
+A. Exactly how a league currently becomes COMPLETED.
+B. Whether completion can currently happen without a user opening the app.
+C. What database object/function should own authoritative completion.
+D. How winner/tie should be calculated from league_score_events.
+E. How the existing in-app notification system should be triggered.
+F. What scheduled mechanism is currently available in this project.
+G. Whether Supabase pg_cron is already enabled/used.
+H. Whether a safe idempotent completion function can be created.
+I. How to prevent duplicate completion notifications.
+J. How to handle a league whose ends_at is already in the past when the scheduler runs.
+K. Any race conditions with someone logging a pint exactly around ends_at.
+L. Any migrations or code that must remain unchanged.
+
+DO NOT IMPLEMENT ANYTHING.
+
+At the end provide:
+
+1. Current completion architecture.
+2. Current notification architecture relevant to completion.
+3. Current scheduler/cron capability.
+4. Recommended authoritative completion design.
+5. Recommended scheduled execution mechanism.
+6. Required database changes.
+7. Required frontend changes, if any.
+8. Race-condition handling.
+9. Idempotency strategy.
+10. Exact implementation order.
+11. Any risks or ambiguities.
+
+STOP after the audit.
