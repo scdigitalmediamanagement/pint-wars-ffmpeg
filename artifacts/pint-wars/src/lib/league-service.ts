@@ -1,9 +1,5 @@
 import { fetch as expoFetch } from 'expo/fetch';
 import { getSupabase } from '@/src/lib/supabase';
-import {
-  diagnosticSha256,
-  diagnosticStringFingerprint,
-} from '@/src/lib/diagnostic-hash';
 import type { LeagueDashboard, LeagueMembership, MyLeague } from '@/src/types/league';
 import type { NearbyPub } from '@/src/lib/pub-service';
 
@@ -228,7 +224,6 @@ export async function getLeagueDashboard(leagueId: string): Promise<LeagueDashbo
 }
 
 type LogPintInput = {
-  attemptId: string;
   leagueId: string;
   userId: string;
   photoUri: string;
@@ -259,7 +254,6 @@ function photoExtension(mimeType: string | null) {
 }
 
 export async function logPint({
-  attemptId,
   leagueId,
   userId,
   photoUri,
@@ -279,15 +273,6 @@ export async function logPint({
   }
 
   const photoBytes = await photoResponse.arrayBuffer();
-  const localSha256 = diagnosticSha256(photoBytes);
-  const localUriFingerprint = diagnosticStringFingerprint(photoUri);
-  console.info('[pint-proof-diagnostic] local-file', {
-    attemptId,
-    localUriFingerprint,
-    localByteLength: photoBytes.byteLength,
-    localSha256,
-    photoPath,
-  });
   const { error: uploadError } = await client.storage
     .from(PINT_PROOF_BUCKET)
     .upload(photoPath, photoBytes, {
@@ -315,12 +300,6 @@ export async function logPint({
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        diagnostics: {
-          attemptId,
-          localUriFingerprint,
-          localByteLength: photoBytes.byteLength,
-          localSha256,
-        },
         leagueId,
         photoPath,
         latitude,
@@ -347,58 +326,41 @@ export async function logPint({
     }
 
     if (!response.ok) {
-      const responseCode =
+      if (
         responseBody
         && typeof responseBody === 'object'
         && 'code' in responseBody
-        && typeof responseBody.code === 'string'
-          ? responseBody.code
-          : null;
-      console.warn('[pint-proof-diagnostic] rpc-failure', {
-        attemptId,
-        photoPath,
-        responseStatus: response.status,
-        responseCode,
-      });
-       if (
-         responseBody
-         && typeof responseBody === 'object'
-         && 'code' in responseBody
-         && responseBody.code === 'DUPLICATE_PROOF'
-       ) {
+        && responseBody.code === 'DUPLICATE_PROOF'
+      ) {
         shouldCleanup = false;
       }
-       throw new Error(
-         responseBody
-         && typeof responseBody === 'object'
-         && 'message' in responseBody
-         && typeof responseBody.message === 'string'
-           ? responseBody.message
-           : 'The pint could not be logged.',
-       );
+      throw new Error(
+        responseBody
+        && typeof responseBody === 'object'
+        && 'message' in responseBody
+        && typeof responseBody.message === 'string'
+          ? responseBody.message
+          : 'The pint could not be logged.',
+      );
     }
 
-     const result = Array.isArray(responseBody) ? responseBody[0] : responseBody;
-     if (
-       !result
-       || typeof result !== 'object'
-       || !('pint_id' in result)
-       || typeof result.pint_id !== 'string'
-       || !('logged_at' in result)
-       || typeof result.logged_at !== 'string'
-     ) {
+    const result = Array.isArray(responseBody) ? responseBody[0] : responseBody;
+    if (
+      !result
+      || typeof result !== 'object'
+      || !('pint_id' in result)
+      || typeof result.pint_id !== 'string'
+      || !('logged_at' in result)
+      || typeof result.logged_at !== 'string'
+    ) {
       throw new Error('The pint could not be logged.');
     }
 
     shouldCleanup = false;
-    console.info('[pint-proof-diagnostic] rpc-success', {
-      attemptId,
-      photoPath,
-    });
-     return {
-       pintLogId: result.pint_id,
-       loggedAt: result.logged_at,
-     } satisfies LoggedPintResult;
+    return {
+      pintLogId: result.pint_id,
+      loggedAt: result.logged_at,
+    } satisfies LoggedPintResult;
   } finally {
     if (shouldCleanup) {
       await client.storage.from(PINT_PROOF_BUCKET).remove([photoPath]);
