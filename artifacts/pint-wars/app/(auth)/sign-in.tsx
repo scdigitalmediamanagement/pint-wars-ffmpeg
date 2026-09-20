@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Keyboard, Text, TextInput, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { Text, TextInput, View } from 'react-native';
 import { Link, router } from 'expo-router';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { Button, ErrorText, Field, Screen, Title, uiStyles } from '@/components/AppUi';
@@ -13,6 +13,8 @@ export default function SignInScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const emailInputRef = useRef<TextInput>(null);
+  const passwordInputRef = useRef<TextInput>(null);
 
   async function submit() {
     setError('');
@@ -22,12 +24,9 @@ export default function SignInScreen() {
     }
     try {
       setLoading(true);
+      emailInputRef.current?.blur();
+      passwordInputRef.current?.blur();
       await signIn(email, password);
-      const focusedInput = TextInput.State.currentlyFocusedInput();
-      if (focusedInput) {
-        TextInput.State.blurTextInput(focusedInput);
-      }
-      Keyboard.dismiss();
       router.replace('/(tabs)');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to sign in.');
@@ -50,8 +49,8 @@ export default function SignInScreen() {
           <ErrorText>Supabase is not configured. Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to run authentication.</ErrorText>
         ) : null}
         <View style={{ gap: 15 }}>
-          <Field label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" />
-          <Field label="Password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="password" />
+          <Field ref={emailInputRef} label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" />
+          <Field ref={passwordInputRef} label="Password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="password" />
           <Link href="/(auth)/forgot-password" style={{ color: colors.primary, fontFamily: 'Inter_600SemiBold' }}>
             Forgot password?
           </Link>

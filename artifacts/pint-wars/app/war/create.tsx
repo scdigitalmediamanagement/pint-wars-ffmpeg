@@ -1,6 +1,6 @@
-import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, InteractionManager, Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { router, useFocusEffect } from 'expo-router';
+import React, { useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Card, ErrorText, Field, Screen, Title, uiStyles } from '@/components/AppUi';
 import { createFreeLeague, getMyProfile } from '@/src/lib/league-service';
@@ -59,14 +59,6 @@ const leaguePlans: LeaguePlan[] = [
   },
 ];
 
-function blurAndDismissKeyboard() {
-  const focusedInput = TextInput.State.currentlyFocusedInput();
-  if (focusedInput) {
-    TextInput.State.blurTextInput(focusedInput);
-  }
-  Keyboard.dismiss();
-}
-
 export default function CreateWarScreen() {
   const colors = useColors();
   const { user } = useAuth();
@@ -82,23 +74,6 @@ export default function CreateWarScreen() {
   const [error, setError] = useState('');
   const selectedPlan = leaguePlans.find((plan) => plan.id === selectedPlanId) ?? leaguePlans[0];
   const freeTrialUsed = profileQuery.data?.free_trial_used_at != null;
-
-  useFocusEffect(
-    useCallback(() => {
-      blurAndDismissKeyboard();
-      const animationFrame = requestAnimationFrame(blurAndDismissKeyboard);
-      const interactionTask = InteractionManager.runAfterInteractions(() => {
-        blurAndDismissKeyboard();
-      });
-      const timeout = setTimeout(blurAndDismissKeyboard, 150);
-
-      return () => {
-        cancelAnimationFrame(animationFrame);
-        interactionTask.cancel();
-        clearTimeout(timeout);
-      };
-    }, []),
-  );
 
   const mutation = useMutation({
     mutationFn: () => createFreeLeague(name),

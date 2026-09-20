@@ -57,19 +57,20 @@ export function Button({
   );
 }
 
-export function Field({ label, ...props }: { label: string } & TextInputProps) {
+export const Field = React.forwardRef<TextInput, { label: string } & TextInputProps>(function Field({ label, ...props }, ref) {
   const colors = useColors();
   return (
     <View style={styles.fieldWrap}>
       <Text style={[styles.fieldLabel, { color: colors.mutedForeground }]}>{label}</Text>
       <TextInput
+        ref={ref}
         {...props}
         placeholderTextColor={colors.mutedForeground}
         style={[styles.field, { color: colors.foreground, backgroundColor: colors.card, borderColor: colors.input }]}
       />
     </View>
   );
-}
+});
 
 export function Card({ children, style }: ViewProps) {
   const colors = useColors();
