@@ -1,0 +1,40 @@
+The keyboard is STILL appearing on the Create a Pint War screen on iPhone and is covering the Continue button.
+
+The previous fix was NOT sufficient.
+
+I need you to diagnose the actual cause and fix it properly.
+
+Current affected screen:
+artifacts/pint-wars/app/war/create.tsx
+
+What is happening:
+- User signs in successfully.
+- User navigates to Create a Pint War.
+- The iOS keyboard remains visible.
+- There is no reason for the keyboard to be open on the league-size selection screen.
+- The keyboard covers the Continue button.
+- Removing autoFocus and adding Keyboard.dismiss() on screen entry/focus did NOT fix it.
+
+Important:
+Do NOT guess and do NOT make unrelated changes.
+
+Please inspect create.tsx and the navigation/auth flow and determine exactly which TextInput is retaining or receiving focus.
+
+Then implement a robust fix so that:
+
+1. When Create a Pint War opens, NO TextInput on that screen is focused.
+2. The iOS keyboard is definitely dismissed after navigation has completed.
+3. If a TextInput is mounted on the Create a Pint War screen for the league name or any other purpose, it must NOT automatically focus.
+4. If React Navigation is restoring focus from the previous authentication screen, explicitly blur the previous input before navigation and ensure the Create screen does not inherit that focus.
+5. Use an appropriate post-navigation/focus timing mechanism if necessary, such as InteractionManager.runAfterInteractions or a short requestAnimationFrame/setTimeout, rather than relying only on Keyboard.dismiss() during initial render.
+6. Do not hide the Continue button or move it behind the keyboard as a workaround.
+7. The normal iPhone keyboard must still work later when the user actually taps a text field.
+8. Do not change league creation logic.
+9. Do not change pricing, free-trial rules, Supabase, authentication, scoring, storage, Google Places, Passport, reviews, notifications, or database behaviour.
+10. Keep the change as small and safe as possible.
+
+After fixing it:
+- Run the TypeScript/typecheck.
+- Tell me exactly which files were changed.
+- Tell me whether typecheck passed.
+- Do not make any other changes.
