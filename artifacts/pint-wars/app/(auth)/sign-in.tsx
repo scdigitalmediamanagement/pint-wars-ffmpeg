@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Keyboard, Text, View } from 'react-native';
+import { Keyboard, Text, TextInput, View } from 'react-native';
 import { Link, router } from 'expo-router';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { Button, ErrorText, Field, Screen, Title, uiStyles } from '@/components/AppUi';
@@ -23,6 +23,10 @@ export default function SignInScreen() {
     try {
       setLoading(true);
       await signIn(email, password);
+      const focusedInput = TextInput.State.currentlyFocusedInput();
+      if (focusedInput) {
+        TextInput.State.blurTextInput(focusedInput);
+      }
       Keyboard.dismiss();
       router.replace('/(tabs)');
     } catch (err) {

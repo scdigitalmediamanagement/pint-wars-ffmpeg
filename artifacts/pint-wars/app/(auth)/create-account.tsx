@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Keyboard, Text, View } from 'react-native';
+import { Keyboard, Text, TextInput, View } from 'react-native';
 import { Link, router } from 'expo-router';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { Button, ErrorText, Field, Screen, Title, uiStyles } from '@/components/AppUi';
@@ -29,6 +29,10 @@ export default function CreateAccountScreen() {
       if (result.needsEmailConfirmation) {
         setMessage('Account created. Check your email to confirm your account, then sign in.');
       } else {
+        const focusedInput = TextInput.State.currentlyFocusedInput();
+        if (focusedInput) {
+          TextInput.State.blurTextInput(focusedInput);
+        }
         Keyboard.dismiss();
         router.replace('/(tabs)');
       }
