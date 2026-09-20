@@ -70,7 +70,7 @@ export default function CreateWarScreen() {
   });
   const [name, setName] = useState('');
   const [selectedPlanId, setSelectedPlanId] = useState('free-4');
-  const [isPaidConfirmation, setIsPaidConfirmation] = useState(false);
+  const [isSetupStep, setIsSetupStep] = useState(false);
   const [error, setError] = useState('');
   const selectedPlan = leaguePlans.find((plan) => plan.id === selectedPlanId) ?? leaguePlans[0];
   const freeTrialUsed = profileQuery.data?.free_trial_used_at != null;
@@ -101,12 +101,16 @@ export default function CreateWarScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={[uiStyles.content, { paddingTop: 28, gap: 24 }]} keyboardShouldPersistTaps="handled">
-        {isPaidConfirmation && selectedPlan.kind === 'paid' ? (
+        {isSetupStep ? (
           <>
-            <Title eyebrow="Payment-ready preview">Confirm your Pint War</Title>
+            <Title eyebrow={selectedPlan.kind === 'paid' ? 'Payment-ready preview' : 'New competition'}>
+              Confirm your Pint War
+            </Title>
             <Card style={{ gap: 18 }}>
               <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 22 }}>
-                Review your league details. Payments are not enabled yet, so nothing will be charged or created.
+                {selectedPlan.kind === 'paid'
+                  ? 'Review your league details. Payments are not enabled yet, so nothing will be charged or created.'
+                  : 'Review your league details before creating your free Pint War.'}
               </Text>
               <View style={styles.summary}>
                 <View style={styles.summaryRow}>
@@ -127,20 +131,38 @@ export default function CreateWarScreen() {
                 </View>
               </View>
               <Field label="League name" value={name} onChangeText={setName} placeholder="Exmouth Pint Wars" maxLength={80} />
-              <Text style={[styles.paymentNote, { color: colors.mutedForeground }]}>
-                This option will create a 10-day Pint War for {selectedPlan.capacity} players after payment is added.
-              </Text>
               {error ? <ErrorText>{error}</ErrorText> : null}
-              <Button
-                label="Payments coming soon"
-                onPress={() => undefined}
-                disabled
-              />
+              {selectedPlan.kind === 'paid' ? (
+                <>
+                  <Text style={[styles.paymentNote, { color: colors.mutedForeground }]}>
+                    This option will create a 10-day Pint War for {selectedPlan.capacity} players after payment is added.
+                  </Text>
+                  <Button label="Payments coming soon" onPress={() => undefined} disabled />
+                </>
+              ) : profileQuery.isLoading ? (
+                <ActivityIndicator color={colors.accent} />
+              ) : profileQuery.isError ? (
+                <ErrorText>Could not check your free-trial entitlement.</ErrorText>
+              ) : freeTrialUsed ? (
+                <Card style={styles.trialCard}>
+                  <Text style={[styles.trialTitle, { color: colors.foreground }]}>Free trial already used</Text>
+                  <Text style={[styles.paymentNote, { color: colors.mutedForeground }]}>
+                    Each account gets one 4-player, 10-day trial. You can still join paid Pint Wars when they are available.
+                  </Text>
+                </Card>
+              ) : (
+                <Button
+                  label="Create your free 4-player trial"
+                  onPress={() => mutation.mutate()}
+                  loading={mutation.isPending}
+                  disabled={!name.trim() || profileQuery.isLoading || profileQuery.isError}
+                />
+              )}
               <Button
                 label="Change league size"
                 variant="quiet"
                 onPress={() => {
-                  setIsPaidConfirmation(false);
+                  setIsSetupStep(false);
                   setError('');
                 }}
               />
@@ -164,7 +186,7 @@ export default function CreateWarScreen() {
                       accessibilityState={{ selected: isSelected }}
                       onPress={() => {
                         setSelectedPlanId(plan.id);
-                        setIsPaidConfirmation(plan.kind === 'paid');
+                        setIsSetupStep(true);
                         setError('');
                       }}
                       style={({ pressed }) => [

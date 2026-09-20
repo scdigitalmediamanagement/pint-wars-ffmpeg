@@ -1,0 +1,103 @@
+I need you to fix the Create a Pint War flow based on the latest iPhone screen recording.
+
+There are TWO related problems that need to be fixed together.
+
+CURRENT BEHAVIOUR:
+
+When I select a paid league size (6, 10, 14 or 16 players), the next screen correctly opens the league setup/name area.
+
+However, when I select FREE PINT WAR, the next screen is laid out differently. The league name field is lower down and I have to scroll to reach it.
+
+At the same time, the iPhone keyboard is automatically opening when the Create a Pint War flow appears, even though I have not deliberately tapped a text field.
+
+DESIRED BEHAVIOUR:
+
+All league types must use the same creation flow.
+
+When I select:
+
+- Free Pint War
+- 6 Player Pint War
+- 10 Player Pint War
+- 14 Player Pint War
+- 16 Player Pint War
+
+the app should immediately move to the appropriate league setup/name screen.
+
+On that screen:
+
+- The League Name field must be visible without the user having to scroll to find it.
+- The layout should be consistent across Free and Paid leagues.
+- The keyboard must NOT automatically open when the screen appears.
+- No text input should have focus when the screen first appears.
+- When I deliberately tap the League Name field, the keyboard should open normally.
+- The Continue button must remain accessible and usable.
+- Do not solve this by simply moving the Continue button.
+- Do not solve this by adding more Keyboard.dismiss() calls.
+- Do not remove normal keyboard behaviour from the League Name field.
+
+IMPORTANT:
+
+Inspect the actual implementation before changing anything.
+
+Start with:
+
+artifacts/pint-wars/app/war/create.tsx
+
+Then inspect any components imported/rendered by that screen which are responsible for:
+
+- league selection
+- league name
+- player capacity
+- the Free Pint War option
+- the paid league options
+- the Continue button
+- any TextInput or TextInput-like component
+
+Find out why the Free Pint War path is rendering differently from the paid league paths.
+
+Also identify exactly which TextInput is receiving focus automatically and why.
+
+Check for:
+
+- autoFocus
+- focus()
+- refs that call focus
+- useEffect
+- useFocusEffect
+- navigation focus restoration
+- conditional rendering
+- hidden or off-screen TextInputs
+- a name input being mounted before the user reaches the naming/setup step
+- different layout containers or spacing used only by Free Pint War
+- ScrollView behaviour specific to the Free Pint War path
+- different conditional branches for free versus paid leagues
+
+DO NOT make another speculative Keyboard.dismiss() fix.
+
+The correct underlying solution should be to make the creation flow and rendering logic correct.
+
+Before making changes, explain:
+
+A) Why Free Pint War requires scrolling to reach the name field while the paid options do not.
+
+B) Which TextInput is causing the keyboard to open automatically.
+
+C) Why that TextInput is receiving focus.
+
+D) The minimal code change needed to make the flows consistent.
+
+Then make ONLY the necessary changes.
+
+Do not change pricing, player limits, league duration, scoring, database logic, authentication, navigation outside this flow, or any unrelated functionality.
+
+After making the fix, run:
+
+pnpm --filter @workspace/pint-wars run typecheck
+
+Report:
+
+1. Root cause of the Free Pint War layout difference.
+2. Root cause of the automatic keyboard.
+3. Files changed.
+4. Typecheck result.
