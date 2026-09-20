@@ -1,0 +1,118 @@
+We now understand the actual UX problem. Do NOT make another keyboard workaround.
+
+The Create a Pint War screen is currently behaving incorrectly because FREE PINT WAR is already selected when the screen first opens.
+
+CURRENT BEHAVIOUR:
+
+When I tap "Create a Pint War", the Free Pint War option is already selected/highlighted.
+
+Because Free is already selected, the League Name/setup area is also displayed underneath the league options.
+
+This is NOT what we want.
+
+CORRECT UX:
+
+When "Create a Pint War" first opens, NO league should be selected.
+
+The user should see ONLY the league options:
+
+- Free Pint War
+- 6-player Pint War
+- 10-player Pint War
+- 14-player Pint War
+- 16-player Pint War
+
+There should be NO League Name field visible yet.
+
+There should be NO keyboard visible.
+
+There should be NO TextInput focused.
+
+Then:
+
+USER TAPS FREE PINT WAR
+→ Free Pint War becomes the selected option
+→ immediately open the shared "Confirm your Pint War" / setup screen
+→ show the League Name field
+→ League Name field is NOT focused
+→ keyboard remains closed
+→ user taps the League Name field
+→ keyboard opens normally
+
+USER TAPS 6-PLAYER PINT WAR
+→ immediately open the same setup/confirmation screen
+→ show League Name field
+→ no automatic focus
+→ no keyboard
+→ user taps the field to type
+
+The exact same behaviour must apply to:
+
+- Free
+- 6 players
+- 10 players
+- 14 players
+- 16 players
+
+IMPORTANT:
+
+The initial Create a Pint War screen is a PLAN SELECTION screen.
+
+It must NOT also display the setup/name form.
+
+There must be a clear separation:
+
+SCREEN 1:
+Create a Pint War
+→ choose a league size
+→ no league selected by default
+→ no name field
+→ no keyboard
+
+SCREEN 2:
+Confirm your Pint War
+→ selected league details
+→ League Name field
+→ keyboard only appears when the user taps the field
+
+Please inspect the current implementation in:
+
+artifacts/pint-wars/app/war/create.tsx
+
+and any relevant components.
+
+Find the state/conditional rendering that causes Free Pint War to be selected by default and causes the League Name section to appear on the initial screen.
+
+Do NOT fix this by hiding the field with CSS or by adding Keyboard.dismiss().
+
+Fix the underlying state/flow.
+
+Also check why tapping Free currently appears to do nothing. The tap should transition from Screen 1 to Screen 2 exactly like the paid options.
+
+The desired initial state should have no selected plan.
+
+Preserve all existing:
+
+- pricing
+- player limits
+- 10-day duration
+- free-trial rules
+- payment-coming-soon behaviour
+- database logic
+- authentication
+- scoring
+- navigation outside this screen
+
+After making the change, run:
+
+pnpm --filter @workspace/pint-wars run typecheck
+
+Report:
+
+1. What state was causing Free Pint War to be selected by default.
+2. Why the name/setup section appeared on the initial screen.
+3. How the selection now transitions to the setup screen.
+4. Files changed.
+5. Typecheck result.
+
+Make ONLY the changes required for this UX fix.

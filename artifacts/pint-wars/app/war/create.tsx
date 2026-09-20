@@ -69,10 +69,10 @@ export default function CreateWarScreen() {
     enabled: Boolean(user?.id),
   });
   const [name, setName] = useState('');
-  const [selectedPlanId, setSelectedPlanId] = useState('free-4');
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [isSetupStep, setIsSetupStep] = useState(false);
   const [error, setError] = useState('');
-  const selectedPlan = leaguePlans.find((plan) => plan.id === selectedPlanId) ?? leaguePlans[0];
+  const selectedPlan = leaguePlans.find((plan) => plan.id === selectedPlanId);
   const freeTrialUsed = profileQuery.data?.free_trial_used_at != null;
 
   const mutation = useMutation({
@@ -101,7 +101,7 @@ export default function CreateWarScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={[uiStyles.content, { paddingTop: 28, gap: 24 }]} keyboardShouldPersistTaps="handled">
-        {isSetupStep ? (
+        {isSetupStep && selectedPlan ? (
           <>
             <Title eyebrow={selectedPlan.kind === 'paid' ? 'Payment-ready preview' : 'New competition'}>
               Confirm your Pint War
@@ -178,7 +178,7 @@ export default function CreateWarScreen() {
               <View style={styles.planList}>
                 <Text style={[styles.sectionLabel, { color: colors.foreground }]}>League size</Text>
                 {leaguePlans.map((plan) => {
-                  const isSelected = plan.id === selectedPlan.id;
+                  const isSelected = plan.id === selectedPlanId;
                   return (
                     <Pressable
                       key={plan.id}
@@ -216,32 +216,8 @@ export default function CreateWarScreen() {
                     </Pressable>
                   );
                 })}
-              </View>
-              <Field label="League name" value={name} onChangeText={setName} placeholder="Exmouth Pint Wars" maxLength={80} />
-              {error ? <ErrorText>{error}</ErrorText> : null}
-              {profileQuery.isLoading ? (
-                <ActivityIndicator color={colors.accent} />
-              ) : profileQuery.isError ? (
-                <ErrorText>Could not check your free-trial entitlement.</ErrorText>
-              ) : freeTrialUsed ? (
-                <Card style={styles.trialCard}>
-                  <Text style={[styles.trialTitle, { color: colors.foreground }]}>Free trial already used</Text>
-                  <Text style={[styles.paymentNote, { color: colors.mutedForeground }]}>
-                    Each account gets one 4-player, 10-day trial. You can still join paid Pint Wars when they are available.
-                  </Text>
-                </Card>
-              ) : (
-                <Button
-                  label="Create your free 4-player trial"
-                  onPress={() => mutation.mutate()}
-                  loading={mutation.isPending}
-                  disabled={!name.trim() || profileQuery.isLoading || profileQuery.isError}
-                />
-              )}
-            </Card>
-            <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 21 }}>
-              Each account gets one free 4-player, 10-day trial. Paid league sizes will be available after payments are added.
-            </Text>
+               </View>
+             </Card>
           </>
         )}
       </ScrollView>
