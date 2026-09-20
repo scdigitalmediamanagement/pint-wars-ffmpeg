@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Text, View } from 'react-native';
+import { Keyboard, Text, View } from 'react-native';
 import { Link, router } from 'expo-router';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { Button, ErrorText, Field, Screen, Title, uiStyles } from '@/components/AppUi';
@@ -23,6 +23,7 @@ export default function SignInScreen() {
     try {
       setLoading(true);
       await signIn(email, password);
+      Keyboard.dismiss();
       router.replace('/(tabs)');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to sign in.');

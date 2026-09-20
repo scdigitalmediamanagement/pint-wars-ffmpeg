@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { router } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Keyboard, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Card, ErrorText, Field, Screen, Title, uiStyles } from '@/components/AppUi';
 import { createFreeLeague, getMyProfile } from '@/src/lib/league-service';
@@ -74,6 +74,17 @@ export default function CreateWarScreen() {
   const [error, setError] = useState('');
   const selectedPlan = leaguePlans.find((plan) => plan.id === selectedPlanId) ?? leaguePlans[0];
   const freeTrialUsed = profileQuery.data?.free_trial_used_at != null;
+
+  useEffect(() => {
+    Keyboard.dismiss();
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      Keyboard.dismiss();
+    }, []),
+  );
+
   const mutation = useMutation({
     mutationFn: () => createFreeLeague(name),
     onSuccess: async (result) => {
@@ -125,7 +136,7 @@ export default function CreateWarScreen() {
                   <Text style={[styles.summaryValue, { color: colors.foreground }]}>{selectedPlan.capacity}</Text>
                 </View>
               </View>
-              <Field label="League name" value={name} onChangeText={setName} placeholder="Exmouth Pint Wars" maxLength={80} autoFocus />
+              <Field label="League name" value={name} onChangeText={setName} placeholder="Exmouth Pint Wars" maxLength={80} />
               <Text style={[styles.paymentNote, { color: colors.mutedForeground }]}>
                 This option will create a 10-day Pint War for {selectedPlan.capacity} players after payment is added.
               </Text>
@@ -194,7 +205,7 @@ export default function CreateWarScreen() {
                   );
                 })}
               </View>
-              <Field label="League name" value={name} onChangeText={setName} placeholder="Exmouth Pint Wars" maxLength={80} autoFocus />
+              <Field label="League name" value={name} onChangeText={setName} placeholder="Exmouth Pint Wars" maxLength={80} />
               {error ? <ErrorText>{error}</ErrorText> : null}
               {profileQuery.isLoading ? (
                 <ActivityIndicator color={colors.accent} />
