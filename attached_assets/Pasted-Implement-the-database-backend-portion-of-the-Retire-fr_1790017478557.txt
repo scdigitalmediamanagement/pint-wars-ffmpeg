@@ -1,0 +1,110 @@
+Implement the database/backend portion of the "Retire from this Pint War" feature based on the design audit you just completed.
+
+IMPORTANT:
+- Use FREE mode.
+- Make the smallest safe change possible.
+- Do not redesign existing league logic.
+- Do not change the meaning of `removed`.
+- Do not change existing pint logs or score events.
+- Do not change the scoring values.
+- Do not change the standard Pint War or Custom League rules.
+
+PRODUCT RULE:
+
+Retirement applies ONLY to the specific Pint War membership.
+
+When a player retires:
+- Their Pint Wars account remains active.
+- Their other leagues are unaffected.
+- Existing pint logs remain.
+- Existing score events remain.
+- Existing points remain.
+- Membership changes from `active` to `retired`.
+- They cannot create any new score in that league.
+- They can still view the league and their historical score.
+- `removed` remains a separate host moderation state.
+
+IMPLEMENT THIS IN THE SMALLEST SAFE WAY:
+
+1. Create ONE new Supabase migration for league retirement.
+
+2. Add an RPC:
+
+   retire_from_league(p_league_id uuid)
+
+3. The RPC must:
+   - Require an authenticated user.
+   - Find that user's membership in the specified league.
+   - Lock the membership row before changing it.
+   - Require the membership currently has status `active`.
+   - Require the caller is NOT the league host.
+   - Require the league is currently active.
+   - Change ONLY that membership to:
+       status = 'retired'
+       retired_at = now()
+   - Never change `removed`.
+   - Never delete or modify pint logs.
+   - Never delete or modify score events.
+   - Be safe against repeated calls.
+   - Be granted to `authenticated`.
+   - Keep appropriate public/anon/service-role permissions consistent with the existing security model.
+
+4. HARDEN ALL SCORING PATHS.
+
+Inspect the FINAL deployed definitions of every function that can create league score events.
+
+At minimum verify:
+- log_pint_verified
+- create_pub_review
+
+Every scoring operation must require:
+
+membership.status = 'active'
+
+A retired membership must NOT be able to:
+- log a pint
+- receive the pint point
+- receive the new-pub bonus
+- create a qualifying review
+- receive the review bonus
+
+Do not change the point values.
+
+5. PRESERVE HISTORICAL ACCESS.
+
+Do NOT change leaderboard/completion logic from:
+
+membership.status <> 'removed'
+
+to:
+
+membership.status = 'active'
+
+Retired players must remain visible with their existing points.
+
+If the existing league-view access check only permits active members, add the smallest safe read-only mechanism necessary so retired members can still view the league.
+
+Do NOT allow retired members to perform scoring actions through this read path.
+
+6. Do not change the host's existing Remove Player functionality.
+
+`removed` and `retired` must remain completely separate.
+
+7. Do not build the UI yet.
+
+8. Do not modify unrelated files.
+
+9. Do not run destructive operations.
+
+10. After implementation:
+   - Run the project's typecheck if appropriate.
+   - Report the exact migration filename.
+   - Report the RPC created.
+   - Report which scoring functions were changed.
+   - Report any read-access function that was changed.
+   - Report any files changed.
+   - Report whether anything was NOT changed because it was already safe.
+
+STOP after this backend/database implementation and report what you did.
+
+Do not proceed to UI implementation.
