@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { Button, Card, ErrorText, Screen, Title, uiStyles } from '@/components/AppUi';
-import { getLeagueDashboard, logPint } from '@/src/lib/league-service';
+import { getLeagueDashboard, logPint, retireFromLeague } from '@/src/lib/league-service';
 import { getCurrentLocation } from '@/src/lib/location-service';
 import { findNearbyPubs, type Coordinates, type NearbyPub } from '@/src/lib/pub-service';
 import { useAuth } from '@/src/providers/AuthProvider';
@@ -105,6 +105,24 @@ export default function LeagueDashboardScreen() {
     onError: (error) => {
       setIsPreparingPint(false);
       setLogError(error instanceof Error ? error.message : 'The pint could not be logged. Try again.');
+    },
+  });
+  const retireMutation = useMutation({
+    mutationFn: () => {
+      if (!leagueId) throw new Error('This Pint War could not be identified.');
+      return retireFromLeague(leagueId);
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['league-dashboard', leagueId] }),
+        queryClient.invalidateQueries({ queryKey: ['my-leagues'] }),
+      ]);
+    },
+    onError: (error) => {
+      Alert.alert(
+        'Could Not Retire',
+        error instanceof Error ? error.message : 'Could not retire from this Pint War. Please try again.',
+      );
     },
   });
 
@@ -252,6 +270,12 @@ export default function LeagueDashboardScreen() {
   }
 
   const { league, members } = query.data;
+  const currentMembership = members.find((member) => member.user_id === user?.id);
+  const isCurrentUserHost = currentMembership?.role === 'host';
+  const isCurrentUserRetired = currentMembership?.status === 'retired';
+  const canRetire = league.status === 'active'
+    && currentMembership?.status === 'active'
+    && !isCurrentUserHost;
   const day = dayNumber(league.starts_at, league.ends_at, league.status);
   const durationDays = leagueDurationDays(league.starts_at, league.ends_at);
   const leagueEndLabel = endTimeLabel(league.ends_at);
@@ -310,7 +334,9 @@ export default function LeagueDashboardScreen() {
                   <Text style={[styles.rank, { color: colors.accent }]}>{index + 1}</Text>
                   <View style={{ flex: 1, gap: 3 }}>
                     <Text style={[styles.playerName, { color: colors.foreground }]}>{member.display_name}{isCurrentUser ? '  (you)' : ''}</Text>
-                    <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', fontSize: 12 }}>{member.role === 'host' ? 'Host' : 'Player'}</Text>
+                     <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', fontSize: 12 }}>
+                       {member.role === 'host' ? 'Host' : member.status === 'retired' ? 'Retired' : 'Player'}
+                     </Text>
                   </View>
                   {isWinner ? (
                     <Text style={[styles.winnerLabel, { color: colors.accent }]}>
@@ -325,31 +351,59 @@ export default function LeagueDashboardScreen() {
         </View>
         {league.status === 'active' ? (
           <>
-            <Button
-              label={cameraError ? 'Try camera again' : 'Log Pint'}
-              loading={isPreparingPint || logMutation.isPending}
-              onPress={() => void takePintPhoto()}
-            />
-            {cameraError ? <ErrorText>{cameraError}</ErrorText> : null}
-            {cameraBlocked && Platform.OS !== 'web' ? (
-              <Button
-                label="Open device settings"
-                variant="quiet"
-                onPress={() => {
-                  void Linking.openSettings().catch(() => {
-                    setCameraError('Open your device settings and allow camera access for Pint Wars.');
-                  });
-                }}
-              />
-            ) : null}
-            {logError ? <ErrorText>{logError}</ErrorText> : null}
-            <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 21 }}>
-              Take a fresh photo with your pint. Verified visits update your score, including eligible first-pub bonuses.
-            </Text>
+            {isCurrentUserRetired ? (
+              <Card style={styles.retiredCard}>
+                <Text style={[styles.retiredTitle, { color: colors.foreground }]}>Retired from this Pint War</Text>
+                <Text style={[styles.retiredText, { color: colors.mutedForeground }]}>
+                  Your existing points remain visible, but you cannot log more pints or earn more points in this league.
+                </Text>
+              </Card>
+            ) : (
+              <>
+                <Button
+                  label={cameraError ? 'Try camera again' : 'Log Pint'}
+                  loading={isPreparingPint || logMutation.isPending}
+                  onPress={() => void takePintPhoto()}
+                />
+                {cameraError ? <ErrorText>{cameraError}</ErrorText> : null}
+                {cameraBlocked && Platform.OS !== 'web' ? (
+                  <Button
+                    label="Open device settings"
+                    variant="quiet"
+                    onPress={() => {
+                      void Linking.openSettings().catch(() => {
+                        setCameraError('Open your device settings and allow camera access for Pint Wars.');
+                      });
+                    }}
+                  />
+                ) : null}
+                {logError ? <ErrorText>{logError}</ErrorText> : null}
+                <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 21 }}>
+                  Take a fresh photo with your pint. Verified visits update your score, including eligible first-pub bonuses.
+                </Text>
+              </>
+            )}
           </>
         ) : (
           <Button label="Start Another Pint War" onPress={() => router.push('/war/create')} />
         )}
+        {canRetire ? (
+          <Button
+            label={retireMutation.isPending ? 'Retiring…' : 'Retire from this Pint War'}
+            variant="quiet"
+            loading={retireMutation.isPending}
+            onPress={() => {
+              Alert.alert(
+                'Retire from this Pint War',
+                "Are you sure you want to retire from this Pint War?\n\nYou won't be able to log any more pints or earn points in this league. Your existing points will remain.\n\nYour Pint Wars account and other leagues will not be affected.",
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Retire', style: 'destructive', onPress: () => retireMutation.mutate() },
+                ],
+              );
+            }}
+          />
+        ) : null}
         {members.some((member) => member.user_id === user?.id && member.role === 'host') ? (
           <Pressable onPress={() => router.push({ pathname: '/war/invite', params: { leagueId: league.id } })}>
             <Text style={{ color: colors.primary, fontFamily: 'Inter_600SemiBold', textAlign: 'center' }}>Manage invites</Text>
@@ -509,6 +563,9 @@ const styles = StyleSheet.create({
   playerName: { fontFamily: 'Inter_600SemiBold', fontSize: 15 },
   pints: { fontFamily: 'Inter_700Bold', fontSize: 22 },
   winnerLabel: { fontFamily: 'Inter_700Bold', fontSize: 10, letterSpacing: 1 },
+  retiredCard: { gap: 8 },
+  retiredTitle: { fontFamily: 'Inter_700Bold', fontSize: 16 },
+  retiredText: { fontFamily: 'Inter_400Regular', lineHeight: 21 },
   modalBackdrop: { flex: 1, justifyContent: 'flex-end' },
   pubSheet: {
     maxHeight: '82%',

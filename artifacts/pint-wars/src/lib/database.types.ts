@@ -175,6 +175,10 @@ export type Database = {
         Args: { p_league_id: string };
         Returns: undefined;
       };
+      retire_from_league: {
+        Args: { p_league_id: string };
+        Returns: undefined;
+      };
       log_pint: {
         Args:
           | {

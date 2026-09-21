@@ -155,6 +155,18 @@ export async function createLeagueInvite(leagueId: string) {
   return result as { invite_code: string };
 }
 
+export async function retireFromLeague(leagueId: string) {
+  const { error } = await getSupabase().rpc('retire_from_league', {
+    p_league_id: leagueId,
+  });
+  if (error) {
+    if (__DEV__) {
+      console.error('[Pint Wars] retire_from_league failed', describeSupabaseError(error));
+    }
+    throw new Error('Could not retire from this Pint War. Please try again.');
+  }
+}
+
 export async function getMyNotifications(): Promise<AppNotification[]> {
   const { data, error } = await getSupabase().rpc('get_my_notifications', { p_limit: 50 });
   if (error) throw error;
