@@ -1,0 +1,82 @@
+I am ready to address the account-deletion gap identified in the production-readiness audit.
+
+Do NOT change any code yet.
+Do NOT run migrations.
+Do NOT delete any data.
+Do NOT modify Supabase.
+This is a READ-ONLY investigation.
+
+I need you to inspect the CURRENT Pint Wars codebase and database migration files and design the safest production account-deletion approach.
+
+Specifically inspect:
+
+1. `artifacts/pint-wars/app/(tabs)/profile.tsx`
+2. `artifacts/pint-wars/src/providers/AuthProvider.tsx`
+3. All Supabase migrations involving:
+   - profiles
+   - leagues
+   - league_memberships
+   - league_invites
+   - pint_logs
+   - league_score_events
+   - pub_reviews
+   - pub_review_bonus_guards
+   - pub_review_reports
+   - notifications
+   - paid_league_purchases
+   - pint proof storage
+4. Any existing API/server functionality that could safely perform authenticated account deletion.
+5. All foreign-key relationships involving `auth.users`, `profiles`, and the user's data.
+6. Any immutable score/event tables or triggers that would prevent deletion.
+7. Any Storage objects belonging to the user.
+8. League ownership implications if the user is the host of an active or completed league.
+
+The deletion design must consider:
+
+- Auth user
+- Profile
+- League memberships
+- User's own pint logs
+- Score events
+- Reviews
+- Review bonus guards
+- Review reports
+- Notifications
+- League invites created by the user
+- Paid purchase records
+- Private pint-proof photos
+- Any other user-owned records you discover
+
+IMPORTANT PRODUCT REQUIREMENTS:
+
+We must NOT accidentally delete other players' legitimate league history just because the deleting user was the host or a league member.
+
+We must preserve completed league results/history where appropriate.
+
+We must also avoid leaving orphaned records or private pint-proof photos behind.
+
+For active leagues where the user is the host, identify the safest behaviour. Do NOT invent a policy. Explain the options and recommend the technically safest approach for us to decide.
+
+Also identify whether Apple/Google store account-deletion requirements require anything specific from the implementation.
+
+At the end provide:
+
+A) CURRENT DATABASE RELATIONSHIP MAP relevant to account deletion.
+
+B) BLOCKERS — anything that prevents safe deletion.
+
+C) RECOMMENDED DELETION DESIGN — step-by-step, including what should be deleted, what should be anonymised/preserved, and how Storage files should be handled.
+
+D) ACTIVE-LEAGUE/HOST HANDLING — explain the options and consequences.
+
+E) IMPLEMENTATION PLAN — the smallest safe set of code/database changes required.
+
+F) TEST PLAN — how we can test account deletion safely without affecting the real Pint Wars data.
+
+DO NOT implement anything yet.
+
+Do not modify files.
+Do not run SQL that changes data.
+Do not create a migration.
+
+This is investigation and design only.
