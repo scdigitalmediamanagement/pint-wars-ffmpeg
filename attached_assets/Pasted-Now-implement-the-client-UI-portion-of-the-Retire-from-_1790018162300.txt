@@ -1,0 +1,90 @@
+Now implement the client/UI portion of the "Retire from this Pint War" feature.
+
+The database migration has already been applied successfully to Supabase.
+
+Existing database functions now available:
+
+- public.retire_from_league(uuid)
+- public.is_league_viewer(uuid)
+
+IMPORTANT:
+- Use FREE mode.
+- Do not create another migration.
+- Do not modify Supabase schema.
+- Do not modify scoring rules.
+- Do not modify the existing Remove Player functionality.
+- Do not change account deletion.
+- Do not redesign the league dashboard.
+- Make the smallest safe UI/client implementation.
+
+PRODUCT BEHAVIOUR:
+
+For an ACTIVE non-host player:
+
+Show an action:
+
+"Retire from this Pint War"
+
+When tapped, show a confirmation:
+
+"Are you sure you want to retire from this Pint War?
+
+You won't be able to log any more pints or earn points in this league. Your existing points will remain.
+
+Your Pint Wars account and other leagues will not be affected."
+
+If confirmed:
+- Call public.retire_from_league(leagueId).
+- Refresh the current league/membership data.
+- Do not modify or delete any existing score.
+- Do not modify any other league.
+
+After successful retirement:
+- Show the player as retired.
+- Remove/disable the "Log Pint" action for that player in this league.
+- Prevent any review action that could award points.
+- Keep the player's existing score visible.
+- Keep the player visible on the leaderboard.
+- Keep the league viewable.
+
+For a RETIRED player:
+Show a clear read-only state such as:
+
+"Retired from this Pint War"
+
+Do not show an active retirement button.
+Do not show "Log Pint".
+Do not show any action that could award league points.
+
+For the HOST:
+Do not show the player retirement action.
+The host's existing league controls must remain unchanged.
+
+For a REMOVED player:
+Do not change the existing removed-player behaviour.
+
+IMPORTANT SECURITY:
+The UI is not the security boundary. The database RPC already prevents retired members from scoring. Do not weaken or bypass that protection.
+
+IMPLEMENTATION:
+
+1. Inspect the existing league service and dashboard code first.
+2. Add the smallest service method needed to call:
+   public.retire_from_league(leagueId)
+3. Wire it into:
+   artifacts/pint-wars/app/war/[leagueId].tsx
+4. Use the existing app UI components/styles where possible.
+5. Use the app's existing confirmation modal/alert pattern rather than introducing a new UI library.
+6. Refresh/invalidate the relevant league and membership queries after retirement.
+7. Handle RPC errors cleanly.
+8. Do not expose raw database errors to the user.
+
+After implementation:
+- Run mobile typecheck.
+- Run API typecheck only if you changed API code.
+- Run git diff --check.
+- Report exactly which files changed.
+- Report how the retirement action appears for active players, retired players and hosts.
+- Do not make any unrelated changes.
+
+STOP after implementation and report the result.
