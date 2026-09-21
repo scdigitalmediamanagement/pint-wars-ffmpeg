@@ -1,0 +1,75 @@
+I want to add a player feature called "Retire from this Pint War".
+
+Do NOT change any code yet.
+Do NOT run migrations.
+Do NOT modify Supabase data.
+
+First inspect the current implementation and give me a design proposal.
+
+IMPORTANT PRODUCT RULE:
+
+"Retire from this Pint War" means the player retires ONLY from the specific league they are viewing.
+
+It does NOT retire or disable their Pint Wars account.
+
+When a player retires from a league:
+
+- Their Pint Wars account remains fully active.
+- Their other leagues are completely unaffected.
+- Their existing points in this league remain.
+- Their existing pint logs remain.
+- Their historical score events remain.
+- They cannot log any more pints in this league.
+- They cannot earn any more points in this league.
+- Their membership status becomes `retired`.
+- They can still view the league and its historical information.
+- Their existing score remains visible on the leaderboard as their final score for that league.
+
+The current database already has membership states including:
+- active
+- retired
+- removed
+
+Inspect how the existing retired state is currently used.
+
+Also inspect the current scoring, pint logging, leaderboard, league dashboard and membership logic to make sure retirement cannot accidentally allow further scoring.
+
+The UI should eventually provide something like:
+
+"Retire from this Pint War"
+
+with a confirmation:
+
+"Are you sure you want to retire from this Pint War? You won't be able to log any more pints or earn points in this league. Your existing points will remain."
+
+IMPORTANT:
+
+Do NOT confuse:
+- Retire from this Pint War
+with
+- Delete Account
+
+They are completely separate features.
+
+Also do NOT confuse:
+- Retire
+with
+- Remove Player
+
+The host's existing ability to remove a player must remain a separate moderation action.
+
+Before making any changes, report:
+
+A) How the existing `retired` membership state currently works.
+
+B) Which existing RPCs/functions currently allow a member to log a pint or earn points.
+
+C) What must be changed to ensure a retired member cannot score again.
+
+D) Where the "Retire from this Pint War" UI should live.
+
+E) Whether a database migration is actually required.
+
+F) The smallest safe implementation plan.
+
+Do not modify anything yet.
