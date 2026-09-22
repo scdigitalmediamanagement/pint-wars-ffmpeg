@@ -1,0 +1,134 @@
+Implement the required safety fixes identified by the read-only account-deletion audit.
+
+IMPORTANT:
+- Use FREE mode.
+- Do not apply any Supabase migration.
+- Do not delete, de-identify, or modify any real user/account data.
+- Do not expose or add the Account Deletion UI yet.
+- Do not change the existing Pint Wars scoring rules.
+- Do not change the completed Exmouth Pint Wars data.
+- Make the smallest safe code/database changes necessary.
+- Create the migration files but DO NOT apply them.
+- Run typecheck/build checks after the changes.
+
+Required fixes:
+
+1. PERSISTENT DE-IDENTIFICATION GUARD
+
+Add a nullable profile field:
+
+deidentified_at timestamptz
+
+It must be set inside delete_my_account() during the same database transaction that de-identifies the account.
+
+The deletion RPC must remain idempotent.
+
+After deidentified_at is set, all account-affecting operations for that user must reject further activity.
+
+Audit the existing write paths and protect at minimum:
+
+- create Pint War
+- join Pint War
+- log pint / verified pint logging
+- create pub review
+- proof-photo upload/logging path
+- any other authenticated operation that creates new user-owned activity
+
+Use the existing profile/account lookup mechanism where practical. Do not duplicate unrelated auth logic.
+
+Important:
+- Existing historical leagues, memberships, pint_logs, score events, reviews/bonus guards and completed results must remain preserved exactly as already designed.
+- Do not change leaderboard/history behaviour.
+
+2. STORAGE CLEANUP
+
+Fix the account-deletion Storage cleanup so it reliably handles the existing pint-proofs path structure:
+
+{user_id}/{league_id}/{filename}
+
+The cleanup must recursively enumerate nested folders/objects under:
+
+pint-proofs/{user_id}/
+
+Do not rely on the Storage listing entry having an object ID.
+
+Delete explicit object paths.
+
+After deletion, perform a final listing/sweep to verify that no pint-proof objects remain under that user's prefix.
+
+The cleanup must be safe to run repeatedly.
+
+Do not delete any other user's objects.
+
+3. SERVER-SIDE RETRY / REPAIR
+
+The current flow is:
+
+database de-identification
+→ Storage cleanup
+→ Auth neutralization
+
+This creates a partial-failure problem.
+
+Add a server-side cleanup/repair mechanism that can safely retry Storage cleanup and Auth neutralization after the database transaction has already completed.
+
+Do NOT make the repair depend on the user's still-valid JWT.
+
+The server must determine the target user only from trusted server-side state created by the deletion operation. Never accept an arbitrary user_id from an unauthenticated client.
+
+The repair operation must be idempotent.
+
+Do not create a public/admin endpoint that allows arbitrary account deletion.
+
+4. PREVENT ACTIVITY DURING CLEANUP
+
+Once deidentified_at is set, database write paths must reject the account even if Auth neutralization has not yet completed.
+
+The trusted pint-proof upload/logging path must also prevent a deidentified account from creating new proof objects or scoring a pint.
+
+Where Storage policies cannot directly inspect the profile state safely, make sure the server-side verified pint/proof workflow rejects the account and ensure the final Storage sweep happens after Auth neutralization.
+
+5. AUTH SESSION HANDLING
+
+Inspect the current Auth neutralization implementation.
+
+Add explicit session/refresh-token revocation if Supabase's supported server-side mechanism can safely do this for the target user.
+
+Do not guess at unsupported Supabase APIs. If the current Supabase libraries do not provide a safe supported operation, leave this part unchanged and report that clearly.
+
+6. AUTH IDENTITY DATA
+
+Do NOT automatically delete or overwrite email/phone/external identity fields unless the existing project/privacy design explicitly requires it.
+
+Keep this as a separate documented decision rather than making an irreversible change now.
+
+7. TESTING
+
+Add or run safe tests that do NOT modify production data.
+
+Verify at minimum:
+
+- active host deletion remains blocked
+- completed host deletion remains permitted by the RPC logic
+- active player deletion preserves membership/history
+- retired player deletion preserves membership/history
+- removed player deletion preserves membership/history
+- multiple leagues remain preserved
+- deidentified_at blocks future account activity
+- repeated deletion/repair is safe
+- Storage cleanup handles nested user/league/file paths
+- cleanup never targets another user's prefix
+- unauthenticated account-deletion API remains 401
+- no arbitrary user_id can be supplied to delete another account
+
+At the end, report:
+
+A) Files changed
+B) New migration filename
+C) What the migration would change
+D) What the API/server changes do
+E) Tests/checks performed
+F) Any remaining safety issue
+G) Explicitly confirm that NO migration was applied and NO real account/data was modified
+
+Do not implement the Account Deletion UI yet.
