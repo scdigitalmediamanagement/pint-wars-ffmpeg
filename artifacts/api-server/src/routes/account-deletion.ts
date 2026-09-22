@@ -175,19 +175,15 @@ async function listStorageObjects(
           continue;
         }
 
-        // Storage can return folder entries without an object id. Treat every
-        // name as a deletion candidate, then recurse into it as a prefix. This
-        // avoids leaving nested objects behind when the listing shape changes.
+        // Storage returns folder entries without an object id. Recurse into
+        // those folders, but only send real object entries to DELETE; Storage
+        // does not delete a directory placeholder as an object.
         const objectPath = entry.name.startsWith(currentPrefix)
           ? entry.name
           : `${currentPrefix}${entry.name}`;
 
         if (!objectPath.startsWith(storagePrefix)) continue;
-        objectPaths.add(objectPath);
 
-        // A normal object listing has an id and does not need a recursive
-        // request. Folder entries, and object entries from older Storage
-        // responses without ids, are both safe to probe as prefixes.
         if (typeof entry.id !== "string") {
           const childPrefix = objectPath.endsWith("/")
             ? objectPath
@@ -195,7 +191,10 @@ async function listStorageObjects(
           if (!visitedPrefixes.has(childPrefix)) {
             pendingPrefixes.push(childPrefix);
           }
+          continue;
         }
+
+        objectPaths.add(objectPath);
       }
 
       if (payload.length < pageSize) break;

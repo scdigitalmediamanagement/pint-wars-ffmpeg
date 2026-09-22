@@ -231,6 +231,7 @@ language plpgsql
 security definer
 set search_path = ''
 as $$
+#variable_conflict use_column
 declare
   deleting_user_id uuid := auth.uid();
   active_host_league_id uuid;
@@ -264,15 +265,15 @@ begin
   for update;
 
   perform 1
-  from public.league_memberships
-  where user_id = deleting_user_id
-  order by league_id, id
+  from public.league_memberships as membership
+  where membership.user_id = deleting_user_id
+  order by membership.league_id, membership.id
   for update;
 
   perform 1
-  from public.league_invites
-  where created_by = deleting_user_id
-  order by id
+  from public.league_invites as invite
+  where invite.created_by = deleting_user_id
+  order by invite.id
   for update;
 
   perform 1
@@ -293,35 +294,35 @@ begin
       'Account deletion is blocked while you host an active Pint War. Finish or end that Pint War first.';
   end if;
 
-  update public.pint_logs
+  update public.pint_logs as pint_log
   set photo_path = 'deleted/' || id::text,
       content_sha256 = null,
       latitude = null,
       longitude = null,
       pub_latitude = null,
       pub_longitude = null
-  where user_id = deleting_user_id;
+  where pint_log.user_id = deleting_user_id;
 
-  delete from public.pub_reviews
-  where user_id = deleting_user_id;
+  delete from public.pub_reviews as review
+  where review.user_id = deleting_user_id;
 
-  delete from public.notifications
-  where user_id = deleting_user_id;
+  delete from public.notifications as notification
+  where notification.user_id = deleting_user_id;
 
-  update public.league_invites
+  update public.league_invites as invite
   set revoked_at = now()
-  where created_by = deleting_user_id
-    and revoked_at is null
-    and expires_at > now();
+  where invite.created_by = deleting_user_id
+    and invite.revoked_at is null
+    and invite.expires_at > now();
 
-  update public.profiles
+  update public.profiles as profile
   set display_name = 'Deleted player',
       avatar_url = null,
       free_trial_used_at = null,
       deidentified_at = coalesce(deidentified_at, now()),
       updated_at = now()
-  where id = deleting_user_id
-  returning deidentified_at into account_deidentified_at;
+  where profile.id = deleting_user_id
+  returning profile.deidentified_at into account_deidentified_at;
 
   insert into public.account_deletion_jobs (
     user_id,

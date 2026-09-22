@@ -2,3 +2,4 @@
 - [Supabase DDL access](supabase-ddl-access.md) — the connector exposes PostgREST only; schema changes require a separate DDL-capable connection.
 - [Expo map web bundling](expo-map-web-bundling.md) — isolate react-native-maps behind .native/.web modules because its native internals break the web bundle.
 - [Account deletion concurrency](account-deletion-concurrency.md) — profile-row activity guards must preserve the existing league-first lock order to avoid races and deadlocks.
+- [Deletion verification fixtures](deletion-verification-fixtures.md) — score-ledger preservation needs a server-authoritative logging fixture; direct pint-log inserts do not award score events.
