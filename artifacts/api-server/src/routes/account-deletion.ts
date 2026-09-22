@@ -4,6 +4,7 @@ import { authenticateSupabaseBearer } from "../lib/supabase-auth";
 const router: IRouter = Router();
 const PINT_PROOF_BUCKET = "pint-proofs";
 const ACCOUNT_DELETION_RPC = "delete_my_account";
+const ACCOUNT_DELETION_REPAIR_HEADER = "x-account-deletion-repair-key";
 
 type SupabaseErrorPayload = {
   code?: unknown;
@@ -13,6 +14,7 @@ type SupabaseErrorPayload = {
 };
 
 type AccountDeletionResult = {
+  job_id?: unknown;
   storage_prefix?: unknown;
   user_id?: unknown;
 };
@@ -20,6 +22,15 @@ type AccountDeletionResult = {
 type StorageListEntry = {
   id?: unknown;
   name?: unknown;
+};
+
+type AccountDeletionJob = {
+  id?: unknown;
+  user_id?: unknown;
+  storage_prefix?: unknown;
+  deidentified_at?: unknown;
+  storage_cleaned_at?: unknown;
+  auth_neutralized_at?: unknown;
 };
 
 function supabaseConfig() {
@@ -68,6 +79,23 @@ function errorMessage(payload: unknown) {
   return typeof message === "string" ? message : "";
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function isUuid(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      value,
+    )
+  );
+}
+
+function deletionJobUrl(url: string, jobId: string) {
+  return `${url}/rest/v1/account_deletion_jobs?id=eq.${encodeURIComponent(jobId)}`;
+}
+
 function storageObjectUrl(url: string, objectPath: string) {
   const encodedPath = objectPath
     .split("/")
@@ -105,55 +133,77 @@ async function listStorageObjects(
   serviceRoleKey: string,
   storagePrefix: string,
 ) {
-  const objectPaths: string[] = [];
-  let offset = 0;
+  const objectPaths = new Set<string>();
+  const pendingPrefixes = [storagePrefix];
+  const visitedPrefixes = new Set<string>();
   const pageSize = 1000;
 
-  while (true) {
-    const response = await fetch(
-      `${url}/storage/v1/object/list/${PINT_PROOF_BUCKET}`,
-      {
-        method: "POST",
-        headers: serviceHeaders(serviceRoleKey, true),
-        body: JSON.stringify({
-          prefix: storagePrefix,
-          limit: pageSize,
-          offset,
-          sortBy: { column: "name", order: "asc" },
-        }),
-      },
-    );
-    const payload = await readJsonOrText(response);
+  while (pendingPrefixes.length > 0) {
+    const currentPrefix = pendingPrefixes.shift();
+    if (!currentPrefix || visitedPrefixes.has(currentPrefix)) continue;
+    visitedPrefixes.add(currentPrefix);
 
-    if (!response.ok) {
-      throw new Error(
-        errorMessage(payload) || "Pint-proof Storage could not be listed.",
+    let offset = 0;
+    while (true) {
+      const response = await fetch(
+        `${url}/storage/v1/object/list/${PINT_PROOF_BUCKET}`,
+        {
+          method: "POST",
+          headers: serviceHeaders(serviceRoleKey, true),
+          body: JSON.stringify({
+            prefix: currentPrefix,
+            limit: pageSize,
+            offset,
+            sortBy: { column: "name", order: "asc" },
+          }),
+        },
       );
-    }
+      const payload = await readJsonOrText(response);
 
-    if (!Array.isArray(payload)) {
-      throw new Error("Pint-proof Storage returned an invalid listing.");
-    }
-
-    for (const entry of payload as StorageListEntry[]) {
-      if (typeof entry.id !== "string" || typeof entry.name !== "string") {
-        continue;
+      if (!response.ok) {
+        throw new Error(
+          errorMessage(payload) || "Pint-proof Storage could not be listed.",
+        );
       }
 
-      const objectPath = entry.name.startsWith(storagePrefix)
-        ? entry.name
-        : `${storagePrefix}${entry.name}`;
-
-      if (objectPath.startsWith(storagePrefix)) {
-        objectPaths.push(objectPath);
+      if (!Array.isArray(payload)) {
+        throw new Error("Pint-proof Storage returned an invalid listing.");
       }
-    }
 
-    if (payload.length < pageSize) break;
-    offset += payload.length;
+      for (const entry of payload as StorageListEntry[]) {
+        if (typeof entry.name !== "string" || entry.name.length === 0) {
+          continue;
+        }
+
+        // Storage can return folder entries without an object id. Treat every
+        // name as a deletion candidate, then recurse into it as a prefix. This
+        // avoids leaving nested objects behind when the listing shape changes.
+        const objectPath = entry.name.startsWith(currentPrefix)
+          ? entry.name
+          : `${currentPrefix}${entry.name}`;
+
+        if (!objectPath.startsWith(storagePrefix)) continue;
+        objectPaths.add(objectPath);
+
+        // A normal object listing has an id and does not need a recursive
+        // request. Folder entries, and object entries from older Storage
+        // responses without ids, are both safe to probe as prefixes.
+        if (typeof entry.id !== "string") {
+          const childPrefix = objectPath.endsWith("/")
+            ? objectPath
+            : `${objectPath}/`;
+          if (!visitedPrefixes.has(childPrefix)) {
+            pendingPrefixes.push(childPrefix);
+          }
+        }
+      }
+
+      if (payload.length < pageSize) break;
+      offset += payload.length;
+    }
   }
 
-  return objectPaths;
+  return [...objectPaths];
 }
 
 async function deleteStorageObjects(
@@ -179,6 +229,15 @@ async function deleteStorageObjects(
         errorMessage(payload) || "Pint-proof Storage cleanup failed.",
       );
     }
+  }
+
+  const remainingPaths = await listStorageObjects(
+    url,
+    serviceRoleKey,
+    storagePrefix,
+  );
+  if (remainingPaths.length > 0) {
+    throw new Error("Pint-proof Storage cleanup left objects behind.");
   }
 }
 
@@ -207,6 +266,124 @@ async function neutralizeAuthUser(
   }
 }
 
+async function getAccountDeletionJob(
+  url: string,
+  serviceRoleKey: string,
+  jobId: string,
+) {
+  const response = await fetch(
+    `${deletionJobUrl(url, jobId)}&select=id,user_id,storage_prefix,deidentified_at,storage_cleaned_at,auth_neutralized_at`,
+    {
+      headers: serviceHeaders(serviceRoleKey),
+    },
+  );
+  const payload = await readJsonOrText(response);
+
+  if (!response.ok) {
+    throw new Error(
+      errorMessage(payload) || "Account deletion state could not be read.",
+    );
+  }
+
+  if (!Array.isArray(payload)) {
+    throw new Error("Account deletion state returned an invalid result.");
+  }
+
+  return (payload[0] ?? null) as AccountDeletionJob | null;
+}
+
+async function markAccountDeletionJob(
+  url: string,
+  serviceRoleKey: string,
+  jobId: string,
+  field: "storage_cleaned_at" | "auth_neutralized_at",
+) {
+  const response = await fetch(deletionJobUrl(url, jobId), {
+    method: "PATCH",
+    headers: {
+      ...serviceHeaders(serviceRoleKey, true),
+      Prefer: "return=minimal",
+    },
+    body: JSON.stringify({
+      [field]: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }),
+  });
+  const payload = await readJsonOrText(response);
+
+  if (!response.ok) {
+    throw new Error(
+      errorMessage(payload) || "Account deletion state could not be updated.",
+    );
+  }
+}
+
+async function repairAccountDeletion(
+  url: string,
+  serviceRoleKey: string,
+  jobId: string,
+) {
+  const job = await getAccountDeletionJob(url, serviceRoleKey, jobId);
+
+  if (
+    !job ||
+    job.id !== jobId ||
+    !isUuid(job.user_id) ||
+    typeof job.storage_prefix !== "string" ||
+    job.storage_prefix !== `${job.user_id}/` ||
+    typeof job.deidentified_at !== "string"
+  ) {
+    throw new Error("Account deletion state is missing or invalid.");
+  }
+
+  await deleteStorageObjects(url, serviceRoleKey, job.storage_prefix);
+  await markAccountDeletionJob(
+    url,
+    serviceRoleKey,
+    jobId,
+    "storage_cleaned_at",
+  );
+
+  await neutralizeAuthUser(url, serviceRoleKey, job.user_id);
+  await markAccountDeletionJob(
+    url,
+    serviceRoleKey,
+    jobId,
+    "auth_neutralized_at",
+  );
+}
+
+router.post("/account/delete/repair", async (req, res) => {
+  const config = supabaseConfig();
+  if (!config) {
+    res.status(503).json({ message: "Account deletion is not configured." });
+    return;
+  }
+
+  // This is an operational server-to-server route. It accepts only a job id
+  // created by delete_my_account, never a user id or an arbitrary prefix.
+  if (req.header(ACCOUNT_DELETION_REPAIR_HEADER) !== config.serviceRoleKey) {
+    res.status(401).json({ message: "Account deletion repair is unauthorized." });
+    return;
+  }
+
+  const body = isRecord(req.body) ? req.body : null;
+  const jobId = body?.jobId;
+  if (!isUuid(jobId)) {
+    res.status(400).json({ message: "A valid account deletion job is required." });
+    return;
+  }
+
+  try {
+    await repairAccountDeletion(config.url, config.serviceRoleKey, jobId);
+    res.json({ ok: true, jobId });
+  } catch {
+    res.status(502).json({
+      message: "Account deletion repair could not be completed right now.",
+    });
+  }
+});
+
 router.post("/account/delete", async (req, res) => {
   const authorization = req.header("authorization");
   const auth = await authenticateSupabaseBearer(authorization);
@@ -230,19 +407,20 @@ router.post("/account/delete", async (req, res) => {
 
     if (
       deletion.user_id !== auth.userId ||
+      !isUuid(deletion.job_id) ||
       typeof deletion.storage_prefix !== "string" ||
       deletion.storage_prefix !== `${auth.userId}/`
     ) {
       throw new Error("Account deletion returned an invalid account identity.");
     }
 
-    await deleteStorageObjects(
+    // The repair path reads the trusted job row created by the RPC. Once the
+    // RPC succeeds, cleanup no longer depends on the user's JWT.
+    await repairAccountDeletion(
       config.url,
       config.serviceRoleKey,
-      deletion.storage_prefix,
+      deletion.job_id,
     );
-
-    await neutralizeAuthUser(config.url, config.serviceRoleKey, auth.userId);
 
     res.json({ ok: true });
   } catch (error) {

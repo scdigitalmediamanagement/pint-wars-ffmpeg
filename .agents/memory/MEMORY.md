@@ -1,3 +1,4 @@
 - [Expo SDK patch updates](expo-sdk-patch-updates.md) — package firewall timing can temporarily block a compatible patch release; verify Metro and typecheck instead of forcing it.
 - [Supabase DDL access](supabase-ddl-access.md) — the connector exposes PostgREST only; schema changes require a separate DDL-capable connection.
 - [Expo map web bundling](expo-map-web-bundling.md) — isolate react-native-maps behind .native/.web modules because its native internals break the web bundle.
+- [Account deletion concurrency](account-deletion-concurrency.md) — profile-row activity guards must preserve the existing league-first lock order to avoid races and deadlocks.
