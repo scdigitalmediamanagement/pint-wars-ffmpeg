@@ -1,0 +1,117 @@
+I want to perform a READ-ONLY safety audit of the newly implemented Pint Wars account deletion system.
+
+IMPORTANT:
+
+- Use FREE mode.
+- Do NOT apply the migration.
+- Do NOT execute `delete_my_account()`.
+- Do NOT delete, modify, de-identify or disable any real account.
+- Do NOT delete any Storage objects.
+- Do NOT modify Supabase data.
+- Do NOT create another migration.
+- Do NOT change code.
+
+Inspect these new files:
+
+artifacts/pint-wars/supabase/migrations/202609220003_account_deletion.sql
+
+artifacts/api-server/src/routes/account-deletion.ts
+
+artifacts/api-server/src/routes/index.ts
+
+Also inspect the existing schema and related functions where necessary.
+
+We need to verify the implementation against these locked product rules:
+
+1. Active host:
+   - Account deletion MUST be blocked.
+   - The active league must remain untouched.
+
+2. Completed host:
+   - Deletion/de-identification must be allowed.
+   - Completed league must remain intact.
+   - Historical score must remain.
+
+3. Active player:
+   - League remains intact.
+   - Membership remains intact.
+   - Existing points remain.
+   - Future activity must be prevented.
+   - Personal data is de-identified.
+
+4. Retired player:
+   - Retirement state and timestamp remain.
+   - Historical score remains.
+
+5. Removed player:
+   - Removed state and timestamp remain.
+   - Historical score/history remains according to existing removed-member rules.
+
+6. Multiple leagues:
+   - All leagues remain.
+   - Only the user's personal data is cleaned/de-identified.
+   - Deletion is blocked if they host ANY active league.
+
+7. Pint logs:
+   - Rows remain.
+   - GPS/location fields are scrubbed.
+   - Private proof path is scrubbed.
+   - Content hash is scrubbed.
+   - Score-event references remain valid.
+
+8. Score events:
+   - MUST remain untouched.
+   - Immutable historical scores must not change.
+
+9. Pub reviews:
+   - User-authored reviews are removed.
+   - Historical review score events remain.
+   - Reviews/reports belonging to other users must not be lost unnecessarily.
+
+10. Notifications:
+   - User's private notifications are removed.
+
+11. Invites:
+   - Active invite codes created by the user are revoked.
+   - Historical invite records remain where required.
+
+12. Paid purchase records:
+   - Must remain intact and not be casually deleted.
+
+13. Private Storage:
+   - All objects under `pint-proofs/{user_id}/` must be deleted by the trusted server-side service-role operation.
+
+14. Auth:
+   - The Auth account must not be hard-deleted.
+   - The account must be neutralized so it cannot sign in.
+   - Personal Auth metadata must be cleared.
+
+15. Repeat execution:
+   - The operation must fail safely or remain harmless if attempted again.
+
+IMPORTANT SECURITY CHECKS:
+
+- Verify the API endpoint cannot be called without authentication.
+- Verify the RPC operates only on `auth.uid()`.
+- Verify the API cannot be used to delete another user's account by supplying another user ID.
+- Verify the service-role Storage cleanup uses the authenticated user's returned Storage prefix rather than an arbitrary client-supplied prefix.
+- Verify the Auth neutralization targets only the authenticated account.
+- Check for partial-failure risks between database de-identification, Storage cleanup and Auth neutralization.
+- Identify any situation where the database could be changed but Storage/Auth cleanup could fail.
+- Identify any situation where Storage could be deleted but the database operation could fail.
+
+Do NOT make changes.
+
+At the end provide:
+
+A) PASS/FAIL for each safety requirement.
+
+B) Any concrete problems found.
+
+C) Any race conditions or partial-failure risks.
+
+D) Whether the migration is safe to apply as currently written.
+
+E) The smallest changes required before we apply it.
+
+STOP after the audit.
