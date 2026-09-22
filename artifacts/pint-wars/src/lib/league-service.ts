@@ -167,6 +167,18 @@ export async function retireFromLeague(leagueId: string) {
   }
 }
 
+export async function endLeagueEarly(leagueId: string) {
+  const { error } = await getSupabase().rpc('end_league_early', {
+    p_league_id: leagueId,
+  });
+  if (error) {
+    if (__DEV__) {
+      console.error('[Pint Wars] end_league_early failed', describeSupabaseError(error));
+    }
+    throw new Error('Could not end this Pint War. Please try again.');
+  }
+}
+
 export async function getMyNotifications(): Promise<AppNotification[]> {
   const { data, error } = await getSupabase().rpc('get_my_notifications', { p_limit: 50 });
   if (error) throw error;

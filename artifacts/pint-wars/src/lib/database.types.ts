@@ -179,6 +179,10 @@ export type Database = {
         Args: { p_league_id: string };
         Returns: undefined;
       };
+      end_league_early: {
+        Args: { p_league_id: string };
+        Returns: undefined;
+      };
       log_pint: {
         Args:
           | {

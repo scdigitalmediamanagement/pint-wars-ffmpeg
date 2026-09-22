@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { Button, Card, ErrorText, Screen, Title, uiStyles } from '@/components/AppUi';
-import { getLeagueDashboard, logPint, retireFromLeague } from '@/src/lib/league-service';
+import { endLeagueEarly, getLeagueDashboard, logPint, retireFromLeague } from '@/src/lib/league-service';
 import { getCurrentLocation } from '@/src/lib/location-service';
 import { findNearbyPubs, type Coordinates, type NearbyPub } from '@/src/lib/pub-service';
 import { useAuth } from '@/src/providers/AuthProvider';
@@ -122,6 +122,24 @@ export default function LeagueDashboardScreen() {
       Alert.alert(
         'Could Not Retire',
         error instanceof Error ? error.message : 'Could not retire from this Pint War. Please try again.',
+      );
+    },
+  });
+  const endLeagueMutation = useMutation({
+    mutationFn: () => {
+      if (!leagueId) throw new Error('This Pint War could not be identified.');
+      return endLeagueEarly(leagueId);
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['league-dashboard', leagueId] }),
+        queryClient.invalidateQueries({ queryKey: ['my-leagues'] }),
+      ]);
+    },
+    onError: (error) => {
+      Alert.alert(
+        'Could Not End Pint War',
+        error instanceof Error ? error.message : 'Could not end this Pint War. Please try again.',
       );
     },
   });
@@ -276,6 +294,7 @@ export default function LeagueDashboardScreen() {
   const canRetire = league.status === 'active'
     && currentMembership?.status === 'active'
     && !isCurrentUserHost;
+  const canEndLeagueEarly = league.status === 'active' && isCurrentUserHost;
   const day = dayNumber(league.starts_at, league.ends_at, league.status);
   const durationDays = leagueDurationDays(league.starts_at, league.ends_at);
   const leagueEndLabel = endTimeLabel(league.ends_at);
@@ -399,6 +418,23 @@ export default function LeagueDashboardScreen() {
                 [
                   { text: 'Cancel', style: 'cancel' },
                   { text: 'Retire', style: 'destructive', onPress: () => retireMutation.mutate() },
+                ],
+              );
+            }}
+          />
+        ) : null}
+        {canEndLeagueEarly ? (
+          <Button
+            label={endLeagueMutation.isPending ? 'Ending…' : 'End Pint War Early'}
+            variant="quiet"
+            loading={endLeagueMutation.isPending}
+            onPress={() => {
+              Alert.alert(
+                'End this Pint War?',
+                'Are you sure you want to end this Pint War early? The current leaderboard will become final and no more points can be earned.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'End Pint War', style: 'destructive', onPress: () => endLeagueMutation.mutate() },
                 ],
               );
             }}
