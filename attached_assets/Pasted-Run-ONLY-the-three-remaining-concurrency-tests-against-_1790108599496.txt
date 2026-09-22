@@ -1,0 +1,90 @@
+Run ONLY the three remaining concurrency tests against the disposable Pint Wars Deletion Test Supabase project.
+
+IMPORTANT:
+- FREE mode.
+- Use ONLY the disposable test Supabase project.
+- Do NOT access or modify production Supabase.
+- Do NOT apply anything to production.
+- Do NOT expose the Account Deletion UI.
+- Do not change the scoring system.
+- Do not change production data.
+- Do not introduce artificial lock ordering that does not exist in the real application.
+- Test the actual application/database paths as they are implemented.
+- If a test harness would create an artificial deadlock or lock inversion, redesign the harness rather than changing production code to accommodate the harness.
+
+The two previous disposable-test fixes are already implemented:
+1. delete_my_account() SQL ambiguity was fixed in migration 202609220004_account_deletion_safety.sql.
+2. Storage recursive cleanup was fixed in artifacts/api-server/src/routes/account-deletion.ts.
+
+Do not undo those fixes.
+
+TEST 1 — DELETION vs PUB REVIEW CREATION
+
+Using disposable test users/data, run the real account-deletion path concurrently with the real pub-review creation path.
+
+Verify:
+- no deadlock
+- no inconsistent transaction state
+- exactly one safe outcome
+- if deletion wins, review creation is rejected because deidentified_at is set
+- if review creation wins before de-identification, the resulting review/score data remains consistent with the existing rules
+- no review score event or bonus guard is lost or partially written
+- deletion remains idempotent
+
+TEST 2 — DELETION vs LEAGUE MEMBERSHIP UPDATE
+
+Run the real account-deletion path concurrently with the real league membership state update path.
+
+Use an appropriate disposable active/retired/removed membership scenario.
+
+Verify:
+- no deadlock
+- no inconsistent membership state
+- no partial update
+- deidentified accounts cannot perform a membership update after deidentification
+- historical membership state remains correct
+- deletion remains idempotent
+
+TEST 3 — DELETION vs AUTOMATIC/ORDINARY LEAGUE COMPLETION
+
+Run the real account-deletion path concurrently with the real league completion path.
+
+Use a disposable active league that can safely transition to completed.
+
+Verify:
+- no deadlock
+- no inconsistent league status
+- completed result/winner/tie calculation remains correct
+- score events remain immutable
+- membership/history remains correct
+- if deletion wins, the user's account is deidentified and cannot create new activity
+- if completion wins first, the completed league is preserved correctly and deletion can then proceed where product rules allow
+- deletion remains idempotent
+
+IMPORTANT LOCKING RULE
+
+Use the documented production lock ordering:
+league first, then membership/profile as applicable.
+
+Do NOT manually lock the profile first merely to manufacture a race.
+
+After each test, inspect the final database state and verify all relevant rows.
+
+FINAL REPORT
+
+Report:
+
+A) Review-creation race: PASS/FAIL
+B) Membership-update race: PASS/FAIL
+C) League-completion race: PASS/FAIL
+D) Any deadlocks
+E) Any inconsistent final states
+F) Any concrete source-code defect found
+G) Any source-code changes made
+H) Whether ALL requested concurrency scenarios are now covered
+I) Whether you now consider the account-deletion implementation ready for production migration
+J) Confirm the real Pint Wars production Supabase database was NOT accessed or modified
+
+STOP after the report.
+
+Do not migrate production.
