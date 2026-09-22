@@ -183,6 +183,10 @@ export type Database = {
         Args: { p_league_id: string };
         Returns: undefined;
       };
+      get_league_summary: {
+        Args: { p_league_id: string };
+        Returns: Json;
+      };
       log_pint: {
         Args:
           | {

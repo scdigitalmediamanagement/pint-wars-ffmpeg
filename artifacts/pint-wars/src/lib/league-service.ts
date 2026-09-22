@@ -1,6 +1,6 @@
 import { fetch as expoFetch } from 'expo/fetch';
 import { getSupabase } from '@/src/lib/supabase';
-import type { LeagueDashboard, LeagueMembership, MyLeague } from '@/src/types/league';
+import type { LeagueDashboard, LeagueMembership, LeagueSummary, MyLeague } from '@/src/types/league';
 import type { NearbyPub } from '@/src/lib/pub-service';
 
 type LeagueRow = MyLeague['league'];
@@ -245,6 +245,22 @@ export async function getLeagueDashboard(leagueId: string): Promise<LeagueDashbo
     league: league as LeagueDashboard['league'],
     members: normalizedMembers,
   };
+}
+
+export async function getLeagueSummary(leagueId: string): Promise<LeagueSummary> {
+  const { data, error } = await getSupabase().rpc('get_league_summary', {
+    p_league_id: leagueId,
+  });
+  if (error) {
+    if (__DEV__) {
+      console.error('[Pint Wars] get_league_summary failed', describeSupabaseError(error));
+    }
+    throw new Error('Could not load the completed War Summary. Please try again.');
+  }
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error('The completed War Summary could not be loaded.');
+  }
+  return data as unknown as LeagueSummary;
 }
 
 type LogPintInput = {

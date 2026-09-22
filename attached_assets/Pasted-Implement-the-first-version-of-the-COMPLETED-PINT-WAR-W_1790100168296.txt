@@ -1,0 +1,139 @@
+Implement the first version of the COMPLETED PINT WAR / WAR SUMMARY feature based on the read-only audit.
+
+IMPORTANT:
+- Use FREE mode.
+- Make the smallest safe implementation.
+- Do not change scoring.
+- Do not change league completion logic.
+- Do not change retirement.
+- Do not change Remove Player.
+- Do not change End Pint War Early.
+- Do not build Rematch yet.
+- Do not build Pint War Memories yet.
+- Do not change pricing.
+- Do not create new tables unless absolutely necessary.
+- Do not create a completion snapshot.
+
+PRODUCT:
+
+When a Pint War is completed, the completed league screen should show a proper War Summary.
+
+Use the existing completed branch of:
+
+artifacts/pint-wars/app/war/[leagueId].tsx
+
+The summary should include:
+
+- League name
+- Actual completion date
+- Scheduled end date where useful
+- Duration
+- Number of players
+- Total pints
+- Distinct pubs visited
+- New Pub Bonuses
+- Reviews
+- Final leaderboard
+- Winner or tied winners
+
+IMPORTANT WORDING:
+
+Use:
+
+"New Pub Bonuses"
+
+Do NOT call this "New pubs discovered", because the existing NEW_PUB scoring rule is globally unique per player/pub and therefore does not necessarily mean every pub was newly discovered during this league.
+
+SCORING:
+
+Do not recalculate or create new score events.
+
+Use the existing immutable score-event ledger and existing leaderboard/completion logic as the source of truth.
+
+For the summary:
+
+- Pints = PINT_LOGGED events
+- New Pub Bonuses = NEW_PUB events
+- Reviews = PUB_REVIEW events
+- Total points = existing final score
+- Pubs visited = distinct stable pub/place identities associated with pint logs in this league
+
+MEMBERS:
+
+- Include active members.
+- Include retired members and their final scores.
+- Exclude removed members consistently with the existing completed leaderboard behavior.
+
+SECURITY:
+
+Add ONE read-only security-definer league summary RPC if required.
+
+It must:
+- Require authentication.
+- Verify the caller can view the league.
+- Allow active and retired league viewers.
+- Exclude removed users according to the existing access model.
+- Return only data the caller is authorized to see.
+- Never expose private proof-photo storage URLs or proof-photo contents.
+
+Do not give the client direct access to other players' raw score-event rows if the existing security model prevents that.
+
+Use the existing completion/winner logic rather than creating a second implementation.
+
+IMPORTANT DATE RULE:
+
+For a completed league:
+- `completed_at` is the actual completion time.
+- `ends_at` remains the scheduled end time.
+- If the league was ended early, show the actual completion information accurately.
+- Do not overwrite `ends_at`.
+
+UI:
+
+Make the completed screen feel like a proper finished Pint War.
+
+Suggested structure:
+
+EXMOUTH PINT WARS
+
+COMPLETED
+
+WINNER
+Costa
+17 points
+
+WAR STATS
+
+5 Pints
+3 Pubs
+3 New Pub Bonuses
+2 Reviews
+3 Players
+
+Then:
+
+FINAL LEADERBOARD
+
+Keep the existing leaderboard and winner/tie presentation.
+
+Keep:
+- Start Another Pint War
+- Existing completed-league access
+
+Do not implement:
+- Memories video
+- Rematch
+- Achievements
+- Public rankings
+
+After implementation:
+
+- Run mobile typecheck.
+- Run git diff --check.
+- If a migration is required, create ONE migration but DO NOT apply it.
+- Report exactly which files changed.
+- Report whether a migration was created.
+- Report the new RPC name if one was created.
+- Stop after implementation.
+
+Do not modify unrelated files.

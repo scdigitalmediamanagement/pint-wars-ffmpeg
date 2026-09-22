@@ -38,3 +38,18 @@ export type LeagueDashboard = {
   league: League;
   members: LeagueMembership[];
 };
+
+export type LeagueSummaryStats = {
+  player_count: number;
+  total_pints: number;
+  pubs_visited: number;
+  new_pub_bonuses: number;
+  reviews: number;
+  total_points: number;
+};
+
+export type LeagueSummary = {
+  league: League;
+  stats: LeagueSummaryStats;
+  leaderboard: LeagueMembership[];
+};
