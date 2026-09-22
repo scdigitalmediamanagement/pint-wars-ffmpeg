@@ -1,0 +1,95 @@
+I want to implement "Delete Account" for Pint Wars.
+
+Do NOT change any code.
+Do NOT create a migration.
+Do NOT modify Supabase data.
+
+First perform a READ-ONLY audit and design proposal.
+
+PRODUCT RULE:
+
+"Delete Account" is completely separate from:
+- Retire from this Pint War
+- Remove Player
+- End Pint War Early
+
+When a user deletes their Pint Wars account, their account must be permanently deleted or safely de-identified according to the safest existing database design.
+
+Inspect the CURRENT implementation and determine exactly what must happen to:
+
+- Supabase Auth user
+- profile
+- league memberships
+- leagues where the user is host
+- leagues where the user is a player
+- retired memberships
+- removed memberships
+- pint logs
+- score events
+- pub reviews
+- pub review reports
+- notifications
+- private pint-proof photos in Storage
+- GPS/location information
+- invite records
+- paid-league purchase records if present
+
+IMPORTANT PRODUCT REQUIREMENTS:
+
+1. Do not accidentally delete an entire Pint War because one player deletes their account.
+
+2. Do not delete other players' scores or historical league results unnecessarily.
+
+3. Existing completed league history should remain meaningful.
+
+4. Personal/private data should be removed or anonymised where appropriate.
+
+5. Private pint-proof photos belonging to the deleted user must be handled safely.
+
+6. Identify what happens if the user is:
+   - an active player in a league
+   - a retired player
+   - a removed player
+   - the host of an active league
+   - the host of a completed league
+   - a member of multiple leagues
+
+7. Pay particular attention to the fact that `leagues.host_id` currently requires a valid profile and there may be no host-transfer system.
+
+8. Do NOT invent a host-transfer mechanism unless the audit shows it is required.
+
+9. Do NOT implement anything yet.
+
+Inspect:
+- current database schema
+- foreign keys and delete behavior
+- RLS policies
+- storage policies
+- existing account/auth code
+- league membership states
+- score-event immutability
+- existing retirement/removal/completion logic
+
+Then report:
+
+A) Current account deletion capability.
+
+B) What would break if we simply deleted `auth.users`.
+
+C) What data should be deleted.
+
+D) What data should be anonymised/preserved.
+
+E) How active-host leagues should be handled.
+
+F) How completed-host leagues should be handled.
+
+G) How active/retired/removed player memberships should be handled.
+
+H) What should happen to private pint-proof photos.
+
+I) Whether a database migration and/or server-side function is required.
+
+J) The smallest safe implementation plan.
+
+STOP after the audit.
