@@ -30,3 +30,5 @@ externalPort = 80
 
 [userenv.shared]
 TEST_SUPABASE_URL = "https://zietsxqqsplnutnyzivb.supabase.co"
+TEST_SUPABASE_DB_HOST = "aws-0-eu-west-2.pooler.supabase.com"
+TEST_SUPABASE_DB_PORT = "5432"
