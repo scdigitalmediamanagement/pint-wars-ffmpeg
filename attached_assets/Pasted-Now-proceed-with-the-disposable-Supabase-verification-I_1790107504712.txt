@@ -1,0 +1,228 @@
+Now proceed with the disposable Supabase verification.
+
+IMPORTANT SAFETY RULES:
+
+- Use ONLY the disposable Supabase project:
+  Pint Wars Deletion Test
+  Project ID: zietsxqqsplnutnyzivb
+- NEVER connect to or modify the real Pint Wars production Supabase project.
+- Use ONLY the TEST_SUPABASE_* environment variables.
+- Do not use production Supabase environment variables.
+- Do not run any operation against production.
+- Do not modify production data.
+- Do not create or delete any real Pint Wars user.
+- Do not expose any secret values in output.
+- This is a disposable test environment, so test users/data may be created there.
+
+PHASE 1 — APPLY MIGRATIONS TO TEST PROJECT
+
+1. Use the verified Session Pooler connection:
+   TEST_SUPABASE_DB_HOST
+   TEST_SUPABASE_DB_PORT
+   TEST_SUPABASE_DB_PASSWORD
+
+2. Apply the project's existing Supabase migrations to the disposable test database in the correct order.
+
+3. Confirm the migrations completed successfully.
+
+4. Confirm that the account-deletion migration containing:
+   - profiles.deidentified_at
+   - account_deletion_jobs
+   - delete_my_account()
+   - associated guards/triggers/policies
+   was applied successfully.
+
+Do NOT apply anything to production.
+
+PHASE 2 — TEST DATA
+
+Create disposable test users and minimal test data needed to exercise the account-deletion rules.
+
+Use clearly identifiable test-only emails such as:
+- deletion-test-host-active@example.invalid
+- deletion-test-host-completed@example.invalid
+- deletion-test-active-player@example.invalid
+- deletion-test-retired@example.invalid
+- deletion-test-removed@example.invalid
+
+Do not use any real person's email address.
+
+Create only the minimum leagues, memberships, pint logs, score events, reviews, reports, notifications, invites and Storage objects needed for the tests.
+
+PHASE 3 — DELETION SAFETY TESTS
+
+Run the following tests against the disposable database:
+
+1. ACTIVE HOST
+Attempt account deletion.
+Expected:
+- deletion rejected
+- active league remains unchanged
+- user remains intact
+
+2. COMPLETED HOST
+Delete/de-identify the completed-host test account.
+Verify:
+- completed league remains
+- host reference remains
+- membership remains
+- score events remain
+- completed result remains
+- profile is de-identified
+- deidentified_at is set
+
+3. ACTIVE PLAYER
+Delete/de-identify active-player test account.
+Verify:
+- league remains
+- membership remains
+- score/history remains
+- profile is de-identified
+- future account activity is rejected
+
+4. RETIRED PLAYER
+Verify:
+- membership remains retired
+- retired_at remains
+- historical score remains
+- de-identification does not change retirement state
+
+5. REMOVED PLAYER
+Verify:
+- membership remains removed
+- removed_at remains
+- historical rules remain intact
+
+6. MULTIPLE LEAGUES
+Verify that deleting/de-identifying a user with multiple leagues preserves every league and membership.
+
+7. PINT LOGS
+Verify:
+- pint_logs remain
+- sensitive GPS/venue/proof-path/content-hash fields are scrubbed as designed
+- score-event references remain valid
+
+8. SCORE EVENTS
+Verify:
+- league_score_events remain unchanged
+- immutable ledger protections remain intact
+
+9. PUB REVIEWS
+Verify:
+- authored reviews are removed as designed
+- review score events remain
+- bonus guards remain
+- other users' reports are preserved appropriately
+
+10. NOTIFICATIONS
+Verify only the deleted user's notifications are removed/suppressed.
+
+11. INVITES
+Verify active invites created by the deleted user are revoked while historical invite records remain as designed.
+
+12. PAID PURCHASES
+Verify purchase records remain intact and associated with the retained de-identified profile UUID.
+
+PHASE 4 — DEIDENTIFICATION GUARD
+
+After deidentified_at is set, explicitly attempt:
+
+- create league
+- join league
+- create invite
+- log pint
+- create review
+- create review report
+- create review bonus guard
+- record paid league purchase
+- update league membership
+- upload pint proof
+- read pint proof
+- delete pint proof
+
+Every relevant operation must be rejected.
+
+PHASE 5 — STORAGE
+
+Create disposable test Storage objects under:
+
+{test-user-id}/{test-league-id}/file1.jpg
+{test-user-id}/{test-league-id}/file2.jpg
+{test-user-id}/another-league/file3.jpg
+
+Also create at least one object under a different test user's prefix.
+
+Run the account-deletion cleanup.
+
+Verify:
+- every object under the deleted user's prefix is removed
+- nested folders are handled
+- final sweep finds no remaining objects
+- another test user's object remains untouched
+- running cleanup again is safe
+
+PHASE 6 — DELETION JOB / REPAIR
+
+Verify:
+
+- deletion creates account_deletion_jobs atomically
+- job contains trusted server-side target information
+- repair accepts only the job ID
+- arbitrary user ID cannot be supplied
+- arbitrary Storage prefix cannot be supplied
+- repair can repeat safely
+- simulate a partial cleanup state where possible
+- rerun repair
+- verify Storage/Auth cleanup completes
+
+Do not expose job secrets or service credentials in output.
+
+PHASE 7 — CONCURRENCY / LOCKING
+
+Test the important race scenarios where practical:
+
+- deletion versus pint logging
+- deletion versus review creation
+- deletion versus league membership update
+- deletion versus league completion
+
+Verify that the documented league-first lock ordering prevents inconsistent results.
+
+PHASE 8 — AUTH
+
+Verify disposable test users are neutralized correctly by the existing ban-based approach.
+
+Do not invent or implement an unsupported session-revocation API.
+
+PHASE 9 — API SECURITY
+
+Verify:
+
+- unauthenticated deletion = 401
+- unauthenticated repair = 401
+- authenticated user cannot target another user
+- repair cannot target another user's job
+- client cannot supply arbitrary user_id or Storage prefix
+
+PHASE 10 — FINAL REPORT
+
+Do not make further source-code changes unless a concrete test failure demonstrates that a change is necessary.
+
+Report:
+
+A) Migration application result
+B) Every test with PASS / FAIL / NOT RUN
+C) Exact concrete failures
+D) SQL/RLS/trigger problems
+E) Storage problems
+F) Concurrency problems
+G) Auth problems
+H) API security problems
+I) Any source-code changes made, with filenames
+J) Whether the account-deletion implementation is safe to migrate to production
+K) Explicit confirmation that the real Pint Wars Supabase project was NOT modified
+
+IMPORTANT:
+After completing the tests, STOP.
+Do not apply the migration to production.
+Do not expose the Account Deletion UI.
