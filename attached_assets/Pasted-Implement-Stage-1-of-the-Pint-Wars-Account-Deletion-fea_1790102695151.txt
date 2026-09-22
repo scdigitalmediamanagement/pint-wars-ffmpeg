@@ -1,0 +1,167 @@
+Implement Stage 1 of the Pint Wars Account Deletion feature.
+
+IMPORTANT:
+- Use FREE mode.
+- Backend/database only.
+- Do NOT build the UI yet.
+- Do NOT add a Delete Account button.
+- Do NOT modify existing user data.
+- Do NOT run the deletion operation against any real account.
+- Do NOT delete or alter the existing Exmouth Pint Wars data.
+- Do NOT change scoring rules.
+- Do NOT change league completion logic.
+- Do NOT change retirement or removal behaviour.
+
+PRODUCT RULES — LOCKED:
+
+Account deletion is separate from:
+- Retire from this Pint War
+- Remove Player
+- End Pint War Early
+
+When an account is deleted:
+
+ACTIVE HOST:
+- Account deletion must be blocked if the user is host of ANY active Pint War.
+- Do not delete the league.
+- Do not transfer the league to another player.
+- Return a clear error explaining that the active Pint War must first finish or be ended by the host.
+
+COMPLETED HOST:
+- Account deletion is allowed.
+- Preserve the completed league.
+- Preserve the historical leaderboard and score.
+- De-identify the user as something like "Deleted player".
+
+ACTIVE PLAYER:
+- Account deletion is allowed.
+- Preserve the league.
+- Preserve the membership.
+- Preserve existing points and history.
+- De-identify the user.
+- Disable/neutralize the account so they cannot continue activity.
+
+RETIRED PLAYER:
+- Account deletion is allowed.
+- Preserve retired status and retirement timestamp.
+- Preserve historical score.
+- De-identify the user.
+
+REMOVED PLAYER:
+- Account deletion is allowed.
+- Preserve removed status and removal timestamp.
+- Preserve historical data.
+- De-identify the user.
+
+OTHER USERS' DATA:
+- Never delete another player's league, score, pint log, review or history.
+
+PRIVATE DATA:
+- Delete all private pint-proof Storage objects belonging to the user.
+- Remove/scrub personal GPS/location information from pint logs.
+- Remove/scrub private proof-photo paths from pint logs.
+- Delete private notifications.
+- Delete the user's authored pub reviews.
+- Preserve the historical PUB_REVIEW score events so league scores do not change.
+- Preserve review bonus guards.
+- Preserve paid purchase records in an appropriately de-identified/auditable form.
+- Revoke active invite codes created by the user while preserving necessary historical invite records.
+
+HISTORICAL DATA:
+- Preserve leagues.
+- Preserve memberships.
+- Preserve pint logs needed for historical integrity, but scrub personal/private fields.
+- Preserve immutable score events.
+- Preserve completed league results.
+- Preserve winner/tie calculations.
+- Do not delete score events.
+
+AUTH:
+Do NOT attempt a simple hard delete of auth.users.
+
+Use the safest existing architecture identified in the audit:
+- retain the stable user/profile UUID needed by historical foreign keys
+- de-identify the profile
+- disable/neutralize the Auth account so it cannot sign in
+- remove personally identifying Auth metadata where safely possible
+
+IMPORTANT:
+Do not invent a new membership status such as `deleted`.
+
+IMPLEMENTATION:
+
+1. First inspect the current final database schema and existing security model again.
+
+2. Create ONE new Supabase migration for the database-side account deletion/de-identification operation.
+
+3. Create a secure database RPC, for example:
+
+   delete_my_account()
+
+The exact name may be chosen based on existing naming conventions.
+
+The RPC must:
+- require authentication
+- operate only on auth.uid()
+- lock/check the relevant leagues and memberships
+- block the operation if auth.uid() is host of any active league
+- preserve historical league data
+- de-identify the profile
+- scrub personal location/proof-path fields from historical pint logs
+- delete private notifications
+- delete the user's authored pub reviews if this can be done without breaking the historical score ledger
+- preserve score events
+- revoke active invite codes
+- preserve retired/removed membership states
+- never delete a league
+- never delete score events
+- never alter another user's data
+- be safe against accidental repeat execution
+
+4. IMPORTANT STORAGE LIMITATION:
+
+The database RPC must NOT pretend that it can delete Supabase Storage objects unless the current database architecture genuinely supports that safely.
+
+If Storage deletion requires the existing service-role API server, design the RPC to return the user's Storage prefix/user ID so the trusted server endpoint can perform the actual Storage cleanup.
+
+5. AUTH LIMITATION:
+
+If disabling/deleting the Supabase Auth user requires the Supabase service-role Admin API, do NOT attempt to perform that through a normal client RPC.
+
+Instead, design the trusted API-server portion needed for the operation.
+
+The final architecture should be:
+
+authenticated client
+→ trusted API endpoint
+→ database account-deletion/de-identification operation
+→ service-role Storage cleanup
+→ trusted Auth account disable/neutralization
+→ success response
+
+6. Do NOT add the client UI yet.
+
+7. Do NOT call the deletion operation.
+
+8. Do NOT delete any existing test account.
+
+9. Do not change unrelated files.
+
+10. After implementation:
+- Run mobile typecheck if mobile files changed.
+- Run API typecheck if API files changed.
+- Run git diff --check.
+- Report every file changed.
+- Report the migration filename.
+- Report the RPC name.
+- Explain exactly what the database operation does.
+- Explain what the API server does.
+- Explain how Storage cleanup works.
+- Explain how Auth is neutralized.
+- Confirm that NO account deletion was actually executed.
+- Confirm that NO Supabase data was deleted or modified during implementation.
+
+IMPORTANT:
+Do not apply the migration automatically.
+
+STOP after implementing the backend/database design and report the result.
