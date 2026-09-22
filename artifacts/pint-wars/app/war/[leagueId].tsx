@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { Button, Card, ErrorText, Screen, Title, uiStyles } from '@/components/AppUi';
-import { endLeagueEarly, getLeagueDashboard, logPint, retireFromLeague } from '@/src/lib/league-service';
+import { endLeagueEarly, getLeagueDashboard, getLeagueSummary, logPint, retireFromLeague } from '@/src/lib/league-service';
 import { getCurrentLocation } from '@/src/lib/location-service';
 import { findNearbyPubs, type Coordinates, type NearbyPub } from '@/src/lib/pub-service';
 import { useAuth } from '@/src/providers/AuthProvider';
@@ -32,6 +32,20 @@ function endTimeLabel(endsAt: string) {
     hour: 'numeric',
     minute: '2-digit',
   })}`;
+}
+
+function completedDateLabel(value: string | null) {
+  if (!value) return 'Unknown';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Unknown';
+  return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function completedDurationDays(startsAt: string, completedAt: string | null, scheduledEndAt: string) {
+  const start = new Date(startsAt).getTime();
+  const end = new Date(completedAt ?? scheduledEndAt).getTime();
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
+  return Math.max(1, Math.ceil((end - start) / 86400000));
 }
 
 type PendingPint = {
@@ -68,6 +82,11 @@ export default function LeagueDashboardScreen() {
     queryFn: () => getLeagueDashboard(leagueId as string),
     enabled: Boolean(leagueId),
     refetchInterval: 60_000,
+  });
+  const summaryQuery = useQuery({
+    queryKey: ['league-summary', leagueId],
+    queryFn: () => getLeagueSummary(leagueId as string),
+    enabled: Boolean(leagueId && query.data?.league.status === 'completed'),
   });
   const logMutation = useMutation({
     mutationFn: (input: {
@@ -298,6 +317,7 @@ export default function LeagueDashboardScreen() {
   const day = dayNumber(league.starts_at, league.ends_at, league.status);
   const durationDays = leagueDurationDays(league.starts_at, league.ends_at);
   const leagueEndLabel = endTimeLabel(league.ends_at);
+  const completedDuration = completedDurationDays(league.starts_at, league.completed_at, league.ends_at);
   const sortedMembers = [...members].sort((a, b) => b.points - a.points || a.joined_at.localeCompare(b.joined_at));
   const totalPoints = members.reduce((total, member) => total + member.points, 0);
   const highestPoints = sortedMembers[0]?.points ?? 0;
@@ -330,20 +350,71 @@ export default function LeagueDashboardScreen() {
           </View>
         </Card>
         {league.status === 'completed' ? (
-          <Card style={styles.resultCard}>
-            <Text style={[styles.selectedLabel, { color: colors.accent }]}>
-              {winners.length === 1 ? 'WINNER' : 'TIED WINNERS'}
-            </Text>
-            <Text style={[styles.resultNames, { color: colors.foreground }]}>
-              {winners.map((winner) => winner.display_name).join(' · ')}
-            </Text>
-            <Text style={[styles.resultText, { color: colors.mutedForeground }]}>
-              Final score: {highestPoints} {highestPoints === 1 ? 'point' : 'points'}
-            </Text>
-          </Card>
+          <>
+            <Card style={styles.resultCard}>
+              <Text style={[styles.selectedLabel, { color: colors.accent }]}>
+                {winners.length === 1 ? 'WINNER' : 'TIED WINNERS'}
+              </Text>
+              <Text style={[styles.resultNames, { color: colors.foreground }]}>
+                {winners.map((winner) => winner.display_name).join(' · ')}
+              </Text>
+              <Text style={[styles.resultText, { color: colors.mutedForeground }]}>
+                Final score: {highestPoints} {highestPoints === 1 ? 'point' : 'points'}
+              </Text>
+              <View style={styles.resultMeta}>
+                <Text style={[styles.resultText, { color: colors.mutedForeground }]}>
+                  Completed {completedDateLabel(league.completed_at)}
+                </Text>
+                <Text style={[styles.resultText, { color: colors.mutedForeground }]}>
+                  Scheduled end {completedDateLabel(league.ends_at)}
+                </Text>
+                {completedDuration ? (
+                  <Text style={[styles.resultText, { color: colors.mutedForeground }]}>
+                    Duration {completedDuration} {completedDuration === 1 ? 'day' : 'days'}
+                  </Text>
+                ) : null}
+              </View>
+            </Card>
+            {summaryQuery.isLoading ? (
+              <Card style={styles.summaryLoading}>
+                <ActivityIndicator color={colors.accent} />
+                <Text style={[styles.resultText, { color: colors.mutedForeground }]}>Loading War Summary…</Text>
+              </Card>
+            ) : summaryQuery.data ? (
+              <Card style={styles.warStats}>
+                <Text style={[styles.selectedLabel, { color: colors.accent }]}>WAR STATS</Text>
+                <View style={styles.statsGrid}>
+                  <View style={styles.statCell}>
+                    <Text style={[styles.statValue, { color: colors.foreground }]}>{summaryQuery.data.stats.total_pints}</Text>
+                    <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>PINTS</Text>
+                  </View>
+                  <View style={styles.statCell}>
+                    <Text style={[styles.statValue, { color: colors.foreground }]}>{summaryQuery.data.stats.pubs_visited}</Text>
+                    <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>PUBS</Text>
+                  </View>
+                  <View style={styles.statCell}>
+                    <Text style={[styles.statValue, { color: colors.foreground }]}>{summaryQuery.data.stats.new_pub_bonuses}</Text>
+                    <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>NEW PUB BONUSES</Text>
+                  </View>
+                  <View style={styles.statCell}>
+                    <Text style={[styles.statValue, { color: colors.foreground }]}>{summaryQuery.data.stats.reviews}</Text>
+                    <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>REVIEWS</Text>
+                  </View>
+                  <View style={styles.statCell}>
+                    <Text style={[styles.statValue, { color: colors.foreground }]}>{summaryQuery.data.stats.player_count}</Text>
+                    <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>PLAYERS</Text>
+                  </View>
+                </View>
+              </Card>
+            ) : summaryQuery.isError ? (
+              <ErrorText>War Summary is unavailable right now.</ErrorText>
+            ) : null}
+          </>
         ) : null}
         <View style={{ gap: 12 }}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Leaderboard</Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+            {league.status === 'completed' ? 'Final leaderboard' : 'Leaderboard'}
+          </Text>
           <Card style={{ paddingVertical: 8 }}>
             {sortedMembers.map((member, index) => {
               const isCurrentUser = member.user_id === user?.id;
@@ -591,6 +662,13 @@ const styles = StyleSheet.create({
   resultCard: { gap: 7 },
   resultNames: { fontFamily: 'Inter_700Bold', fontSize: 22, lineHeight: 28 },
   resultText: { fontFamily: 'Inter_400Regular', lineHeight: 21 },
+  resultMeta: { gap: 2, marginTop: 4 },
+  summaryLoading: { alignItems: 'center', gap: 10 },
+  warStats: { gap: 18 },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 18 },
+  statCell: { flexBasis: '28%', flexGrow: 1, gap: 4, minWidth: 80 },
+  statValue: { fontFamily: 'Inter_700Bold', fontSize: 28, lineHeight: 32 },
+  statLabel: { fontFamily: 'Inter_700Bold', fontSize: 10, letterSpacing: 1 },
   metricValue: { fontFamily: 'Inter_700Bold', fontSize: 26 },
   metricLabel: { fontFamily: 'Inter_700Bold', fontSize: 10, letterSpacing: 1 },
   sectionTitle: { fontFamily: 'Inter_700Bold', fontSize: 21 },
