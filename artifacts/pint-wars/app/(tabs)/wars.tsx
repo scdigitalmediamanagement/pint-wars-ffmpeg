@@ -8,8 +8,8 @@ import { useAuth } from '@/src/providers/AuthProvider';
 import { useColors } from '@/hooks/useColors';
 import type { LeagueDashboard, LeagueMembership } from '@/src/types/league';
 
-function formatEndLabel(endsAt: string, status: 'active' | 'completed') {
-  const date = new Date(endsAt);
+function formatEndLabel(endsAt: string, status: 'active' | 'completed', completedAt: string | null) {
+  const date = new Date(status === 'completed' ? completedAt ?? endsAt : endsAt);
   if (Number.isNaN(date.getTime())) return null;
   const dateLabel = date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
   const timeLabel = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
@@ -82,7 +82,7 @@ export default function WarsScreen() {
     const isCompleted = league.status === 'completed';
     const memberCount = dashboard?.members.length;
     const leaderboard = dashboard ? leaderboardSummary(dashboard.members, league.status) : null;
-    const endLabel = formatEndLabel(league.ends_at, league.status);
+    const endLabel = formatEndLabel(league.ends_at, league.status, league.completed_at);
 
     return (
       <Pressable
@@ -142,13 +142,13 @@ export default function WarsScreen() {
         {query.isError ? <Text style={{ color: colors.destructive }}>Could not load your wars.</Text> : null}
         {activeLeagues.length ? (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Active leagues</Text>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>ACTIVE</Text>
             {activeLeagues.map(renderLeagueCard)}
           </View>
         ) : null}
         {completedLeagues.length ? (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Completed history</Text>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>COMPLETED</Text>
             {completedLeagues.map(renderLeagueCard)}
           </View>
         ) : null}
