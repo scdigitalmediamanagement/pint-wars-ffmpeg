@@ -1,0 +1,160 @@
+Perform one final READ-ONLY SQL metadata audit against the REAL Pint Wars production Supabase database.
+
+IMPORTANT:
+- FREE mode.
+- READ ONLY ONLY.
+- Do not apply any migration.
+- Do not execute INSERT, UPDATE, DELETE, TRUNCATE, ALTER, CREATE, DROP, GRANT, REVOKE, or any other write/DDL operation.
+- Do not call delete_my_account().
+- Do not call any account-deletion RPC.
+- Do not create test users or test data.
+- Do not access or list private Storage objects.
+- Do not expose passwords, API keys, JWTs, emails, names, or other personal data.
+- Do not modify application code.
+- Do not modify production Supabase in any way.
+
+Use the existing production database connection only if a direct read-only SQL connection is already safely available in the workspace.
+
+If a production DB connection is NOT available, do NOT ask me to paste a password or secret into chat. Report exactly which non-secret connection capability is missing and stop.
+
+The purpose is to verify the production prerequisites before we consider migration.
+
+READ-ONLY CHECKS:
+
+1. MIGRATION FILE REVIEW
+
+Read these repository migration files:
+
+- 202609180004_paid_league_purchases.sql
+- 202609220003_account_deletion.sql
+- 202609220004_account_deletion_safety.sql
+
+Summarize exactly:
+- tables created
+- columns created
+- functions replaced/created
+- triggers created
+- policies changed
+- constraints/foreign keys changed
+- dependencies between the three migrations
+
+Do not modify anything.
+
+2. PRODUCTION SCHEMA METADATA
+
+Using information_schema / pg_catalog read-only queries, verify whether production currently contains:
+
+- public.profiles
+- public.leagues
+- public.league_members
+- public.pint_logs
+- public.league_score_events
+- public.pub_reviews
+- public.pub_review_reports
+- public.pub_review_bonus_guards
+- public.notifications
+- public.league_invites
+- public.paid_league_purchases, if expected by the migration
+
+For each relevant object, report only existence and schema metadata, not row contents.
+
+3. FOREIGN KEYS / CONSTRAINTS
+
+Inspect the current production foreign keys and constraints relevant to:
+
+- pub_review_reports → pub_reviews
+- league_score_events
+- pint_logs
+- paid_league_purchases
+- league_members
+
+Determine whether 202609220003 and 202609220004 can safely create/alter the expected constraints.
+
+4. EXISTING PRODUCTION FUNCTIONS
+
+Read-only inspect pg_proc/pg_get_functiondef() for the relevant existing functions.
+
+Pay particular attention to:
+
+- pint logging / verified pint logging
+- create_pub_review
+- retire_from_league
+- end_league_early
+- complete_all_expired_leagues
+- notification completion functions
+- any function that updates league membership
+- any function that creates league/invite activity
+
+Do NOT execute these functions.
+
+Determine whether the actual production function bodies use the expected league-first locking order.
+
+Report the relevant lock order in plain English.
+
+5. EXISTING TRIGGERS AND RLS
+
+Read-only inspect:
+
+- pg_trigger
+- pg_policies
+- relevant information_schema metadata
+
+Determine whether 202609220003/004 would conflict with any existing trigger, policy, constraint, or function.
+
+6. PAID PURCHASE MIGRATION
+
+Because production currently lacks public.paid_league_purchases, inspect 202609180004 carefully.
+
+Determine:
+- whether it is safe to apply to the current production schema
+- what existing objects it depends on
+- whether it changes any existing production data
+- whether it creates any triggers/functions that 202609220004 relies upon
+- whether applying it is genuinely required by the account-deletion migration
+
+Do not apply it.
+
+7. CURRENT DATA SAFETY
+
+Use aggregate/count queries only where necessary.
+
+Do not return personal information.
+
+Specifically check whether:
+- pub_review_reports currently has rows
+- any existing rows would violate the planned review-report foreign-key change
+- any existing schema state would prevent the migrations from being applied
+
+8. PRODUCTION MIGRATION ORDER
+
+Based strictly on the repository migration contents and the actual production metadata, determine whether the correct sequence is:
+
+202609180004
+→ 202609220003
+→ 202609220004
+
+If that sequence is correct, explain why.
+
+If another sequence is required, identify it.
+
+9. FINAL DECISION
+
+Return:
+
+A) Direct production SQL connection available: YES/NO
+B) Production schema compatibility: PASS/FAIL
+C) 202609180004 prerequisite: PASS/FAIL
+D) 202609220003 prerequisite: PASS/FAIL
+E) 202609220004 compatibility: PASS/FAIL
+F) Foreign keys/constraints: PASS/FAIL
+G) Existing functions/lock ordering: PASS/FAIL
+H) Existing triggers/RLS: PASS/FAIL
+I) Existing-data compatibility: PASS/FAIL
+J) Exact migration order
+K) Any remaining blocker
+L) Whether production migration is now ready
+M) Explicit confirmation that NO production data or schema was changed
+
+STOP after this report.
+
+Do not apply anything.
