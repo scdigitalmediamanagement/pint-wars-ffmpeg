@@ -1,0 +1,117 @@
+I want to implement the next Pint Wars feature:
+
+END PINT WAR EARLY
+
+IMPORTANT PRODUCT RULE:
+
+The host must be able to end the current Pint War before its scheduled end date.
+
+This applies ONLY to the specific league being viewed.
+
+When the host chooses:
+
+"End Pint War Early"
+
+show a confirmation:
+
+"End this Pint War?"
+
+"Are you sure you want to end this Pint War early? The current leaderboard will become final and no more points can be earned."
+
+Buttons:
+
+"Cancel"
+"End Pint War"
+
+After confirmation:
+
+- The league status becomes `completed`.
+- The current leaderboard becomes final.
+- Existing pint logs remain unchanged.
+- Existing score events remain unchanged.
+- Existing reviews remain unchanged.
+- Existing player scores remain unchanged.
+- The winner/tie is calculated using the existing completion logic.
+- No further pints can be logged.
+- No further league scoring can occur.
+- No further qualifying league review points can be awarded.
+- The league remains viewable as a completed league.
+- Historical scores and leaderboard remain visible.
+
+IMPORTANT:
+
+- Only the league host can end the league early.
+- A normal player must not be able to perform this action.
+- Do not confuse "End Pint War Early" with "Remove Player".
+- Do not confuse it with "Retire from this Pint War".
+- Do not delete anything.
+- Do not alter existing scoring values.
+- Do not change the automatic expiry/completion system.
+- Do not change the existing winner/tie calculation unless absolutely necessary to support early completion.
+
+Before changing anything:
+
+1. Inspect the current league completion logic.
+2. Inspect the existing automatic completion function.
+3. Inspect how winner/tie is currently calculated.
+4. Inspect the current host controls on:
+   artifacts/pint-wars/app/war/[leagueId].tsx
+
+Then implement the smallest safe solution.
+
+DATABASE:
+
+If a database migration is required, create ONE new migration.
+
+The database must be the security boundary.
+
+The server/database must verify:
+- authenticated user
+- specified league exists
+- caller is the host
+- league is currently active
+
+Then atomically change the league to completed using the existing completion/winner logic.
+
+Do not allow a non-host to bypass the UI and end a league through a direct RPC call.
+
+CLIENT:
+
+Add the host action to the existing league dashboard.
+
+Use the existing UI components and confirmation pattern.
+
+For a completed league:
+- Do not show "End Pint War Early".
+- Show the existing completed state/leaderboard.
+
+For a normal player:
+- Do not show the action.
+
+After ending:
+- Refresh the league dashboard.
+- Show the completed leaderboard/winner/tie immediately.
+
+IMPORTANT PRODUCT COMPATIBILITY:
+
+This feature must work with:
+- standard Pint Wars
+- the existing free test league
+- retired players
+- removed players
+- automatic completion
+
+Do not implement the later "Pint War Memories" video yet.
+Do not implement Rematch yet.
+Do not change pricing yet.
+
+After implementation:
+- Run mobile typecheck.
+- Run API typecheck if API code was changed.
+- Run git diff --check.
+- If a migration was created, DO NOT apply it automatically.
+- Report exactly what changed.
+- Report whether a migration was created.
+- Stop.
+
+Use FREE mode.
