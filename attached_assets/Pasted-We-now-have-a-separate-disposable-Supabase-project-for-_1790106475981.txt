@@ -1,0 +1,60 @@
+We now have a separate disposable Supabase project for testing account deletion.
+
+TEST SUPABASE PROJECT:
+Project name: Pint Wars Deletion Test
+Project ID: zietsxqqsplnutnyzivb
+Project URL: https://zietsxqqsplnutnyzivb.supabase.co
+
+IMPORTANT SAFETY RULES:
+- This is the ONLY Supabase project you may use for this test.
+- NEVER use or modify the real Pint Wars production Supabase project.
+- Do not change the existing production Supabase environment variables.
+- Do not apply anything to production.
+- Do not run delete_my_account() against any real user.
+- Do not expose or print any Supabase secret.
+- Do not ask me to paste a secret into chat.
+
+First, inspect the existing project and determine the safest way to run the account-deletion migration and verification against the disposable Supabase project.
+
+I want you to prepare the test connection, but DO NOT run the migration yet.
+
+Specifically:
+
+1. Inspect the repository's existing Supabase migration structure and tooling.
+
+2. Determine exactly which test-only credentials/environment variables are required to:
+   - connect to the disposable Supabase project
+   - apply the existing migrations to the disposable project
+   - run the SQL verification safely
+   - test the Storage cleanup
+
+3. Tell me exactly which TEST secrets I need to add to Replit Secrets.
+
+Use clear names such as:
+- TEST_SUPABASE_URL
+- TEST_SUPABASE_SERVICE_ROLE_KEY
+- TEST_SUPABASE_DB_PASSWORD
+
+Only request credentials that are genuinely necessary.
+
+4. If the database password is required, explain where I can find/reset the disposable project's database password. Do not ask for the password in chat.
+
+5. Create/use ONLY test-specific environment variable names. Do not overwrite:
+   - EXPO_PUBLIC_SUPABASE_URL
+   - EXPO_PUBLIC_SUPABASE_ANON_KEY
+   - SUPABASE_SERVICE_ROLE_KEY
+   - GOOGLE_PLACES_API_KEY
+   or any other production Pint Wars secrets.
+
+6. Do not modify application source code yet.
+
+7. Do not apply any migration yet.
+
+8. Do not create test users or test data yet.
+
+At the end, report:
+A) Which test credentials are actually required
+B) Exactly where I should add each one in Replit Secrets
+C) Whether anything was changed
+D) Confirm production Supabase was not accessed or modified
+E) Stop and wait for me before applying the test migration.

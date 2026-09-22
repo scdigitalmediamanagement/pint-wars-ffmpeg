@@ -25,3 +25,8 @@ channel = "stable-25_05"
 [[ports]]
 localPort = 8082
 externalPort = 80
+
+[userenv]
+
+[userenv.shared]
+TEST_SUPABASE_URL = "https://zietsxqqsplnutnyzivb.supabase.co"
