@@ -1,0 +1,115 @@
+Perform a FINAL READ-ONLY production migration pre-flight check for the account-deletion hardening.
+
+IMPORTANT:
+- FREE mode.
+- READ ONLY.
+- Do NOT apply any migration.
+- Do NOT modify production Supabase.
+- Do NOT create, delete, de-identify, or modify any production user.
+- Do NOT expose the Account Deletion UI.
+- Do NOT change application code.
+- Do NOT use the disposable test database for this check.
+- This task is ONLY to determine whether the corrected migration is safe to apply to the current production schema.
+
+We have now successfully verified the corrected implementation against the disposable Supabase project, including:
+- deletion safety
+- Storage cleanup
+- Auth neutralization
+- SQL/RLS/trigger behaviour
+- deletion vs pint logging
+- deletion vs pub review creation
+- deletion vs membership retirement/update
+- deletion vs league completion
+
+The corrected migration is:
+
+artifacts/pint-wars/supabase/migrations/202609220004_account_deletion_safety.sql
+
+The Storage/API correction is:
+
+artifacts/api-server/src/routes/account-deletion.ts
+
+Production must remain untouched.
+
+Check the CURRENT production Pint Wars Supabase schema/state and compare it with the assumptions made by 202609220004_account_deletion_safety.sql.
+
+Specifically verify:
+
+1. Migration prerequisites
+- Confirm which existing migrations have already been applied to production.
+- Confirm 202609220004 is in the correct sequence.
+- Identify any prerequisite migration that production is missing.
+
+2. Schema compatibility
+Confirm the production database currently contains the tables, columns, enums, functions and constraints expected by 202609220004.
+
+Pay particular attention to:
+- profiles
+- leagues
+- league_members
+- pint_logs
+- league_score_events
+- pub_reviews
+- pub_review_reports
+- pub_review_bonus_guards
+- notifications
+- league_invites
+- paid league purchase records
+- pint-proofs Storage bucket/policies
+
+3. Existing production data
+Read-only inspect enough metadata/counts/state to determine whether the migration would conflict with existing data.
+
+Do NOT expose personal information unnecessarily.
+Do NOT dump user emails, tokens, Storage contents, or private proof data.
+
+4. Existing functions and policies
+Check for conflicts with:
+- existing delete_my_account()
+- existing scoring RPCs
+- existing review RPCs
+- existing membership RPCs
+- existing Storage policies
+- existing Auth-related database functions/triggers
+
+5. Lock ordering
+Confirm the production functions involved in:
+- pint logging
+- review creation
+- membership retirement/update
+- league completion
+use compatible league-first locking behaviour.
+
+6. Migration safety
+Check specifically whether:
+- the new columns can be added safely
+- the new account_deletion_jobs table can be created safely
+- constraints/policies/triggers can be created without conflicting with existing objects
+- the review-report foreign-key change can be applied safely to existing data
+- the revised delete_my_account() can replace the existing function safely
+
+7. API compatibility
+Confirm that the corrected account-deletion.ts matches the production API environment and existing route registration.
+
+8. Production environment
+Confirm the account-deletion API does NOT require any new production secret that has not been identified.
+
+9. DO NOT APPLY ANYTHING.
+
+FINAL REPORT:
+
+A) Production schema compatibility: PASS/FAIL
+B) Migration prerequisites: PASS/FAIL
+C) Existing-data compatibility: PASS/FAIL
+D) Function/RPC compatibility: PASS/FAIL
+E) RLS/Storage compatibility: PASS/FAIL
+F) Lock-order compatibility: PASS/FAIL
+G) API compatibility: PASS/FAIL
+H) Any concrete blocker
+I) Exact migration(s) that should be applied
+J) Exact order they should be applied
+K) Any required backup/safety step
+L) Final recommendation: READY FOR PRODUCTION MIGRATION or NOT READY
+M) Explicitly confirm NO production changes were made
+
+STOP after the report.
