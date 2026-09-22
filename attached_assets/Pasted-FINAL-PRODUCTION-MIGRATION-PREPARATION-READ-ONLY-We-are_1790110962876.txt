@@ -1,0 +1,49 @@
+FINAL PRODUCTION MIGRATION PREPARATION — READ ONLY
+
+We are preparing to apply the Pint Wars account-deletion migrations to the real production Supabase project.
+
+DO NOT:
+- apply any migration
+- connect to or modify production Supabase
+- change application source code
+- change secrets
+- create users or test data
+- run any INSERT, UPDATE, DELETE, ALTER, CREATE, DROP, TRUNCATE, RPC, or other write operation
+
+Using the repository files only, inspect these exact migrations:
+
+1. artifacts/pint-wars/supabase/migrations/202609180004_paid_league_purchases.sql
+2. artifacts/pint-wars/supabase/migrations/202609220003_account_deletion.sql
+3. artifacts/pint-wars/supabase/migrations/202609220004_account_deletion_safety.sql
+
+Prepare a final production application pack.
+
+For each migration:
+A) Confirm the exact file path.
+B) Confirm its dependencies.
+C) Confirm whether it can be safely run in the production SQL Editor.
+D) Report any statement that would make it unsafe to run.
+E) Confirm that 202609220004 is the final/correct account-deletion function definition.
+
+Then produce:
+
+1. The EXACT SQL contents of migration 202609180004 in a clean copy/paste block.
+2. The EXACT SQL contents of migration 202609220003 in a clean copy/paste block.
+3. The EXACT SQL contents of migration 202609220004 in a clean copy/paste block.
+
+Do not modify the SQL while reproducing it.
+
+Also provide a short verification query pack that is READ-ONLY and can be run after all three migrations to verify:
+- paid_league_purchases exists
+- profiles.deidentified_at exists
+- account_deletion_jobs exists
+- pub_review_reports.review_id is nullable
+- pub_review_reports_review_id_fkey uses ON DELETE SET NULL
+- delete_my_account() exists
+- the final delete_my_account() definition is the corrected league-first version
+- the required account-deletion triggers exist
+- the required RLS policies exist
+
+Do NOT execute any of the migration SQL.
+Do NOT apply anything.
+Stop after producing the migration pack and verification queries.
