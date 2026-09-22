@@ -1,0 +1,75 @@
+Run the proposed disposable-database verification for the account-deletion hardening.
+
+IMPORTANT:
+- FREE mode.
+- Do NOT apply the new account-deletion migration to the real Pint Wars Supabase project.
+- Do NOT modify or delete any real Pint Wars data.
+- Do NOT run delete_my_account() against any real user.
+- Do NOT change application code unless a test reveals a concrete defect that must be fixed.
+- Use a disposable/test Supabase database only if one is already available and safe to use.
+- If no disposable database is available, do not create or use the production database as a substitute. Report that clearly.
+
+Verify the new SQL/database behaviour, especially:
+
+1. deidentified_at guard
+   - de-identified users cannot create/join leagues
+   - cannot create invites
+   - cannot log pints
+   - cannot create reviews/review reports/bonus guards
+   - cannot record paid purchases
+   - cannot update league membership state
+   - notification behaviour is correct
+
+2. deletion transaction
+   - active hosted league blocks deletion
+   - completed hosted league can be de-identified
+   - active player can be de-identified
+   - retired player remains retired
+   - removed player remains removed
+   - multiple leagues are preserved
+   - pint_logs remain but sensitive fields are scrubbed
+   - league_score_events remain unchanged
+   - historical review score events/bonus guards remain
+   - invites are revoked correctly
+   - notifications are removed/suppressed correctly
+
+3. concurrency/race protection
+   - verify the intended league-first lock ordering
+   - verify de-identification cannot race with relevant account activity
+
+4. Storage
+   - create disposable nested test objects using:
+     {user_id}/{league_id}/{filename}
+   - verify recursive discovery
+   - verify deletion
+   - verify final sweep
+   - verify another user's prefix is untouched
+
+5. deletion job / repair
+   - deletion creates the trusted account_deletion_jobs record atomically
+   - repair uses only the trusted job ID
+   - arbitrary user IDs/prefixes cannot be supplied
+   - repeated repair is idempotent
+   - simulated partial cleanup can be repaired
+
+6. Auth neutralization
+   - verify the intended ban-based neutralization behaviour using disposable/test users only
+   - do not invent or test unsupported session-revocation APIs
+
+7. API security
+   - unauthenticated deletion = 401
+   - unauthenticated repair = 401
+   - arbitrary user_id cannot be supplied to target another account
+
+At the end give me:
+
+A) PASS/FAIL for every test
+B) Any concrete defect found
+C) Any SQL trigger/RLS/policy issue found
+D) Any Storage cleanup issue found
+E) Any concurrency issue found
+F) Whether the migration is now safe to apply to the real Pint Wars Supabase database
+G) Exact files changed, if any
+H) Explicitly confirm that the real Pint Wars Supabase database was NOT modified
+
+Do not add the Account Deletion UI yet.
