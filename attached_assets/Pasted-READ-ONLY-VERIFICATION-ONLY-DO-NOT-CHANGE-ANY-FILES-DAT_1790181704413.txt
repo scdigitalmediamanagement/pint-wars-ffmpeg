@@ -1,0 +1,40 @@
+READ-ONLY VERIFICATION ONLY. DO NOT CHANGE ANY FILES, DATABASE DATA, DATABASE SCHEMA, SECRETS, AUTH USERS, OR STORAGE OBJECTS.
+
+We have now applied and verified the three production migrations for Pint Wars account deletion.
+
+I want you to audit the existing account-deletion API implementation only.
+
+Relevant files:
+- artifacts/api-server/src/routes/account-deletion.ts
+- artifacts/api-server/src/routes/index.ts
+
+Verify all of the following:
+
+1. POST /api/account/delete requires a valid authenticated Supabase bearer token.
+2. It obtains the authenticated user ID from the verified JWT/session, not from a request-body user ID.
+3. The client cannot supply an arbitrary user ID and cause another account to be deleted.
+4. It calls public.delete_my_account() using the authenticated user's JWT.
+5. It correctly handles the new return shape:
+   - job_id
+   - storage_prefix
+   - user_id
+6. It verifies that the returned user_id matches the authenticated caller.
+7. It uses the returned storage_prefix only for that authenticated user's pint-proofs cleanup.
+8. It does not delete or modify another user's Storage objects.
+9. It only neutralizes the authenticated user's Supabase Auth account.
+10. It does not hard-delete the Auth user.
+11. It does not expose service-role credentials to the client.
+12. It correctly handles database failure before attempting Storage/Auth cleanup.
+13. It correctly handles Storage cleanup failure without falsely reporting success.
+14. It correctly handles Auth neutralization failure without falsely reporting success.
+15. It is compatible with the account_deletion_jobs retry model created by the production migration.
+16. Check that routes/index.ts actually registers the endpoint.
+17. Run the existing TypeScript/build checks if they are read-only.
+18. Do not make any changes.
+
+Return only:
+
+A) PASS/FAIL for each item 1–17.
+B) Any concrete problem found.
+C) Whether the current API is safe to test with an authenticated test account.
+D) If anything fails, give me the smallest required change, but DO NOT make that change.
