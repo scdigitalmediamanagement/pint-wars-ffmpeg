@@ -1,0 +1,94 @@
+Prepare a SAFE production account-deletion end-to-end test plan.
+
+IMPORTANT:
+- FREE mode.
+- Do NOT delete or de-identify any account yet.
+- Do NOT call /api/account/delete.
+- Do NOT call delete_my_account().
+- Do NOT modify production data.
+- Do NOT create or modify the Exmouth Pint Wars.
+- Do NOT use my Costa account.
+- Do NOT expose the Account Deletion UI.
+- Do not change application source code.
+
+We now have the production account-deletion backend and database migrations fully verified.
+
+I want you to prepare the exact steps for testing the complete production flow using ONE dedicated disposable production test account.
+
+The test must verify:
+
+1. TEST ACCOUNT
+- Explain exactly how to create a dedicated test account in the existing Pint Wars app.
+- Use a clearly disposable test email address.
+- Do not use a real person's email.
+- Do not require me to give you any password.
+
+2. TEST LEAGUE
+Create a small disposable Pint War involving the test account and another disposable test account if required.
+
+The test league must become COMPLETED before deletion is attempted.
+
+Do not use:
+- Costa
+- Tall Paul
+- Luke
+- Exmouth Pint Wars
+- any existing real league
+
+3. TEST HISTORY
+The test account should have enough disposable history to verify preservation:
+- at least one pint
+- at least one score event
+- at least one pub visit/review if practical
+- at least one notification if practical
+- a pint-proof Storage object
+
+Do not overcomplicate the test.
+
+4. BEFORE DELETION CHECKLIST
+Tell me exactly what screenshots/values we should record before deletion, without exposing sensitive credentials.
+
+5. DELETION TEST
+Do NOT execute it yet.
+
+Explain exactly what we will do when we are ready:
+- authenticated test account calls Account Deletion
+- database de-identification occurs
+- Storage cleanup occurs
+- Auth neutralization occurs
+- deletion job is completed
+
+6. EXPECTED RESULTS
+Define exactly what should remain after deletion:
+- completed league
+- membership
+- historical pint/score information
+- score events
+- relevant historical records
+
+And what should disappear/be scrubbed:
+- profile identity
+- authored review
+- notification data
+- GPS/proof metadata
+- private proof Storage object
+- active Auth access
+
+7. REPAIR TEST
+Explain how we can safely verify the repair job without damaging the test account or production data.
+
+8. STOP CONDITION
+The plan must end BEFORE actually executing account deletion.
+
+FINAL OUTPUT:
+
+A) Exact test-account setup
+B) Exact test-league setup
+C) Exact pre-deletion checklist
+D) Exact deletion procedure — but DO NOT execute it
+E) Expected post-deletion state
+F) Repair verification
+G) Rollback/abort considerations
+H) Explicit confirmation that nothing was deleted or de-identified during this planning task
+
+Do not make any code or database changes.
