@@ -5,10 +5,10 @@ import { authenticateSupabaseBearer } from "../lib/supabase-auth";
 const router: IRouter = Router();
 
 const PRODUCT_CAPACITY: Record<string, number> = {
-  consumable: 6,
-  consumable_2: 10,
-  consumable_3: 14,
-  consumable_4: 16,
+  pint_war_6_players: 6,
+  pint_war_10_players: 10,
+  pint_war_14_players: 14,
+  pint_war_16_players: 16,
 };
 
 type RevenueCatEvent = {

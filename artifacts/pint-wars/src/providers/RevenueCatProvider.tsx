@@ -15,13 +15,15 @@ import Purchases, {
 import { useAuth } from '@/src/providers/AuthProvider';
 
 export const PINT_WAR_PRODUCTS = [
-  { identifier: 'consumable', capacity: 6 },
-  { identifier: 'consumable_2', capacity: 10 },
-  { identifier: 'consumable_3', capacity: 14 },
-  { identifier: 'consumable_4', capacity: 16 },
+  { identifier: 'pint_war_6_players', capacity: 6 },
+  { identifier: 'pint_war_10_players', capacity: 10 },
+  { identifier: 'pint_war_14_players', capacity: 14 },
+  { identifier: 'pint_war_16_players', capacity: 16 },
 ] as const;
 
 export type PintWarProductIdentifier = (typeof PINT_WAR_PRODUCTS)[number]['identifier'];
+
+const PINT_WAR_OFFERING_IDENTIFIER = 'default';
 
 type RevenueCatStatus = 'loading' | 'signed-out' | 'ready' | 'error';
 
@@ -115,7 +117,7 @@ export function RevenueCatProvider({ children }: React.PropsWithChildren) {
       Purchases.getOfferings(),
     ]);
     setCustomerInfo(nextCustomerInfo);
-    setOffering(offerings.current ?? null);
+    setOffering(offerings.all[PINT_WAR_OFFERING_IDENTIFIER] ?? null);
   }, []);
 
   useEffect(() => {
