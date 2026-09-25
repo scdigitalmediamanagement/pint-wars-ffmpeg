@@ -71,6 +71,9 @@ export default function CreateWarScreen() {
     useState<PintWarProductIdentifier | null>(null);
   const selectedPlan = leaguePlans.find((plan) => plan.id === selectedPlanId);
   const freeTrialUsed = profileQuery.data?.free_trial_used_at != null;
+  const availableLeaguePlans = freeTrialUsed
+    ? leaguePlans.filter((plan) => plan.kind !== 'free')
+    : leaguePlans;
   const selectedPackage = selectedPlan?.productIdentifier
     ? revenueCat.offering?.availablePackages.find(
         (item) => item.product.identifier === selectedPlan.productIdentifier,
@@ -273,7 +276,7 @@ export default function CreateWarScreen() {
               </Text>
               <View style={styles.planList}>
                 <Text style={[styles.sectionLabel, { color: colors.foreground }]}>League size</Text>
-                {leaguePlans.map((plan) => {
+                {availableLeaguePlans.map((plan) => {
                   const isSelected = plan.id === selectedPlanId;
                   const planPackage = plan.productIdentifier
                     ? revenueCat.offering?.availablePackages.find(
@@ -304,8 +307,6 @@ export default function CreateWarScreen() {
                           <Text style={[styles.planTitle, { color: colors.foreground }]}>{plan.title}</Text>
                           {plan.kind === 'paid' ? (
                             <Text style={[styles.comingSoon, { color: colors.accent }]}>ONE-TIME</Text>
-                          ) : freeTrialUsed ? (
-                            <Text style={[styles.comingSoon, { color: colors.mutedForeground }]}>USED</Text>
                           ) : null}
                         </View>
                         <Text style={[styles.planDescription, { color: colors.mutedForeground }]}>{plan.description}</Text>
