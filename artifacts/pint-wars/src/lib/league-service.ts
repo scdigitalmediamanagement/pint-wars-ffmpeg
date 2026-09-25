@@ -38,6 +38,110 @@ function describeSupabaseError(error: unknown) {
   };
 }
 
+async function paidLeagueRequest(
+  path: string,
+  body?: Record<string, string>,
+) {
+  const client = getSupabase();
+  const [{ data: sessionData, error: sessionError }] = await Promise.all([
+    client.auth.getSession(),
+  ]);
+  if (sessionError) throw sessionError;
+  const token = sessionData.session?.access_token;
+  if (!token) throw new Error('Sign in before creating a paid Pint War.');
+
+  const domain = process.env.EXPO_PUBLIC_DOMAIN;
+  if (!domain) throw new Error('The Pint Wars API is not configured.');
+
+  return expoFetch(`https://${domain}/api/${path}`, {
+    method: body ? 'POST' : 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+    },
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  });
+}
+
+async function readApiPayload(response: Response) {
+  try {
+    return (await response.json()) as {
+      ready?: unknown;
+      pending?: unknown;
+      message?: unknown;
+      league_id?: unknown;
+      invite_code?: unknown;
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function checkPaidLeaguePurchaseAvailability() {
+  const response = await paidLeagueRequest('paid-leagues/availability');
+  const payload = await readApiPayload(response);
+  if (!response.ok || typeof payload?.ready !== 'boolean') {
+    throw new Error(
+      typeof payload?.message === 'string'
+        ? payload.message
+        : 'Paid Pint Wars could not be checked.',
+    );
+  }
+  return payload.ready;
+}
+
+export async function createPaidLeague(
+  name: string,
+  productIdentifier: string,
+) {
+  const trimmedName = name.trim();
+  if (!trimmedName || trimmedName.length > 80) {
+    throw new Error('League name must be between 1 and 80 characters.');
+  }
+
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const response = await paidLeagueRequest('paid-leagues/create', {
+      name: trimmedName,
+      productIdentifier,
+    });
+    const payload = await readApiPayload(response);
+
+    if (response.status === 202 && payload?.pending === true) {
+      if (attempt < 9) {
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+        continue;
+      }
+      throw new Error(
+        'Payment succeeded, but verification is still processing. Retry league creation in a moment.',
+      );
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        typeof payload?.message === 'string'
+          ? payload.message
+          : 'Your paid Pint War could not be created.',
+      );
+    }
+
+    if (
+      typeof payload?.league_id !== 'string' ||
+      typeof payload.invite_code !== 'string'
+    ) {
+      throw new Error('League creation returned an invalid result.');
+    }
+
+    return {
+      league_id: payload.league_id,
+      invite_code: payload.invite_code,
+    };
+  }
+
+  throw new Error(
+    'Payment succeeded, but verification is still processing. Retry league creation in a moment.',
+  );
+}
+
 export async function getMyLeagues(): Promise<MyLeague[]> {
   const client = getSupabase();
   const { error: refreshError } = await client.rpc('refresh_my_league_statuses', {});

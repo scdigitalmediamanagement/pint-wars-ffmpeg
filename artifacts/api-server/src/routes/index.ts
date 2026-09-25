@@ -3,6 +3,7 @@ import healthRouter from "./health";
 import pubsRouter from "./pubs";
 import pintProofsRouter from "./pint-proofs";
 import accountDeletionRouter from "./account-deletion";
+import paidLeaguesRouter from "./paid-leagues";
 
 const router: IRouter = Router();
 
@@ -10,5 +11,6 @@ router.use(healthRouter);
 router.use(pubsRouter);
 router.use(pintProofsRouter);
 router.use(accountDeletionRouter);
+router.use(paidLeaguesRouter);
 
 export default router;

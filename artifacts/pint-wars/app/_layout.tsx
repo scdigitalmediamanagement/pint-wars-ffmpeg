@@ -15,6 +15,7 @@ import {
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider } from '@/src/providers/AuthProvider';
+import { RevenueCatProvider } from '@/src/providers/RevenueCatProvider';
 import { supabase } from '@/src/lib/supabase';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -68,11 +69,13 @@ export default function RootLayout() {
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <GestureHandlerRootView>
-              <KeyboardProvider>
-                <RootLayoutNav />
-              </KeyboardProvider>
-            </GestureHandlerRootView>
+            <RevenueCatProvider>
+              <GestureHandlerRootView>
+                <KeyboardProvider>
+                  <RootLayoutNav />
+                </KeyboardProvider>
+              </GestureHandlerRootView>
+            </RevenueCatProvider>
           </AuthProvider>
         </QueryClientProvider>
       </ErrorBoundary>

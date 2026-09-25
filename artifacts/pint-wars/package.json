@@ -59,6 +59,8 @@
     "expo-dev-client": "~57.0.19",
     "expo-updates": "~57.0.23",
     "react-native-maps": "1.18.0",
+    "react-native-purchases": "^10.10.2",
+    "react-native-purchases-ui": "^10.10.2",
     "react-native-url-polyfill": "^4.0.0"
   }
 }
