@@ -1,0 +1,39 @@
+Continue the Pint Wars RevenueCat setup from the existing implementation.
+
+RevenueCat Test Store is now configured with the Default offering containing these four consumable products:
+
+6 players: pint_war_6_players — $2.99 Test Store price
+10 players: pint_war_10_players — $3.99 Test Store price
+14 players: pint_war_14_players — $4.99 Test Store price
+16 players: pint_war_16_players — $5.99 Test Store price
+
+Default offering identifier: default
+
+The RevenueCat webhook endpoint is:
+POST /api/revenuecat/webhook
+
+A bearer secret for the webhook is already saved in Replit Secrets.
+
+Before changing anything, inspect the existing RevenueCat code, environment variables, database functions, and purchase/league-creation flow.
+
+Then:
+1. Configure the app to use the existing RevenueCat Test Store public SDK key(s) from Replit Secrets/environment variables. Do not invent or hard-code keys.
+2. Configure RevenueCat product retrieval using the Default offering.
+3. Make sure the four product IDs above are the only products used for the paid Pint War capacity purchases.
+4. Make sure the existing free/paid league rules are preserved.
+5. Connect the existing webhook endpoint to RevenueCat correctly using the saved bearer secret.
+6. Verify webhook authentication and make sure webhook events cannot create duplicate leagues or duplicate purchases.
+7. Do not change the Pint Wars scoring system, league rules, pricing structure, Supabase schema, or unrelated features.
+8. Do not create another RevenueCat offering or another set of products.
+9. Do not delete the older RevenueCat Test Store products yet.
+10. Do not implement real Apple/Google StoreKit billing yet; this task is specifically for RevenueCat Test Store development/testing.
+
+After making changes, run the project's available checks/tests and report:
+- exactly which files you changed
+- which existing environment variables/secrets you used
+- whether the RevenueCat SDK is configured
+- whether the Default offering/products can be retrieved
+- whether the webhook endpoint is correctly authenticated
+- any remaining blocker to performing an actual Test Store purchase
+
+Do not claim a purchase test passed unless you actually ran one.
