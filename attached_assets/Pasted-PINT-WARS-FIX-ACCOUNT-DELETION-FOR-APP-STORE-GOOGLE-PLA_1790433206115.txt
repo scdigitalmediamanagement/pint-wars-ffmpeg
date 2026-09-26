@@ -1,0 +1,108 @@
+PINT WARS — FIX ACCOUNT DELETION FOR APP STORE + GOOGLE PLAY
+
+We need to make the EXISTING Pint Wars account-deletion system compliant before store submission.
+
+Do NOT change:
+- RevenueCat products, offerings, keys or webhook
+- Apple/Google configuration
+- pricing
+- scoring
+- league scoring rules
+- purchase logic
+- map/location functionality
+
+First inspect the existing deletion implementation and database relationships.
+
+Then implement the minimum safe changes needed so that:
+
+1. IN-APP DELETION
+The existing Profile → Delete Account flow must genuinely delete the user's account and associated personal data.
+
+Use the existing POST /api/account/delete endpoint unless a minimal supporting change is required.
+
+After successful deletion:
+- permanently delete the Supabase Auth user
+- remove or anonymise personal identifiers that must remain for historical records
+- remove the user's email and identity from the retained account
+- remove/anonymise display name and other personal profile data
+- delete personal photos/storage
+- delete or anonymise user-generated content as required
+- preserve only historical/business/security/financial records that genuinely need to remain
+- do not retain the stable user identifier merely for convenience
+
+Do NOT invent legal retention requirements.
+
+2. HISTORICAL LEAGUE DATA
+Preserve legitimate league results and scoring history where necessary, but make deleted users non-identifying.
+
+Use a generic deleted-player representation rather than retaining a stable link to the former account.
+
+Do not break league integrity or allow historical scores to be manipulated.
+
+3. PURCHASE RECORDS
+Preserve any purchase/accounting/fraud information that genuinely needs to remain, but remove the user/account linkage where it is not necessary.
+
+Do not break one-purchase/one-league protection.
+
+4. MODERATION/FRAUD DATA
+Retain only the minimum necessary records for legitimate moderation/fraud/security purposes, with an appropriate bounded retention approach if supported by the current architecture.
+
+Do not invent a statutory retention period.
+
+5. ACCOUNT-DELETION JOBS
+Once deletion has completed successfully, remove/anonymise the identifying information from the completed deletion job so the job does not permanently retain the user's identity.
+
+6. REVENUECAT
+Inspect the existing RevenueCat customer association.
+
+Determine the correct supported way to delete or dissociate the RevenueCat customer when the Pint Wars account is deleted.
+
+Do not guess or invent an API.
+
+If this requires a configuration or server-side action that cannot safely be implemented from the current project, report exactly what remains.
+
+7. ACTIVE PINT WARS
+Do NOT silently delete or destroy an active league because the host requests account deletion.
+
+Instead, implement a safe deletion path that preserves the other players' league data.
+
+Use the existing league controls where possible (for example, ending/transferring the league) but do not invent a new product rule without reporting it first.
+
+If this requires a product decision that cannot safely be inferred from the existing app, STOP and report that specific decision instead of making it.
+
+8. EXTERNAL WEB DELETION
+Change /delete-account so that a user can initiate an account-deletion request from the web without reinstalling the app, as required by Google Play.
+
+Use a secure verification/confirmation process.
+
+Do NOT create a public unauthenticated endpoint that can delete arbitrary accounts.
+
+The approved support email is:
+scdigitalmediamanagement@gmail.com
+
+9. PRIVACY / DELETION PAGES
+Update /privacy and /delete-account so their wording exactly matches the new actual behavior.
+
+Do not claim that information is permanently deleted if it is legitimately retained.
+
+10. TESTS
+Do not perform a real account deletion during testing.
+
+Run:
+- Pint Wars typecheck
+- API typecheck
+- expo install --check
+- expo-doctor
+- git diff --check
+
+Report:
+- every file changed
+- database migrations created
+- exactly what is deleted
+- exactly what is anonymised/retained
+- how external deletion requests work
+- RevenueCat handling
+- how active leagues are handled
+- all verification results
+
+Do not deploy anything.
