@@ -17,7 +17,6 @@
     "android": {
       "package": "com.pintwars.app",
       "permissions": [
-        "android.permission.RECORD_AUDIO",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
       ]
@@ -31,6 +30,7 @@
         "expo-image-picker",
         {
           "cameraPermission": "Allow Pint Wars to use your camera so you can log a pint photo.",
+          "microphonePermission": false,
           "photosPermission": false
         }
       ],
