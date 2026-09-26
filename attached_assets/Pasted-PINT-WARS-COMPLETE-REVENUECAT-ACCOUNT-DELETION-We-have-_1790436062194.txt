@@ -1,0 +1,82 @@
+PINT WARS — COMPLETE REVENUECAT ACCOUNT DELETION
+
+We have already created and stored the server-only RevenueCat V2 secret API key in Replit Secrets:
+
+REVENUECAT_SECRET_API_KEY
+
+RevenueCat project ID:
+cf2aea4e
+
+Do NOT change:
+- RevenueCat products
+- RevenueCat offerings
+- product IDs
+- prices
+- purchase flow
+- webhook logic
+- scoring
+- league rules
+- Supabase purchase logic
+
+Update ONLY the account-deletion integration.
+
+1. REVENUECAT DELETION
+In the existing server-side account deletion sequence, after the Pint Wars account cleanup is prepared but before final deletion is reported as successful, call RevenueCat's official V2 customer deletion endpoint:
+
+DELETE https://api.revenuecat.com/v2/projects/cf2aea4e/customers/{customer_id}
+
+Use:
+Authorization: Bearer <REVENUECAT_SECRET_API_KEY>
+
+The RevenueCat customer ID is the same Supabase user UUID currently used by RevenueCatProvider as the RevenueCat App User ID.
+
+URL-encode the customer ID.
+
+Treat:
+- HTTP 200 as success
+- HTTP 404 as already deleted / success
+
+Treat other responses as failure and do not report account deletion as successful.
+
+RevenueCat deletion is asynchronous. Do not claim that physical provider-side erasure has completed synchronously. The result can state that deletion was successfully requested/queued.
+
+2. RETRY SAFETY
+Use the existing account_deletion_jobs record so that if the request is retried:
+- RevenueCat deletion can safely be requested again
+- Supabase Auth deletion can safely be retried
+- Storage cleanup remains safe
+- the operation does not create duplicate leagues or alter historical scores
+- the endpoint does not return success until the existing required cleanup sequence has completed.
+
+Do not call RevenueCat deletion from client-side code.
+
+3. PRIVACY / DELETION TEXT
+Update the existing /privacy and /delete-account wording only where necessary so it accurately states that:
+- the Pint Wars account and associated personal data are deleted/anonymised according to the implemented process
+- RevenueCat customer deletion is requested as part of account deletion
+- RevenueCat processes that deletion asynchronously
+- legally/business-required third-party records may be retained where applicable
+
+Do not invent retention periods.
+
+4. TESTING
+Do NOT delete any real account.
+Do NOT call the RevenueCat deletion endpoint during testing.
+Do NOT deploy.
+
+Run:
+- Pint Wars typecheck
+- API typecheck
+- expo install --check
+- expo-doctor
+- git diff --check
+
+Report:
+- every file changed
+- exact RevenueCat endpoint used
+- exact order of the deletion steps
+- retry behaviour
+- privacy wording changed
+- all test results
+
+Do not make any other changes.
