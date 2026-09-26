@@ -93,16 +93,28 @@ export async function checkPaidLeaguePurchaseAvailability() {
 export async function createPaidLeague(
   name: string,
   productIdentifier: string,
+  transactionIdentifier: string,
 ) {
   const trimmedName = name.trim();
   if (!trimmedName || trimmedName.length > 80) {
     throw new Error('League name must be between 1 and 80 characters.');
   }
 
+  const trimmedTransactionIdentifier = transactionIdentifier.trim();
+  if (
+    trimmedTransactionIdentifier.length < 1 ||
+    trimmedTransactionIdentifier.length > 255
+  ) {
+    throw new Error(
+      'This purchase is missing its transaction ID. Do not purchase again; contact support.',
+    );
+  }
+
   for (let attempt = 0; attempt < 10; attempt += 1) {
     const response = await paidLeagueRequest('paid-leagues/create', {
       name: trimmedName,
       productIdentifier,
+      transactionIdentifier: trimmedTransactionIdentifier,
     });
     const payload = await readApiPayload(response);
 

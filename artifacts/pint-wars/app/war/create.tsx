@@ -21,16 +21,23 @@ import { useColors } from '@/hooks/useColors';
 type LeaguePlan = {
   id: string;
   capacity: number;
+  durationDays: number;
   title: string;
   description: string;
   kind: 'free' | 'paid';
   productIdentifier?: PintWarProductIdentifier;
 };
 
+type PendingPaidPurchase = {
+  productIdentifier: PintWarProductIdentifier;
+  transactionIdentifier: string;
+};
+
 const leaguePlans: LeaguePlan[] = [
   {
     id: 'free-4',
     capacity: 4,
+    durationDays: 10,
     title: 'Free Pint War',
     description: 'One free trial per account, for 4 players over 10 days.',
     kind: 'free',
@@ -38,8 +45,9 @@ const leaguePlans: LeaguePlan[] = [
   ...PINT_WAR_PRODUCTS.map(({ identifier, capacity }) => ({
     id: `paid-${capacity}`,
     capacity,
+    durationDays: 30,
     title: `${capacity}-player Pint War`,
-    description: `A 10-day Pint War for up to ${capacity} players.`,
+    description: `A 30-day Pint War for up to ${capacity} players.`,
     kind: 'paid' as const,
     productIdentifier: identifier,
   })),
@@ -67,8 +75,8 @@ export default function CreateWarScreen() {
   const [isSetupStep, setIsSetupStep] = useState(false);
   const [error, setError] = useState('');
   const [isPaywallVisible, setIsPaywallVisible] = useState(false);
-  const [pendingProductIdentifier, setPendingProductIdentifier] =
-    useState<PintWarProductIdentifier | null>(null);
+  const [pendingPurchase, setPendingPurchase] =
+    useState<PendingPaidPurchase | null>(null);
   const selectedPlan = leaguePlans.find((plan) => plan.id === selectedPlanId);
   const freeTrialUsed = profileQuery.data?.free_trial_used_at != null;
   const availableLeaguePlans = freeTrialUsed
@@ -120,10 +128,14 @@ export default function CreateWarScreen() {
   });
 
   const paidMutation = useMutation({
-    mutationFn: (productIdentifier: PintWarProductIdentifier) =>
-      createPaidLeague(name, productIdentifier),
+    mutationFn: (purchase: PendingPaidPurchase) =>
+      createPaidLeague(
+        name,
+        purchase.productIdentifier,
+        purchase.transactionIdentifier,
+      ),
     onSuccess: async (result) => {
-      setPendingProductIdentifier(null);
+      setPendingPurchase(null);
       await finishLeagueCreation(result);
     },
     onError: (cause) => {
@@ -144,7 +156,10 @@ export default function CreateWarScreen() {
     setIsPaywallVisible(true);
   }
 
-  function handlePaywallPurchase(productIdentifier: string) {
+  function handlePaywallPurchase(
+    productIdentifier: string,
+    transactionIdentifier: string,
+  ) {
     const product = PINT_WAR_PRODUCTS.find(
       (candidate) => candidate.identifier === productIdentifier,
     );
@@ -156,9 +171,13 @@ export default function CreateWarScreen() {
     }
 
     setError('');
-    setPendingProductIdentifier(product.identifier);
+    const purchase = {
+      productIdentifier: product.identifier,
+      transactionIdentifier,
+    };
+    setPendingPurchase(purchase);
     void revenueCat.refresh().catch(() => undefined);
-    paidMutation.mutate(product.identifier);
+    paidMutation.mutate(purchase);
   }
 
   return (
@@ -190,7 +209,9 @@ export default function CreateWarScreen() {
                 </View>
                 <View style={styles.summaryRow}>
                   <Text style={[styles.summaryLabel, { color: colors.mutedForeground }]}>Duration</Text>
-                  <Text style={[styles.summaryValue, { color: colors.foreground }]}>10 days</Text>
+                  <Text style={[styles.summaryValue, { color: colors.foreground }]}>
+                    {selectedPlan.durationDays} days
+                  </Text>
                 </View>
                 <View style={styles.summaryRow}>
                   <Text style={[styles.summaryLabel, { color: colors.mutedForeground }]}>Players</Text>
@@ -202,7 +223,7 @@ export default function CreateWarScreen() {
               {selectedPlan.kind === 'paid' ? (
                 <>
                   <Text style={[styles.paymentNote, { color: colors.mutedForeground }]}>
-                    This is a one-time purchase for a single 10-day Pint War. Choose the same size in checkout if you want {selectedPlan.capacity} players.
+                    This is a one-time purchase for a single 30-day Pint War. Choose the same size in checkout if you want {selectedPlan.capacity} players.
                   </Text>
                   {revenueCat.status === 'loading' || paidAvailabilityQuery.isLoading ? (
                     <ActivityIndicator color={colors.accent} />
@@ -221,12 +242,12 @@ export default function CreateWarScreen() {
                   {paidMutation.isPending ? (
                     <ActivityIndicator color={colors.accent} />
                   ) : null}
-                  {pendingProductIdentifier && !paidMutation.isPending ? (
+                  {pendingPurchase && !paidMutation.isPending ? (
                     <Button
                       label="Retry verification and create Pint War"
                       onPress={() => {
                         setError('');
-                        paidMutation.mutate(pendingProductIdentifier);
+                        paidMutation.mutate(pendingPurchase);
                       }}
                       disabled={!name.trim()}
                     />
@@ -272,7 +293,7 @@ export default function CreateWarScreen() {
             <Title eyebrow="New competition">Create a Pint War</Title>
             <Card style={{ gap: 16 }}>
               <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 22 }}>
-                Choose your league size. Every Pint War starts as soon as it is created and runs for 10 days.
+                Choose your league size. Free trials run for 10 days; paid Pint Wars run for 30 days.
               </Text>
               <View style={styles.planList}>
                 <Text style={[styles.sectionLabel, { color: colors.foreground }]}>League size</Text>
@@ -339,7 +360,10 @@ export default function CreateWarScreen() {
             <RevenueCatUI.Paywall
               options={{ offering: revenueCat.offering }}
               onPurchaseCompleted={({ storeTransaction }) =>
-                handlePaywallPurchase(storeTransaction.productIdentifier)
+                handlePaywallPurchase(
+                  storeTransaction.productIdentifier,
+                  storeTransaction.transactionIdentifier,
+                )
               }
               onPurchaseError={({ error: purchaseError }) => {
                 setError(purchaseError.message || 'The purchase could not be completed.');

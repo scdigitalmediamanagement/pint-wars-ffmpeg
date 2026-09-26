@@ -229,6 +229,10 @@ router.post("/paid-leagues/create", async (req, res) => {
     typeof req.body.productIdentifier === "string"
       ? req.body.productIdentifier
       : "";
+  const transactionIdentifier =
+    typeof req.body.transactionIdentifier === "string"
+      ? req.body.transactionIdentifier.trim()
+      : "";
 
   if (name.length < 1 || name.length > 80) {
     res.status(400).json({ message: "League name must be between 1 and 80 characters." });
@@ -237,6 +241,11 @@ router.post("/paid-leagues/create", async (req, res) => {
 
   if (!Object.hasOwn(PRODUCT_CAPACITY, productIdentifier)) {
     res.status(400).json({ message: "The selected league product is not supported." });
+    return;
+  }
+
+  if (transactionIdentifier.length < 1 || transactionIdentifier.length > 255) {
+    res.status(400).json({ message: "The purchase transaction is invalid." });
     return;
   }
 
@@ -253,13 +262,14 @@ router.post("/paid-leagues/create", async (req, res) => {
     purchaseUrl.searchParams.set("select", "id");
     purchaseUrl.searchParams.set("user_id", `eq.${auth.userId}`);
     purchaseUrl.searchParams.set(
+      "provider_purchase_id",
+      `eq.${transactionIdentifier}`,
+    );
+    purchaseUrl.searchParams.set(
       "provider_product_id",
       `eq.${productIdentifier}`,
     );
-    purchaseUrl.searchParams.set("consumed_at", "is.null");
-    purchaseUrl.searchParams.set("league_id", "is.null");
-    purchaseUrl.searchParams.set("order", "verified_at.asc");
-    purchaseUrl.searchParams.set("limit", "1");
+    purchaseUrl.searchParams.set("limit", "2");
 
     const purchaseResponse = await fetch(purchaseUrl, {
       headers: serviceHeaders(config.serviceRoleKey),
@@ -270,18 +280,32 @@ router.post("/paid-leagues/create", async (req, res) => {
     }
 
     const purchases = await readJson(purchaseResponse);
-    const purchaseId =
-      Array.isArray(purchases) &&
-      isRecord(purchases[0]) &&
-      typeof purchases[0].id === "string"
-        ? purchases[0].id
-        : null;
+    if (!Array.isArray(purchases)) {
+      res.status(503).json({ message: "Purchase verification is temporarily unavailable." });
+      return;
+    }
 
-    if (!purchaseId) {
+    if (purchases.length === 0) {
       res.status(202).json({
         pending: true,
         message: "RevenueCat is still verifying your purchase.",
       });
+      return;
+    }
+
+    if (purchases.length > 1) {
+      res.status(409).json({
+        message: "This purchase could not be matched uniquely. Please contact support before trying again.",
+      });
+      return;
+    }
+
+    const purchaseId =
+      isRecord(purchases[0]) && typeof purchases[0].id === "string"
+        ? purchases[0].id
+        : null;
+    if (!purchaseId) {
+      res.status(503).json({ message: "Purchase verification is temporarily unavailable." });
       return;
     }
 
