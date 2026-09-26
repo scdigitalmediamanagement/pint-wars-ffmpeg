@@ -54,3 +54,12 @@ export const FindNearbyPubsResponse = zod.object({
 })),
   "providerConfigured": zod.boolean()
 })
+
+
+/**
+ * De-identifies account data and removes pint-proof storage objects while preserving historical league and score records.
+ * @summary Delete the authenticated account
+ */
+export const DeleteMyAccountResponse = zod.object({
+  "ok": zod.literal(true)
+})

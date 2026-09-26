@@ -20,6 +20,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AccountDeletionResponse,
   ApiError,
   HealthStatus,
   NearbyPubSearch,
@@ -218,4 +219,79 @@ export const useFindNearbyPubs = <TError = ErrorType<ApiError>,
         TContext
       > => {
       return useMutation(getFindNearbyPubsMutationOptions(options));
+    }
+
+export const getDeleteMyAccountUrl = () => {
+
+
+
+
+  return `/api/account/delete`
+}
+
+/**
+ * De-identifies account data and removes pint-proof storage objects while preserving historical league and score records.
+ * @summary Delete the authenticated account
+ */
+export const deleteMyAccount = async ( options?: Parameters<typeof customFetch>[1]): Promise<AccountDeletionResponse> => {
+
+  return customFetch<AccountDeletionResponse>(getDeleteMyAccountUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteMyAccountMutationKey = () => ['deleteMyAccount'] as const;
+
+export const getDeleteMyAccountMutationOptions = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMyAccount>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteMyAccount>>, TError,void, TContext> => {
+
+const mutationKey = getDeleteMyAccountMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteMyAccount>>, void> = () => {
+
+
+          return  deleteMyAccount(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteMyAccountMutationResult = NonNullable<Awaited<ReturnType<typeof deleteMyAccount>>>
+
+    export type DeleteMyAccountMutationError = ErrorType<ApiError>
+
+
+    /**
+ * @summary Delete the authenticated account
+ */
+export const useDeleteMyAccount = <TError = ErrorType<ApiError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMyAccount>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteMyAccount>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getDeleteMyAccountMutationOptions(options));
     }

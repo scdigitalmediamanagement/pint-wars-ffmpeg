@@ -10,7 +10,7 @@ type AuthContextValue = {
   isRecoverySession: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<{ needsEmailConfirmation: boolean }>;
-  signOut: () => Promise<void>;
+  signOut: (scope?: 'global' | 'local' | 'others') => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
   establishRecoverySession: (url: string) => Promise<void>;
   updatePassword: (newPassword: string) => Promise<void>;
@@ -90,9 +90,9 @@ export function AuthProvider({ children }: React.PropsWithChildren) {
         if (error) throw error;
         return { needsEmailConfirmation: !data.session };
       },
-      async signOut() {
+      async signOut(scope = 'global') {
         if (!supabase) throw new Error('Supabase is not configured.');
-        const { error } = await supabase.auth.signOut();
+        const { error } = await supabase.auth.signOut({ scope });
         if (error) throw error;
         setIsRecoverySession(false);
       },

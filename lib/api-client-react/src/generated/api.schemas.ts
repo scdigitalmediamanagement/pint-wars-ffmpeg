@@ -22,6 +22,11 @@ export interface NearbyPubsRequest {
   longitude: number;
 }
 
+export const AccountDeletionResponseValue = {
+  ok: true,
+} as const;
+export type AccountDeletionResponse = typeof AccountDeletionResponseValue;
+
 export interface Coordinates {
   latitude: number;
   longitude: number;
@@ -50,6 +55,7 @@ export interface NearbyPubSearch {
   pubs: NearbyPub[];
   providerConfigured: boolean;
 }
+
 export interface ApiError {
   message: string;
 }

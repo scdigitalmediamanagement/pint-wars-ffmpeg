@@ -44,6 +44,9 @@ function RootLayoutNav() {
       <Stack.Screen name="invite" options={{ headerShown: false }} />
       <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
       <Stack.Screen name="notifications" options={{ headerShown: false }} />
+      <Stack.Screen name="privacy" options={{ title: 'Privacy Policy' }} />
+      <Stack.Screen name="support" options={{ title: 'Support' }} />
+      <Stack.Screen name="delete-account" options={{ title: 'Account Deletion' }} />
     </Stack>
   );
 }

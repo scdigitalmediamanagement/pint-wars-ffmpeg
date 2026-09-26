@@ -26,12 +26,14 @@ export function Button({
   variant = 'primary',
   loading = false,
   disabled = false,
+  testID,
 }: {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'quiet';
+  variant?: 'primary' | 'secondary' | 'quiet' | 'destructive';
   loading?: boolean;
   disabled?: boolean;
+  testID?: string;
 }) {
   const colors = useColors();
   const backgroundColor =
@@ -40,10 +42,18 @@ export function Button({
       : variant === 'secondary'
         ? colors.accent
         : colors.secondary;
-  const textColor = variant === 'quiet' ? colors.foreground : variant === 'secondary' ? colors.accentForeground : colors.primaryForeground;
+  const textColor =
+    variant === 'destructive'
+      ? colors.destructive
+      : variant === 'quiet'
+        ? colors.foreground
+        : variant === 'secondary'
+          ? colors.accentForeground
+          : colors.primaryForeground;
 
   return (
     <Pressable
+      testID={testID}
       accessibilityRole="button"
       disabled={disabled || loading}
       onPress={onPress}

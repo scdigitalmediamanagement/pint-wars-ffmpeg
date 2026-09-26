@@ -12,6 +12,8 @@ tags:
     description: Health operations
   - name: pubs
     description: Pub identification operations
+  - name: account
+    description: Account management operations
 paths:
   /healthz:
     get:
@@ -77,6 +79,45 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /account/delete:
+    post:
+      operationId: deleteMyAccount
+      tags: [account]
+      summary: Delete the authenticated account
+      description: De-identifies account data and removes pint-proof storage objects while preserving historical league and score records.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Account deletion and cleanup completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountDeletionResponse"
+        "400":
+          description: Deletion is blocked by an active hosted Pint War or the account profile is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Missing or invalid Supabase session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Account data or storage cleanup could not be completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Account deletion is not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 components:
   securitySchemes:
     bearerAuth:
@@ -106,6 +147,15 @@ components:
       required:
         - latitude
         - longitude
+    AccountDeletionResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+          const: true
+      required:
+        - ok
     Coordinates:
       type: object
       additionalProperties: false
