@@ -33,7 +33,7 @@ export default function DeleteAccountScreen() {
           Your profile link is removed. Historical league memberships, scores, and host attribution remain under a new generic “Deleted player” profile; score values are not changed. Your authored reviews, reports, and notifications are deleted.
         </PublicBullet>
         <PublicBullet>
-          Purchase verification records may remain in anonymized form to preserve purchase and league integrity. RevenueCat customer data is separate and is not deleted by this request in the current setup; contact support for help with that provider-side request.
+          Purchase verification records may remain in anonymized form to preserve purchase and league integrity. Pint Wars requests permanent deletion of the associated RevenueCat customer using your Supabase user ID. RevenueCat processes that request asynchronously. Third-party records may be retained where legally or business-required; the current project does not define fixed retention periods.
         </PublicBullet>
         <PublicBullet>
           Deletion is blocked while you host an active Pint War. The app will not end a league for you. Finish it or use its existing “End Pint War Early” control, then try again.

@@ -187,13 +187,13 @@ export default function AccountDeletionRequest() {
     return (
       <View style={{ gap: 12 }}>
         <Text style={{ color: colors.foreground, fontFamily: 'Inter_600SemiBold', fontSize: 16 }}>
-          Your Pint Wars account deletion request is complete.
+          Your Pint Wars account deletion steps are complete.
         </Text>
         <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 22 }}>
           Your sign-in has been removed. League and score history remains under the generic name “Deleted player”; purchase records may remain in anonymized form to preserve purchase and league integrity. Pint-proof files and personal visit coordinates are removed.
         </Text>
         <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 22 }}>
-          RevenueCat customer data is managed separately and is not removed by this request in the current setup. Contact support for help with that provider-side request.
+          The RevenueCat deletion request was accepted, or the customer was already absent. RevenueCat processes accepted requests asynchronously, so provider-side erasure may continue after this screen appears. Third-party records may be retained where legally or business-required.
         </Text>
       </View>
     );

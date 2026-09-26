@@ -80,7 +80,7 @@ export default function PrivacyPolicyScreen() {
           Historical league memberships, scores, host attribution, and purchase verification records may remain under a new generic “Deleted player” profile. The original account UUID is not retained in completed Pint Wars deletion records, and historical score values are not changed. No fixed retention period or automatic expiry schedule is defined in the current project.
         </PublicParagraph>
         <PublicParagraph>
-          RevenueCat separately processes purchase customer and transaction data associated with the Supabase user ID. The current project has no configured server-side RevenueCat deletion connection, so the Pint Wars deletion request does not remove that provider-side data. Contact support for help with a separate RevenueCat request.
+          As part of account deletion, Pint Wars requests permanent deletion of the RevenueCat customer associated with your Supabase user ID. RevenueCat processes that request asynchronously, so provider-side erasure may continue after the Pint Wars deletion process completes. Third-party records may be retained where legally or business-required; the current project does not define fixed retention periods.
         </PublicParagraph>
         <PublicParagraph>
           For details or privacy-related help, email:

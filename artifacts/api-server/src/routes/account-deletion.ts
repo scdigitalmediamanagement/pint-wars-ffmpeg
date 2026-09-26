@@ -6,6 +6,7 @@ const PINT_PROOF_BUCKET = "pint-proofs";
 const ACCOUNT_DELETION_RPC = "delete_my_account";
 const ACCOUNT_DELETION_REKEY_RPC = "rekey_account_deletion_job";
 const ACCOUNT_DELETION_REPAIR_HEADER = "x-account-deletion-repair-key";
+const REVENUECAT_PROJECT_ID = "cf2aea4e";
 
 type SupabaseErrorPayload = {
   code?: unknown;
@@ -34,11 +35,22 @@ type AccountDeletionJob = {
   auth_deleted_at?: unknown;
 };
 
-function supabaseConfig() {
+type AccountDeletionConfig = {
+  url: string;
+  serviceRoleKey: string;
+  revenueCatSecretApiKey: string;
+};
+
+function accountDeletionConfig(): AccountDeletionConfig | null {
   const url = process.env["EXPO_PUBLIC_SUPABASE_URL"];
   const serviceRoleKey = process.env["SUPABASE_SERVICE_ROLE_KEY"];
-  return url && serviceRoleKey
-    ? { url: url.replace(/\/+$/, ""), serviceRoleKey }
+  const revenueCatSecretApiKey = process.env["REVENUECAT_SECRET_API_KEY"];
+  return url && serviceRoleKey && revenueCatSecretApiKey
+    ? {
+        url: url.replace(/\/+$/, ""),
+        serviceRoleKey,
+        revenueCatSecretApiKey,
+      }
     : null;
 }
 
@@ -262,6 +274,25 @@ async function deleteAuthUser(
   }
 }
 
+async function deleteRevenueCatCustomer(
+  secretApiKey: string,
+  customerId: string,
+) {
+  const response = await fetch(
+    `https://api.revenuecat.com/v2/projects/${REVENUECAT_PROJECT_ID}/customers/${encodeURIComponent(customerId)}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${secretApiKey}`,
+      },
+    },
+  );
+
+  if (response.status !== 200 && response.status !== 404) {
+    throw new Error("RevenueCat customer deletion could not be completed.");
+  }
+}
+
 async function rekeyAccountDeletionJob(
   url: string,
   serviceRoleKey: string,
@@ -367,6 +398,7 @@ async function finalizeAccountDeletionJob(
 async function repairAccountDeletion(
   url: string,
   serviceRoleKey: string,
+  revenueCatSecretApiKey: string,
   jobId: string,
 ) {
   const job = await getAccountDeletionJob(url, serviceRoleKey, jobId);
@@ -400,12 +432,13 @@ async function repairAccountDeletion(
     "storage_cleaned_at",
   );
 
+  await deleteRevenueCatCustomer(revenueCatSecretApiKey, job.user_id);
   await deleteAuthUser(url, serviceRoleKey, job.user_id);
   await finalizeAccountDeletionJob(url, serviceRoleKey, jobId);
 }
 
 router.post("/account/delete/repair", async (req, res) => {
-  const config = supabaseConfig();
+  const config = accountDeletionConfig();
   if (!config) {
     res.status(503).json({ message: "Account deletion is not configured." });
     return;
@@ -426,7 +459,12 @@ router.post("/account/delete/repair", async (req, res) => {
   }
 
   try {
-    await repairAccountDeletion(config.url, config.serviceRoleKey, jobId);
+    await repairAccountDeletion(
+      config.url,
+      config.serviceRoleKey,
+      config.revenueCatSecretApiKey,
+      jobId,
+    );
     res.json({ ok: true, jobId });
   } catch {
     res.status(502).json({
@@ -443,7 +481,7 @@ router.post("/account/delete", async (req, res) => {
     return;
   }
 
-  const config = supabaseConfig();
+  const config = accountDeletionConfig();
   if (!config) {
     res.status(503).json({ message: "Account deletion is not configured." });
     return;
@@ -470,6 +508,7 @@ router.post("/account/delete", async (req, res) => {
     await repairAccountDeletion(
       config.url,
       config.serviceRoleKey,
+      config.revenueCatSecretApiKey,
       deletion.job_id,
     );
 
