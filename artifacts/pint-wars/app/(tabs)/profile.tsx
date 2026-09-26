@@ -102,13 +102,13 @@ export default function ProfileScreen() {
         <Card style={{ gap: 14 }}>
           <Text style={{ color: colors.foreground, fontFamily: 'Inter_700Bold', fontSize: 18 }}>Delete Account</Text>
           <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 22 }}>
-            This is permanent and cannot be undone. Your profile will be de-identified, sign-in will be blocked, and pint-proof photos and personal location details will be removed. Historical league, score, purchase, and audit records may remain.
+            This permanently deletes your Pint Wars sign-in and removes its link to your history. Pint-proof photos and personal visit coordinates are removed. League and score history, plus purchase verification records, remain under “Deleted player.” RevenueCat customer data is not removed by this request in the current setup.
           </Text>
           {deletionError ? <ErrorText>{deletionError}</ErrorText> : null}
           {showDeletionConfirmation ? (
             <>
               <Text style={{ color: colors.destructive, fontFamily: 'Inter_600SemiBold', lineHeight: 21 }}>
-                Confirm permanent deletion? This request cannot be reversed. Deletion is blocked while you host an active Pint War.
+                Confirm permanent deletion? This cannot be reversed. You must finish or explicitly end any active Pint War you host; deletion will not end it automatically.
               </Text>
               <Button
                 label="Confirm Permanent Deletion"

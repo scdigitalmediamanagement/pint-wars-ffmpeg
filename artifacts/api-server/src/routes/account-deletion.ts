@@ -4,6 +4,7 @@ import { authenticateSupabaseBearer } from "../lib/supabase-auth";
 const router: IRouter = Router();
 const PINT_PROOF_BUCKET = "pint-proofs";
 const ACCOUNT_DELETION_RPC = "delete_my_account";
+const ACCOUNT_DELETION_REKEY_RPC = "rekey_account_deletion_job";
 const ACCOUNT_DELETION_REPAIR_HEADER = "x-account-deletion-repair-key";
 
 type SupabaseErrorPayload = {
@@ -30,7 +31,7 @@ type AccountDeletionJob = {
   storage_prefix?: unknown;
   deidentified_at?: unknown;
   storage_cleaned_at?: unknown;
-  auth_neutralized_at?: unknown;
+  auth_deleted_at?: unknown;
 };
 
 function supabaseConfig() {
@@ -240,7 +241,7 @@ async function deleteStorageObjects(
   }
 }
 
-async function neutralizeAuthUser(
+async function deleteAuthUser(
   url: string,
   serviceRoleKey: string,
   userId: string,
@@ -248,19 +249,37 @@ async function neutralizeAuthUser(
   const response = await fetch(
     `${url}/auth/v1/admin/users/${encodeURIComponent(userId)}`,
     {
-      method: "PUT",
+      method: "DELETE",
+      headers: serviceHeaders(serviceRoleKey),
+    },
+  );
+  const payload = await readJsonOrText(response);
+
+  if (!response.ok && response.status !== 404) {
+    throw new Error(
+      errorMessage(payload) || "Auth account deletion failed.",
+    );
+  }
+}
+
+async function rekeyAccountDeletionJob(
+  url: string,
+  serviceRoleKey: string,
+  jobId: string,
+) {
+  const response = await fetch(
+    `${url}/rest/v1/rpc/${ACCOUNT_DELETION_REKEY_RPC}`,
+    {
+      method: "POST",
       headers: serviceHeaders(serviceRoleKey, true),
-      body: JSON.stringify({
-        ban_duration: "876000h",
-        user_metadata: {},
-      }),
+      body: JSON.stringify({ p_job_id: jobId }),
     },
   );
   const payload = await readJsonOrText(response);
 
   if (!response.ok) {
     throw new Error(
-      errorMessage(payload) || "Auth account neutralization failed.",
+      errorMessage(payload) || "Account history could not be re-keyed.",
     );
   }
 }
@@ -271,7 +290,7 @@ async function getAccountDeletionJob(
   jobId: string,
 ) {
   const response = await fetch(
-    `${deletionJobUrl(url, jobId)}&select=id,user_id,storage_prefix,deidentified_at,storage_cleaned_at,auth_neutralized_at`,
+    `${deletionJobUrl(url, jobId)}&select=id,user_id,storage_prefix,deidentified_at,storage_cleaned_at,auth_deleted_at`,
     {
       headers: serviceHeaders(serviceRoleKey),
     },
@@ -295,7 +314,7 @@ async function markAccountDeletionJob(
   url: string,
   serviceRoleKey: string,
   jobId: string,
-  field: "storage_cleaned_at" | "auth_neutralized_at",
+  field: "storage_cleaned_at",
 ) {
   const response = await fetch(deletionJobUrl(url, jobId), {
     method: "PATCH",
@@ -317,12 +336,49 @@ async function markAccountDeletionJob(
   }
 }
 
+async function finalizeAccountDeletionJob(
+  url: string,
+  serviceRoleKey: string,
+  jobId: string,
+) {
+  const completedAt = new Date().toISOString();
+  const response = await fetch(deletionJobUrl(url, jobId), {
+    method: "PATCH",
+    headers: {
+      ...serviceHeaders(serviceRoleKey, true),
+      Prefer: "return=minimal",
+    },
+    body: JSON.stringify({
+      user_id: null,
+      storage_prefix: null,
+      auth_deleted_at: completedAt,
+      updated_at: completedAt,
+    }),
+  });
+  const payload = await readJsonOrText(response);
+
+  if (!response.ok) {
+    throw new Error(
+      errorMessage(payload) || "Account deletion state could not be finalized.",
+    );
+  }
+}
+
 async function repairAccountDeletion(
   url: string,
   serviceRoleKey: string,
   jobId: string,
 ) {
   const job = await getAccountDeletionJob(url, serviceRoleKey, jobId);
+
+  if (
+    job?.id === jobId &&
+    job.auth_deleted_at != null &&
+    job.user_id == null &&
+    job.storage_prefix == null
+  ) {
+    return;
+  }
 
   if (
     !job ||
@@ -335,6 +391,7 @@ async function repairAccountDeletion(
     throw new Error("Account deletion state is missing or invalid.");
   }
 
+  await rekeyAccountDeletionJob(url, serviceRoleKey, jobId);
   await deleteStorageObjects(url, serviceRoleKey, job.storage_prefix);
   await markAccountDeletionJob(
     url,
@@ -343,13 +400,8 @@ async function repairAccountDeletion(
     "storage_cleaned_at",
   );
 
-  await neutralizeAuthUser(url, serviceRoleKey, job.user_id);
-  await markAccountDeletionJob(
-    url,
-    serviceRoleKey,
-    jobId,
-    "auth_neutralized_at",
-  );
+  await deleteAuthUser(url, serviceRoleKey, job.user_id);
+  await finalizeAccountDeletionJob(url, serviceRoleKey, jobId);
 }
 
 router.post("/account/delete/repair", async (req, res) => {

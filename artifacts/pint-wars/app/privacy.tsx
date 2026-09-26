@@ -74,10 +74,13 @@ export default function PrivacyPolicyScreen() {
           The current code does not define a fixed retention period or automatic expiry schedule for account, league, score, review, or purchase records.
         </PublicParagraph>
         <PublicParagraph>
-          You can start account deletion from Profile in the app. The authenticated deletion process removes pint-proof files, clears personal photo and location fields, deletes your authored reviews and notifications, revokes active invites, changes your profile display name to “Deleted player,” and blocks sign-in. It cannot run while you host an active Pint War.
+          You can start account deletion from Profile in the app or from the public Account Deletion page after verifying access to your account email. The process deletes your Supabase Auth account, removes pint-proof files and personal visit coordinates, deletes your authored reviews, reports, and notifications, and revokes active invites. It cannot run while you host an active Pint War; the app will not end a league automatically.
         </PublicParagraph>
         <PublicParagraph>
-          Deletion is de-identification rather than removal of every historical record. The stable user ID and Supabase Auth record, including its email address, are retained by the current implementation while sign-in is blocked. Historical score and league records, purchase records, and expired or historical invite records may remain; score history is retained for league integrity. These records cannot be restored to an active account.
+          Historical league memberships, scores, host attribution, and purchase verification records may remain under a new generic “Deleted player” profile. The original account UUID is not retained in completed Pint Wars deletion records, and historical score values are not changed. No fixed retention period or automatic expiry schedule is defined in the current project.
+        </PublicParagraph>
+        <PublicParagraph>
+          RevenueCat separately processes purchase customer and transaction data associated with the Supabase user ID. The current project has no configured server-side RevenueCat deletion connection, so the Pint Wars deletion request does not remove that provider-side data. Contact support for help with a separate RevenueCat request.
         </PublicParagraph>
         <PublicParagraph>
           For details or privacy-related help, email:

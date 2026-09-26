@@ -5,4 +5,4 @@
 - [Deletion verification fixtures](deletion-verification-fixtures.md) — score-ledger preservation needs a server-authoritative logging fixture; direct pint-log inserts do not award score events.
 - [Workspace pnpm store version](pnpm-store-version.md) — use the pnpm major version matching the workspace’s existing node_modules store.
 - [Local API endpoint checks](local-api-endpoint-checks.md) — shell requests may lack the workflow-injected dev domain; use the managed API port for local smoke tests.
-- [Expo DevTools startup](expo-devtools-startup.md) — missing GLib can prevent native DevTools from launching while Metro and web bundling still work.
+- [Expo DevTools startup](expo-devtools-startup.md) — missing GLib may block DevTools but not Metro; retry a blank first web capture after bundling finishes.

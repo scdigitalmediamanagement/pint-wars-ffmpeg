@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import {
   PublicBullet,
   PublicInfoPage,
@@ -6,29 +7,36 @@ import {
   PublicSection,
   SupportEmailLink,
 } from '@/components/PublicInfo';
+import AccountDeletionRequest from '@/components/AccountDeletionRequest';
 
 export default function DeleteAccountScreen() {
   return (
     <PublicInfoPage title="Account Deletion" eyebrow="Pint Wars · Your account">
       <PublicParagraph>
-        You can request account deletion in the Pint Wars app: open Profile, select Delete Account, review the permanent-deletion warning, and confirm.
+        In the app, open Profile → Delete Account. If you cannot use the app, use the public Account Deletion web page to verify access to your account email and request deletion.
       </PublicParagraph>
       <PublicParagraph>
-        The app sends an authenticated POST request to /api/account/delete. This endpoint requires a valid signed-in session; it is not an unauthenticated web link or browser form.
+        The web form sends a one-time email code. It does not create accounts or disclose whether an email address is registered. After verification, you must separately confirm permanent deletion.
       </PublicParagraph>
+
+      {Platform.OS === 'web' ? (
+        <PublicSection title="Request deletion online">
+          <AccountDeletionRequest />
+        </PublicSection>
+      ) : null}
 
       <PublicSection title="What happens">
         <PublicBullet>
-          Pint-proof files are removed from storage. Photo hashes and personal visit coordinates are cleared from pint logs.
+          Your Supabase Auth account and sign-in email are deleted. Pint-proof files are removed; photo hashes and personal visit coordinates are cleared from pint logs.
         </PublicBullet>
         <PublicBullet>
-          Your profile display name changes to “Deleted player,” your authored reviews and notifications are deleted, and active invites you created are revoked.
+          Your profile link is removed. Historical league memberships, scores, and host attribution remain under a new generic “Deleted player” profile; score values are not changed. Your authored reviews, reports, and notifications are deleted.
         </PublicBullet>
         <PublicBullet>
-          Sign-in is blocked and the Supabase Auth user metadata is cleared. The current process retains the Supabase Auth record and its email address, the stable user ID, historical league and score records, purchase records, and some historical invite/audit records.
+          Purchase verification records may remain in anonymized form to preserve purchase and league integrity. RevenueCat customer data is separate and is not deleted by this request in the current setup; contact support for help with that provider-side request.
         </PublicBullet>
         <PublicBullet>
-          The deletion request is blocked while you host an active Pint War. Finish or end that league before trying again.
+          Deletion is blocked while you host an active Pint War. The app will not end a league for you. Finish it or use its existing “End Pint War Early” control, then try again.
         </PublicBullet>
       </PublicSection>
 
