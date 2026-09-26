@@ -1,0 +1,77 @@
+PINT WARS — LEGAL / STORE READINESS
+
+Make ONLY the following changes. Do not change RevenueCat, products, prices, Supabase purchase logic, league rules, scoring, map logic, or any existing functionality.
+
+1. PUBLIC PRIVACY POLICY PAGE
+Create a public web route/page for the Pint Wars Privacy Policy.
+It must accurately describe the EXISTING app's actual data practices.
+
+Before writing it, inspect the current code/database integrations to identify what Pint Wars actually collects and which third parties process data, including:
+- account/email/display name/user ID
+- precise location
+- photos used as pint proof
+- user-generated content such as reviews and league content
+- purchase history
+- Supabase
+- RevenueCat
+- Google Places / Maps if currently used
+- Apple/Google in-app purchases
+Do not invent data practices, sharing, retention periods, or purposes that are not supported by the current implementation.
+
+Include:
+- what data is collected
+- why it is collected
+- how it is used
+- third-party services involved
+- data security
+- retention/deletion
+- account deletion
+- children's/privacy information if applicable
+- contact information
+- effective date
+- a clear way to request privacy-related help
+
+2. PUBLIC SUPPORT PAGE
+Create a public web Support page containing a real support contact method.
+Use the existing project/business contact information if already present.
+If no support email exists in the project, STOP and report that; do not invent an email address.
+
+3. IN-APP ACCOUNT DELETION
+The app already has a backend endpoint:
+POST /api/account/delete
+
+Add a clear "Delete Account" option to the existing Profile/account area.
+
+The flow must:
+- clearly warn the user that deletion is permanent
+- require an explicit confirmation
+- call the existing authenticated deletion endpoint
+- sign the user out after successful deletion
+- handle errors safely
+- not expose or weaken authorization
+- not merely deactivate the account
+
+Do not create a second deletion backend if the existing endpoint can be used.
+
+4. PUBLIC ACCOUNT-DELETION PAGE
+Create a public web page explaining how account deletion works and, if appropriate, providing the direct deletion route required by Apple.
+
+5. NAVIGATION
+Add links to Privacy Policy and Support where appropriate in the app/web footer or existing settings/help area without redesigning the app.
+
+Do NOT deploy anything yet.
+
+After changes:
+- typecheck
+- expo install --check
+- expo-doctor
+- git diff --check
+
+Report:
+- every file changed
+- the public routes created
+- whether a support email already existed
+- exactly how the deletion flow works
+- test results
+
+Do not make any other changes.
