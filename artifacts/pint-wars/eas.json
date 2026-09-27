@@ -4,6 +4,10 @@
       "developmentClient": true,
       "distribution": "internal",
       "channel": "main"
+    },
+    "preview": {
+      "distribution": "internal",
+      "environment": "development"
     }
   }
 }
