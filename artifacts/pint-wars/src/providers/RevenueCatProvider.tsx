@@ -83,6 +83,7 @@ async function syncRevenueCatIdentity(userId: string | null) {
     await Purchases.setLogLevel(
       __DEV__ ? Purchases.LOG_LEVEL.DEBUG : Purchases.LOG_LEVEL.WARN,
     );
+    console.log('[RevenueCat] API key diagnostic', { exists: Boolean(apiKey), length: apiKey.length, prefix: apiKey.slice(0, 4) });
     Purchases.configure({ apiKey, appUserID: userId });
     configuredApiKey = apiKey;
     activeAppUserId = userId;
