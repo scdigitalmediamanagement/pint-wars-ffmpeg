@@ -1,0 +1,50 @@
+Also update the Pint Wars scoring system to the newly agreed scoring rules.
+
+LOCKED SCORING:
+- Every valid logged pint = +1 point.
+- A qualifying pub review = +1 bonus point.
+- There is NO new-pub bonus.
+- There is NO +2 NEW_PUB event.
+- There is NO +3 PUB_REVIEW event.
+- A player can receive the review bonus only once per player per pub.
+- Editing an existing review awards 0 additional points.
+- Deleting and recreating a review must NOT allow the player to earn the review bonus again.
+- Review reports award 0 points.
+
+IMPORTANT:
+The current database already has the league_score_events ledger and the older scoring types/values. Do not simply change UI text.
+
+Inspect the current scoring migrations, RPCs, review creation/deletion flow, pint logging flow, leaderboard totals, completed-war winner calculations and notifications.
+
+Implement the new scoring model securely and atomically.
+
+Requirements:
+1. Keep PINT_LOGGED = +1.
+2. Remove/disable the NEW_PUB scoring event entirely. Visiting a new pub provides no bonus points.
+3. Change PUB_REVIEW to +1.
+4. Enforce the review bonus once per player per pub permanently, including after review deletion/recreation.
+5. Keep review edits score-neutral.
+6. Keep review reports score-neutral.
+7. Make sure concurrent review creation cannot award the bonus twice.
+8. Keep the immutable score ledger as the authoritative source for leaderboard totals and winners.
+9. Update completed-war winner calculations and notifications to use the same authoritative score totals.
+10. Update client types and leaderboard/dashboard displays so they use points correctly.
+11. Remove any UI wording that says NEW PUB gives bonus points.
+12. Update scoring/help text to clearly explain:
+   "1 pint = 1 point. Leave a pub review = +1 bonus point."
+13. Preserve existing historical score records. Do not rewrite historical leagues or manufacture new historical review bonuses.
+14. Existing historical scores must remain intact.
+15. Do not change RevenueCat, pricing, duration, paid-league creation, or the new 1–30 day duration system.
+
+Before making changes, inspect the current production-aware schema/migrations and determine the safest migration path.
+
+Create a new unapplied Supabase migration for the scoring changes rather than editing old applied migrations.
+
+Run:
+- Pint Wars typecheck
+- API typecheck
+- Expo dependency check
+- Expo Doctor
+- git diff --check
+
+Report every file and migration changed and confirm whether the new scoring migration still needs to be applied to Production Supabase.
