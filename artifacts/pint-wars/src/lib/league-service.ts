@@ -93,12 +93,19 @@ export async function checkPaidLeaguePurchaseAvailability() {
 export async function createPaidLeague(
   name: string,
   productIdentifier: string,
+  selectedProductIdentifier: string,
   transactionIdentifier: string,
   durationDays: number,
 ) {
   const trimmedName = name.trim();
   if (!trimmedName || trimmedName.length > 80) {
     throw new Error('League name must be between 1 and 80 characters.');
+  }
+
+  if (productIdentifier !== selectedProductIdentifier) {
+    throw new Error(
+      'The purchased product does not match the selected Pint War size. No league was created.',
+    );
   }
 
   const trimmedTransactionIdentifier = transactionIdentifier.trim();
@@ -119,6 +126,7 @@ export async function createPaidLeague(
     const response = await paidLeagueRequest('paid-leagues/create', {
       name: trimmedName,
       productIdentifier,
+      selectedProductIdentifier,
       transactionIdentifier: trimmedTransactionIdentifier,
       durationDays,
     });

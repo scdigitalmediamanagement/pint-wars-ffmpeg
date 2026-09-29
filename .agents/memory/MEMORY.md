@@ -6,3 +6,4 @@
 - [Workspace pnpm store version](pnpm-store-version.md) — use the pnpm major version matching the workspace’s existing node_modules store.
 - [Local API endpoint checks](local-api-endpoint-checks.md) — shell requests may lack the workflow-injected dev domain; use the managed API port for local smoke tests.
 - [Expo DevTools startup](expo-devtools-startup.md) — missing GLib may block DevTools but not Metro; retry a blank first web capture after bundling finishes.
+- [RevenueCat SKU binding](paid-purchase-product-binding.md) — bind checkout to selected capacity and keep webhook-record verification server-authoritative.

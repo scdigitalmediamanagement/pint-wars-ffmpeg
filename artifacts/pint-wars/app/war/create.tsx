@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import RevenueCatUI from 'react-native-purchases-ui';
+import Purchases, { PURCHASES_ERROR_CODE } from 'react-native-purchases';
 import { Button, Card, ErrorText, Field, Screen, Title, uiStyles } from '@/components/AppUi';
 import {
   checkPaidLeaguePurchaseAvailability,
@@ -29,9 +29,13 @@ type LeaguePlan = {
 };
 
 type PendingPaidPurchase = {
-  productIdentifier: PintWarProductIdentifier;
+  productIdentifier: string;
   transactionIdentifier: string;
   durationDays: number;
+};
+
+type PaidLeagueCreation = PendingPaidPurchase & {
+  selectedProductIdentifier: PintWarProductIdentifier;
 };
 
 const leaguePlans: LeaguePlan[] = [
@@ -75,7 +79,7 @@ export default function CreateWarScreen() {
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [isSetupStep, setIsSetupStep] = useState(false);
   const [error, setError] = useState('');
-  const [isPaywallVisible, setIsPaywallVisible] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
   const [pendingPurchase, setPendingPurchase] =
     useState<PendingPaidPurchase | null>(null);
   const selectedPlan = leaguePlans.find((plan) => plan.id === selectedPlanId);
@@ -88,9 +92,24 @@ export default function CreateWarScreen() {
     pendingPurchase?.durationDays ??
     (isPaidDurationValid ? parsedPaidDurationDays : null);
   const freeTrialUsed = profileQuery.data?.free_trial_used_at != null;
-  const availableLeaguePlans = freeTrialUsed
-    ? leaguePlans.filter((plan) => plan.kind !== 'free')
-    : leaguePlans;
+  const pendingPurchaseProduct = pendingPurchase
+    ? PINT_WAR_PRODUCTS.find(
+        (product) => product.identifier === pendingPurchase.productIdentifier,
+      )
+    : null;
+  const pendingPurchaseMatchesSelectedPlan = Boolean(
+    pendingPurchaseProduct &&
+      selectedPlan?.productIdentifier === pendingPurchaseProduct.identifier,
+  );
+  const availableLeaguePlans = pendingPurchase
+    ? pendingPurchaseProduct
+      ? leaguePlans.filter(
+          (plan) => plan.productIdentifier === pendingPurchaseProduct.identifier,
+        )
+      : []
+    : freeTrialUsed
+      ? leaguePlans.filter((plan) => plan.kind !== 'free')
+      : leaguePlans;
   const selectedPackage = selectedPlan?.productIdentifier
     ? revenueCat.offering?.availablePackages.find(
         (item) => item.product.identifier === selectedPlan.productIdentifier,
@@ -137,10 +156,11 @@ export default function CreateWarScreen() {
   });
 
   const paidMutation = useMutation({
-    mutationFn: (purchase: PendingPaidPurchase) =>
+    mutationFn: (purchase: PaidLeagueCreation) =>
       createPaidLeague(
         name,
         purchase.productIdentifier,
+        purchase.selectedProductIdentifier,
         purchase.transactionIdentifier,
         purchase.durationDays,
       ),
@@ -157,47 +177,67 @@ export default function CreateWarScreen() {
     },
   });
 
-  function openRevenueCatPaywall() {
+  async function purchaseSelectedPlan() {
+    const selectedProductIdentifier = selectedPlan?.productIdentifier;
+    const packageToPurchase = selectedPackage;
+
+    if (selectedPlan?.kind !== 'paid' || !selectedProductIdentifier) {
+      setError('Choose a paid Pint War size before purchasing.');
+      return;
+    }
     if (!isPaidDurationValid) {
       setError('Choose a duration between 1 and 30 days before purchasing.');
       return;
     }
-    if (!paidCheckoutReady || !revenueCat.offering) {
+    if (
+      !paidCheckoutReady ||
+      !packageToPurchase ||
+      packageToPurchase.product.identifier !== selectedProductIdentifier
+    ) {
       setError('Payments are still being configured. You will not be charged.');
       return;
     }
-    setError('');
-    setIsPaywallVisible(true);
-  }
-
-  function handlePaywallPurchase(
-    productIdentifier: string,
-    transactionIdentifier: string,
-  ) {
-    const product = PINT_WAR_PRODUCTS.find(
-      (candidate) => candidate.identifier === productIdentifier,
-    );
-    setIsPaywallVisible(false);
-
-    if (!product) {
-      setError('The purchased product is not a supported Pint War size.');
-      return;
-    }
-
-    if (!isPaidDurationValid) {
-      setError('Choose a duration between 1 and 30 days before purchasing.');
-      return;
-    }
 
     setError('');
-    const purchase = {
-      productIdentifier: product.identifier,
-      transactionIdentifier,
-      durationDays: parsedPaidDurationDays,
-    };
-    setPendingPurchase(purchase);
-    void revenueCat.refresh().catch(() => undefined);
-    paidMutation.mutate(purchase);
+    setIsPurchasing(true);
+    try {
+      const result = await Purchases.purchasePackage(packageToPurchase);
+      const purchase: PendingPaidPurchase = {
+        productIdentifier: result.productIdentifier,
+        transactionIdentifier: result.transaction.transactionIdentifier,
+        durationDays: parsedPaidDurationDays,
+      };
+      setPendingPurchase(purchase);
+      void revenueCat.refresh().catch(() => undefined);
+
+      if (result.productIdentifier !== selectedProductIdentifier) {
+        return;
+      }
+
+      paidMutation.mutate({
+        ...purchase,
+        selectedProductIdentifier,
+      });
+    } catch (cause) {
+      const purchaseError = cause as {
+        code?: unknown;
+        message?: unknown;
+        userCancelled?: unknown;
+      };
+      if (
+        purchaseError.userCancelled === true ||
+        purchaseError.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR
+      ) {
+        return;
+      }
+      setError(
+        typeof purchaseError.message === 'string'
+          ? purchaseError.message
+          : 'The purchase could not be completed. You will not be charged.',
+      );
+    } finally {
+      setIsPurchasing(false);
+    }
   }
 
   return (
@@ -211,7 +251,7 @@ export default function CreateWarScreen() {
             <Card style={{ gap: 18 }}>
               <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 22 }}>
                 {selectedPlan.kind === 'paid'
-                  ? 'The RevenueCat checkout lists all four sizes. The product purchased there determines this Pint War’s final capacity.'
+                  ? 'Checkout is limited to the size you selected. Review the capacity, price, and duration before confirming the store purchase.'
                   : 'Review your league details before creating your free Pint War.'}
               </Text>
               <View style={styles.summary}>
@@ -247,7 +287,7 @@ export default function CreateWarScreen() {
                   <Text style={[styles.sectionLabel, { color: colors.foreground }]}>Duration (days)</Text>
                   <TextInput
                     accessibilityLabel="Paid Pint War duration in days"
-                    editable={!pendingPurchase}
+                    editable={!pendingPurchase && !isPurchasing && !paidMutation.isPending}
                     keyboardType="number-pad"
                     maxLength={2}
                     onChangeText={(value) => {
@@ -279,12 +319,19 @@ export default function CreateWarScreen() {
                   ) : null}
                 </View>
               ) : null}
-              <Field label="League name" value={name} onChangeText={setName} placeholder="Exmouth Pint Wars" maxLength={80} />
+              <Field
+                label="League name"
+                value={name}
+                onChangeText={setName}
+                placeholder="Exmouth Pint Wars"
+                maxLength={80}
+                editable={!pendingPurchase && !isPurchasing && !paidMutation.isPending}
+              />
               {error ? <ErrorText>{error}</ErrorText> : null}
               {selectedPlan.kind === 'paid' ? (
                 <>
                   <Text style={[styles.paymentNote, { color: colors.mutedForeground }]}>
-                    This is a one-time purchase for one Pint War. The price is based on player capacity; duration is selected separately. Choose the same size in checkout if you want {selectedPlan.capacity} players.
+                    This is a one-time purchase for one {selectedPlan.capacity}-player Pint War. Price depends only on capacity; duration is selected separately and does not change the price.
                   </Text>
                   {revenueCat.status === 'loading' || paidAvailabilityQuery.isLoading ? (
                     <ActivityIndicator color={colors.accent} />
@@ -300,23 +347,48 @@ export default function CreateWarScreen() {
                   ) : paidAvailabilityQuery.data === false ? (
                     <ErrorText>Purchase verification is not configured yet. You will not be charged.</ErrorText>
                   ) : null}
-                  {paidMutation.isPending ? (
+                  {paidMutation.isPending || isPurchasing ? (
                     <ActivityIndicator color={colors.accent} />
                   ) : null}
-                  {pendingPurchase && !paidMutation.isPending ? (
+                  {pendingPurchase && pendingPurchaseProduct && !pendingPurchaseMatchesSelectedPlan ? (
+                    <>
+                      <ErrorText>
+                        The store completed a {pendingPurchaseProduct.capacity}-player purchase, but this Pint War is set to {selectedPlan.capacity} players. No Pint War was created. Switch to the purchased size to retry without paying again.
+                      </ErrorText>
+                      <Button
+                        label={`Use purchased ${pendingPurchaseProduct.capacity}-player size`}
+                        variant="secondary"
+                        onPress={() => {
+                          setSelectedPlanId(`paid-${pendingPurchaseProduct.capacity}`);
+                          setError('');
+                        }}
+                        disabled={isPurchasing || paidMutation.isPending}
+                      />
+                    </>
+                  ) : pendingPurchase && !pendingPurchaseProduct ? (
+                    <ErrorText>
+                      RevenueCat confirmed a product that is not one of the supported Pint War sizes. No Pint War was created. Do not purchase again; contact support before continuing.
+                    </ErrorText>
+                  ) : pendingPurchase && pendingPurchaseMatchesSelectedPlan ? (
                     <Button
-                      label="Retry verification and create Pint War"
+                      label={`Retry verification and create ${selectedPlan.capacity}-player Pint War`}
                       onPress={() => {
+                        if (!selectedPlan.productIdentifier) return;
                         setError('');
-                        paidMutation.mutate(pendingPurchase);
+                        paidMutation.mutate({
+                          ...pendingPurchase,
+                          selectedProductIdentifier: selectedPlan.productIdentifier,
+                        });
                       }}
-                      disabled={!name.trim()}
+                      loading={paidMutation.isPending}
+                      disabled={!name.trim() || paidMutation.isPending || isPurchasing}
                     />
                   ) : (
                     <Button
-                      label="Continue to RevenueCat checkout"
-                      onPress={openRevenueCatPaywall}
-                      disabled={!name.trim() || !isPaidDurationValid || !paidCheckoutReady || paidMutation.isPending}
+                      label={`Purchase ${selectedPlan.capacity}-player Pint War`}
+                      onPress={() => void purchaseSelectedPlan()}
+                      loading={isPurchasing}
+                      disabled={!name.trim() || !isPaidDurationValid || !paidCheckoutReady || paidMutation.isPending || isPurchasing}
                     />
                   )}
                 </>
@@ -342,6 +414,7 @@ export default function CreateWarScreen() {
               <Button
                 label="Change league size"
                 variant="quiet"
+                disabled={isPurchasing || paidMutation.isPending}
                 onPress={() => {
                   setIsSetupStep(false);
                   setError('');
@@ -356,6 +429,16 @@ export default function CreateWarScreen() {
               <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 22 }}>
                 {'Choose your league size and duration.\nPaid Pint Wars can run for 1–30 days.'}
               </Text>
+              {pendingPurchase && pendingPurchaseProduct ? (
+                <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_500Medium', lineHeight: 21 }}>
+                  A purchase for {pendingPurchaseProduct.capacity} players is awaiting verification. Select that size to continue without paying again.
+                </Text>
+              ) : null}
+              {pendingPurchase && !pendingPurchaseProduct ? (
+                <ErrorText>
+                  A completed store purchase could not be matched to a supported size. No Pint War was created. Do not purchase again; contact support.
+                </ErrorText>
+              ) : null}
               <View style={styles.planList}>
                 <Text style={[styles.sectionLabel, { color: colors.foreground }]}>League size</Text>
                 {availableLeaguePlans.map((plan) => {
@@ -410,32 +493,6 @@ export default function CreateWarScreen() {
           </>
         )}
       </ScrollView>
-      {revenueCat.offering ? (
-        <Modal
-          visible={isPaywallVisible}
-          animationType="slide"
-          presentationStyle="fullScreen"
-          onRequestClose={() => setIsPaywallVisible(false)}
-        >
-          <View style={[styles.paywallContainer, { backgroundColor: colors.background }]}>
-            <RevenueCatUI.Paywall
-              options={{ offering: revenueCat.offering }}
-              onPurchaseCompleted={({ storeTransaction }) =>
-                handlePaywallPurchase(
-                  storeTransaction.productIdentifier,
-                  storeTransaction.transactionIdentifier,
-                )
-              }
-              onPurchaseError={({ error: purchaseError }) => {
-                setError(purchaseError.message || 'The purchase could not be completed.');
-                setIsPaywallVisible(false);
-              }}
-              onPurchaseCancelled={() => setIsPaywallVisible(false)}
-              onDismiss={() => setIsPaywallVisible(false)}
-            />
-          </View>
-        </Modal>
-      ) : null}
     </Screen>
   );
 }
@@ -462,5 +519,4 @@ const styles = StyleSheet.create({
   paymentNote: { fontFamily: 'Inter_400Regular', fontSize: 13, lineHeight: 19 },
   trialCard: { gap: 8 },
   trialTitle: { fontFamily: 'Inter_700Bold', fontSize: 17 },
-  paywallContainer: { flex: 1 },
 });

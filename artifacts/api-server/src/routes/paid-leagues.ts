@@ -229,6 +229,10 @@ router.post("/paid-leagues/create", async (req, res) => {
     typeof req.body.productIdentifier === "string"
       ? req.body.productIdentifier
       : "";
+  const selectedProductIdentifier =
+    typeof req.body.selectedProductIdentifier === "string"
+      ? req.body.selectedProductIdentifier
+      : "";
   const transactionIdentifier =
     typeof req.body.transactionIdentifier === "string"
       ? req.body.transactionIdentifier.trim()
@@ -243,6 +247,14 @@ router.post("/paid-leagues/create", async (req, res) => {
 
   if (!Object.hasOwn(PRODUCT_CAPACITY, productIdentifier)) {
     res.status(400).json({ message: "The selected league product is not supported." });
+    return;
+  }
+
+  if (productIdentifier !== selectedProductIdentifier) {
+    res.status(409).json({
+      message:
+        "The purchased product does not match the selected Pint War size. No Pint War was created.",
+    });
     return;
   }
 
