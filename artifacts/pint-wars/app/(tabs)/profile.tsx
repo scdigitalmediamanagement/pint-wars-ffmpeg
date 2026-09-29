@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useDeleteMyAccount } from '@workspace/api-client-react';
 import { Button, Card, ErrorText, Field, Screen, Title, uiStyles } from '@/components/AppUi';
@@ -45,6 +45,12 @@ export default function ProfileScreen() {
   const [error, setError] = useState('');
   const [showDeletionConfirmation, setShowDeletionConfirmation] = useState(false);
   const [deletionError, setDeletionError] = useState('');
+
+  useFocusEffect(
+    useCallback(() => {
+      setDeletionError('');
+    }, []),
+  );
 
   useEffect(() => {
     if (profileQuery.data?.display_name) setDisplayName(profileQuery.data.display_name);
