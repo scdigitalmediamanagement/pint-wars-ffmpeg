@@ -32,6 +32,7 @@ type PendingPaidPurchase = {
   productIdentifier: string;
   transactionIdentifier: string;
   durationDays: number;
+  priceString: string;
 };
 
 type PaidLeagueCreation = PendingPaidPurchase & {
@@ -173,10 +174,7 @@ export default function CreateWarScreen() {
       ),
     onSuccess: async (result, purchase) => {
       setPendingPurchase(null);
-      const purchasePrice = revenueCat.offering?.availablePackages.find(
-        (item) => item.product.identifier === purchase.productIdentifier,
-      )?.product.priceString;
-      await finishLeagueCreation(result, purchasePrice);
+      await finishLeagueCreation(result, purchase.priceString);
     },
     onError: (cause) => {
       setError(
@@ -212,10 +210,16 @@ export default function CreateWarScreen() {
     setIsPurchasing(true);
     try {
       const result = await Purchases.purchasePackage(packageToPurchase);
+      const purchasedPackage = revenueCat.offering?.availablePackages.find(
+        (item) => item.product.identifier === result.productIdentifier,
+      );
       const purchase: PendingPaidPurchase = {
         productIdentifier: result.productIdentifier,
         transactionIdentifier: result.transaction.transactionIdentifier,
         durationDays: parsedPaidDurationDays,
+        priceString:
+          purchasedPackage?.product.priceString ??
+          packageToPurchase.product.priceString,
       };
       setPendingPurchase(purchase);
       void revenueCat.refresh().catch(() => undefined);
