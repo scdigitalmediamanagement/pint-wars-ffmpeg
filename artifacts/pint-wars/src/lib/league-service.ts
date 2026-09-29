@@ -40,7 +40,7 @@ function describeSupabaseError(error: unknown) {
 
 async function paidLeagueRequest(
   path: string,
-  body?: Record<string, string>,
+  body?: Record<string, string | number>,
 ) {
   const client = getSupabase();
   const [{ data: sessionData, error: sessionError }] = await Promise.all([
@@ -94,6 +94,7 @@ export async function createPaidLeague(
   name: string,
   productIdentifier: string,
   transactionIdentifier: string,
+  durationDays: number,
 ) {
   const trimmedName = name.trim();
   if (!trimmedName || trimmedName.length > 80) {
@@ -110,11 +111,16 @@ export async function createPaidLeague(
     );
   }
 
+  if (!Number.isInteger(durationDays) || durationDays < 1 || durationDays > 30) {
+    throw new Error('Duration must be between 1 and 30 days.');
+  }
+
   for (let attempt = 0; attempt < 10; attempt += 1) {
     const response = await paidLeagueRequest('paid-leagues/create', {
       name: trimmedName,
       productIdentifier,
       transactionIdentifier: trimmedTransactionIdentifier,
+      durationDays,
     });
     const payload = await readApiPayload(response);
 

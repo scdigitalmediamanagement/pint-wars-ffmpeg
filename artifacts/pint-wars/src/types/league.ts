@@ -10,6 +10,7 @@ export type League = {
   status: LeagueStatus;
   starts_at: string;
   ends_at: string;
+  duration_days: number | null;
   created_at: string;
   completed_at: string | null;
 };

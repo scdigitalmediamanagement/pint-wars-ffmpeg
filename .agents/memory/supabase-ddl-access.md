@@ -9,6 +9,12 @@ The connected Supabase integration cannot apply DDL. Its proxy supports `/rest/v
 
 **How to apply:** Use a Supabase Management API/direct Postgres connection with DDL authority through a supported workspace integration or deployment setup; do not route the migration through the app's anon key or Replit's `DATABASE_URL`.
 
+In this workspace, the Supabase integration's `GET /rest/v1/` OpenAPI endpoint requires a `service_role` key, while table-specific zero-row selects can still check column existence.
+
+**Why:** API-root schema introspection may be restricted independently from ordinary PostgREST table reads, so a root 401 does not mean every metadata check is unavailable.
+
+**How to apply:** Use a narrow `GET /rest/v1/<table>?select=<known-columns>&limit=0` to check a known table shape when permitted; this cannot reveal function bodies or provide DDL access.
+
 For Supabase projects whose `db.<project-ref>.supabase.co` hostname resolves only to IPv6, use the project's Session Pooler host and port for workspace-side `psql` access. The pooler username is `postgres.<project-ref>`; the database password remains the project database password.
 
 **Why:** The Replit workspace may not have a usable IPv6 route to the direct database host, while the Session Pooler provides a reachable IPv4 connection for migration work.

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import RevenueCatUI from 'react-native-purchases-ui';
@@ -21,7 +21,7 @@ import { useColors } from '@/hooks/useColors';
 type LeaguePlan = {
   id: string;
   capacity: number;
-  durationDays: number;
+  durationDays?: number;
   title: string;
   description: string;
   kind: 'free' | 'paid';
@@ -31,6 +31,7 @@ type LeaguePlan = {
 type PendingPaidPurchase = {
   productIdentifier: PintWarProductIdentifier;
   transactionIdentifier: string;
+  durationDays: number;
 };
 
 const leaguePlans: LeaguePlan[] = [
@@ -45,9 +46,8 @@ const leaguePlans: LeaguePlan[] = [
   ...PINT_WAR_PRODUCTS.map(({ identifier, capacity }) => ({
     id: `paid-${capacity}`,
     capacity,
-    durationDays: 30,
     title: `${capacity}-player Pint War`,
-    description: `A 30-day Pint War for up to ${capacity} players.`,
+    description: `A one-time Pint War for up to ${capacity} players. Choose the duration separately.`,
     kind: 'paid' as const,
     productIdentifier: identifier,
   })),
@@ -71,6 +71,7 @@ export default function CreateWarScreen() {
     enabled: Boolean(user?.id),
   });
   const [name, setName] = useState('');
+  const [paidDurationInput, setPaidDurationInput] = useState('7');
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [isSetupStep, setIsSetupStep] = useState(false);
   const [error, setError] = useState('');
@@ -78,6 +79,14 @@ export default function CreateWarScreen() {
   const [pendingPurchase, setPendingPurchase] =
     useState<PendingPaidPurchase | null>(null);
   const selectedPlan = leaguePlans.find((plan) => plan.id === selectedPlanId);
+  const parsedPaidDurationDays = Number(paidDurationInput);
+  const isPaidDurationValid =
+    Number.isInteger(parsedPaidDurationDays) &&
+    parsedPaidDurationDays >= 1 &&
+    parsedPaidDurationDays <= 30;
+  const summaryDurationDays =
+    pendingPurchase?.durationDays ??
+    (isPaidDurationValid ? parsedPaidDurationDays : null);
   const freeTrialUsed = profileQuery.data?.free_trial_used_at != null;
   const availableLeaguePlans = freeTrialUsed
     ? leaguePlans.filter((plan) => plan.kind !== 'free')
@@ -133,6 +142,7 @@ export default function CreateWarScreen() {
         name,
         purchase.productIdentifier,
         purchase.transactionIdentifier,
+        purchase.durationDays,
       ),
     onSuccess: async (result) => {
       setPendingPurchase(null);
@@ -148,6 +158,10 @@ export default function CreateWarScreen() {
   });
 
   function openRevenueCatPaywall() {
+    if (!isPaidDurationValid) {
+      setError('Choose a duration between 1 and 30 days before purchasing.');
+      return;
+    }
     if (!paidCheckoutReady || !revenueCat.offering) {
       setError('Payments are still being configured. You will not be charged.');
       return;
@@ -170,10 +184,16 @@ export default function CreateWarScreen() {
       return;
     }
 
+    if (!isPaidDurationValid) {
+      setError('Choose a duration between 1 and 30 days before purchasing.');
+      return;
+    }
+
     setError('');
     const purchase = {
       productIdentifier: product.identifier,
       transactionIdentifier,
+      durationDays: parsedPaidDurationDays,
     };
     setPendingPurchase(purchase);
     void revenueCat.refresh().catch(() => undefined);
@@ -210,7 +230,11 @@ export default function CreateWarScreen() {
                 <View style={styles.summaryRow}>
                   <Text style={[styles.summaryLabel, { color: colors.mutedForeground }]}>Duration</Text>
                   <Text style={[styles.summaryValue, { color: colors.foreground }]}>
-                    {selectedPlan.durationDays} days
+                    {selectedPlan.kind === 'free'
+                      ? `${selectedPlan.durationDays ?? 10} days`
+                      : summaryDurationDays
+                        ? `${summaryDurationDays} ${summaryDurationDays === 1 ? 'day' : 'days'}`
+                        : 'Select 1–30 days'}
                   </Text>
                 </View>
                 <View style={styles.summaryRow}>
@@ -218,12 +242,49 @@ export default function CreateWarScreen() {
                   <Text style={[styles.summaryValue, { color: colors.foreground }]}>{selectedPlan.capacity}</Text>
                 </View>
               </View>
+              {selectedPlan.kind === 'paid' ? (
+                <View style={styles.durationField}>
+                  <Text style={[styles.sectionLabel, { color: colors.foreground }]}>Duration (days)</Text>
+                  <TextInput
+                    accessibilityLabel="Paid Pint War duration in days"
+                    editable={!pendingPurchase}
+                    keyboardType="number-pad"
+                    maxLength={2}
+                    onChangeText={(value) => {
+                      setPaidDurationInput(value.replace(/\D/g, '').slice(0, 2));
+                      setError('');
+                    }}
+                    placeholder="7"
+                    selectTextOnFocus
+                    style={[
+                      styles.durationInput,
+                      {
+                        backgroundColor: colors.background,
+                        borderColor: colors.border,
+                        color: colors.foreground,
+                        opacity: pendingPurchase ? 0.6 : 1,
+                      },
+                    ]}
+                    value={
+                      pendingPurchase
+                        ? String(pendingPurchase.durationDays)
+                        : paidDurationInput
+                    }
+                  />
+                  <Text style={[styles.durationHint, { color: colors.mutedForeground }]}>
+                    Choose any duration from 1 to 30 days. Price depends only on player capacity.
+                  </Text>
+                  {!pendingPurchase && !isPaidDurationValid ? (
+                    <ErrorText>Enter a whole number from 1 to 30 days.</ErrorText>
+                  ) : null}
+                </View>
+              ) : null}
               <Field label="League name" value={name} onChangeText={setName} placeholder="Exmouth Pint Wars" maxLength={80} />
               {error ? <ErrorText>{error}</ErrorText> : null}
               {selectedPlan.kind === 'paid' ? (
                 <>
                   <Text style={[styles.paymentNote, { color: colors.mutedForeground }]}>
-                    This is a one-time purchase for a single 30-day Pint War. Choose the same size in checkout if you want {selectedPlan.capacity} players.
+                    This is a one-time purchase for one Pint War. The price is based on player capacity; duration is selected separately. Choose the same size in checkout if you want {selectedPlan.capacity} players.
                   </Text>
                   {revenueCat.status === 'loading' || paidAvailabilityQuery.isLoading ? (
                     <ActivityIndicator color={colors.accent} />
@@ -255,7 +316,7 @@ export default function CreateWarScreen() {
                     <Button
                       label="Continue to RevenueCat checkout"
                       onPress={openRevenueCatPaywall}
-                      disabled={!name.trim() || !paidCheckoutReady || paidMutation.isPending}
+                      disabled={!name.trim() || !isPaidDurationValid || !paidCheckoutReady || paidMutation.isPending}
                     />
                   )}
                 </>
@@ -293,7 +354,7 @@ export default function CreateWarScreen() {
             <Title eyebrow="New competition">Create a Pint War</Title>
             <Card style={{ gap: 16 }}>
               <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 22 }}>
-                Choose your league size. Free trials run for 10 days; paid Pint Wars run for 30 days.
+                Choose your league size. Free trials run for 10 days; paid durations can be selected from 1 to 30 days.
               </Text>
               <View style={styles.planList}>
                 <Text style={[styles.sectionLabel, { color: colors.foreground }]}>League size</Text>
@@ -395,6 +456,9 @@ const styles = StyleSheet.create({
   summaryRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16 },
   summaryLabel: { fontFamily: 'Inter_400Regular', fontSize: 14 },
   summaryValue: { flex: 1, fontFamily: 'Inter_600SemiBold', fontSize: 14, textAlign: 'right' },
+  durationField: { gap: 8 },
+  durationInput: { width: 96, height: 48, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, fontFamily: 'Inter_600SemiBold', fontSize: 16, textAlign: 'center' },
+  durationHint: { fontFamily: 'Inter_400Regular', fontSize: 12, lineHeight: 18 },
   paymentNote: { fontFamily: 'Inter_400Regular', fontSize: 13, lineHeight: 19 },
   trialCard: { gap: 8 },
   trialTitle: { fontFamily: 'Inter_700Bold', fontSize: 17 },

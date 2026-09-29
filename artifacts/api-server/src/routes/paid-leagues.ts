@@ -233,6 +233,8 @@ router.post("/paid-leagues/create", async (req, res) => {
     typeof req.body.transactionIdentifier === "string"
       ? req.body.transactionIdentifier.trim()
       : "";
+  const durationDays =
+    typeof req.body.durationDays === "number" ? req.body.durationDays : NaN;
 
   if (name.length < 1 || name.length > 80) {
     res.status(400).json({ message: "League name must be between 1 and 80 characters." });
@@ -246,6 +248,11 @@ router.post("/paid-leagues/create", async (req, res) => {
 
   if (transactionIdentifier.length < 1 || transactionIdentifier.length > 255) {
     res.status(400).json({ message: "The purchase transaction is invalid." });
+    return;
+  }
+
+  if (!Number.isInteger(durationDays) || durationDays < 1 || durationDays > 30) {
+    res.status(400).json({ message: "Duration must be between 1 and 30 days." });
     return;
   }
 
@@ -320,6 +327,7 @@ router.post("/paid-leagues/create", async (req, res) => {
         body: JSON.stringify({
           p_name: name,
           p_purchase_id: purchaseId,
+          p_duration_days: durationDays,
         }),
       },
     );

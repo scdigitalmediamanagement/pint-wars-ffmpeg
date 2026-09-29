@@ -43,6 +43,7 @@ export type Database = {
           status: 'active' | 'completed';
           starts_at: string;
           ends_at: string;
+          duration_days: number | null;
           created_at: string;
           completed_at: string | null;
         };
