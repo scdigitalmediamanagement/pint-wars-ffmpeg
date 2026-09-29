@@ -1,0 +1,50 @@
+Update the existing Pint Wars paid-league creation flow to implement the newly agreed pricing/duration model.
+
+IMPORTANT: Do not redesign the app or change RevenueCat product IDs.
+
+LOCKED COMMERCIAL MODEL:
+- 6 players = £2.99
+- 10 players = £3.99
+- 14 players = £4.99
+- 16 players = £5.99
+- Price depends ONLY on player capacity.
+- Duration is selectable independently from 1 to 30 days.
+- A 6-player league costs £2.99 whether it lasts 1, 3, 7, 15, or 30 days.
+- Same principle for 10/14/16 players.
+- RevenueCat continues using the existing four products:
+  pint_war_6_players
+  pint_war_10_players
+  pint_war_14_players
+  pint_war_16_players
+
+IMPLEMENTATION:
+1. Update the paid Pint War creation screen so the host selects:
+   - Player capacity: 6, 10, 14, or 16
+   - Duration: 1–30 days
+   - League name
+2. Make the duration selector clear and simple. A compact 1–30 day selector is fine.
+3. The displayed price must remain determined solely by the selected player capacity.
+4. Show the selected duration clearly on the confirmation screen before payment.
+5. Pass the selected duration securely through the paid-league creation flow.
+6. Do NOT trust the client to determine the price or player capacity. The server/database must continue validating the purchased RevenueCat product against the capacity.
+7. The server must use the selected duration when calculating the league's starts_at/ends_at.
+8. The invite expiry must match the league duration.
+9. Store the duration with the league if the existing schema does not already preserve it. Use a proper database migration rather than relying only on client state.
+10. Existing paid leagues must continue working unchanged.
+11. Do not change RevenueCat products, offerings, webhook handling, purchase verification, or pricing.
+12. Do not implement extensions beyond 30 days yet. That is a separate future feature.
+13. Do not change the free Pint War flow unless required to prevent a regression.
+14. Remove any stale paid-league wording that says the duration is fixed at 30 days.
+
+Before changing code:
+- Inspect the CURRENT database schema, migrations, paid-league RPC, API route, RevenueCat purchase flow, and create screen.
+- Resolve any discrepancy between the current code/database and the requested 1–30 day model.
+- Do not assume the existing 10-day/30-day values are current.
+- Make the smallest safe set of changes required.
+
+After implementation:
+- Run Pint Wars typecheck.
+- Run API typecheck.
+- Run Expo dependency/doctor checks.
+- Run git diff --check.
+- Report exactly which files and database migrations were changed and whether all checks passed.
