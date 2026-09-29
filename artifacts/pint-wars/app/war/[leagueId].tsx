@@ -7,6 +7,7 @@ import { Button, Card, ErrorText, Screen, Title, uiStyles } from '@/components/A
 import { endLeagueEarly, getLeagueDashboard, getLeagueSummary, logPint, retireFromLeague } from '@/src/lib/league-service';
 import { getCurrentLocation } from '@/src/lib/location-service';
 import { findNearbyPubs, type Coordinates, type NearbyPub } from '@/src/lib/pub-service';
+import { CURRENT_LEAGUE_SCORING, type LeaguePoints } from '@/src/types/league';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { useColors } from '@/hooks/useColors';
 
@@ -319,7 +320,7 @@ export default function LeagueDashboardScreen() {
   const leagueEndLabel = endTimeLabel(league.ends_at);
   const completedDuration = completedDurationDays(league.starts_at, league.completed_at, league.ends_at);
   const sortedMembers = [...members].sort((a, b) => b.points - a.points || a.joined_at.localeCompare(b.joined_at));
-  const totalPoints = members.reduce((total, member) => total + member.points, 0);
+  const totalPoints: LeaguePoints = members.reduce((total, member) => total + member.points, 0);
   const highestPoints = sortedMembers[0]?.points ?? 0;
   const winners = sortedMembers.filter((member) => member.points === highestPoints);
 
@@ -349,6 +350,17 @@ export default function LeagueDashboardScreen() {
             </View>
           </View>
         </Card>
+        {league.status === 'active' ? (
+          <Card style={styles.scoringRules}>
+            <Text style={[styles.selectedLabel, { color: colors.accent }]}>SCORING</Text>
+            <Text style={[styles.scoringRule, { color: colors.foreground }]}>
+              {CURRENT_LEAGUE_SCORING.pointsPerValidPint} pint = {CURRENT_LEAGUE_SCORING.pointsPerValidPint} point. Leave a pub review = +{CURRENT_LEAGUE_SCORING.reviewBonusPoints} bonus point.
+            </Text>
+            <Text style={[styles.resultText, { color: colors.mutedForeground }]}>
+              The review bonus is once per player per pub. Editing, reporting, or recreating a review adds no points. Visiting a new pub adds no bonus. Past score events keep their original point values.
+            </Text>
+          </Card>
+        ) : null}
         {league.status === 'completed' ? (
           <>
             <Card style={styles.resultCard}>
@@ -391,10 +403,6 @@ export default function LeagueDashboardScreen() {
                   <View style={styles.statCell}>
                     <Text style={[styles.statValue, { color: colors.foreground }]}>{summaryQuery.data.stats.pubs_visited}</Text>
                     <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>PUBS</Text>
-                  </View>
-                  <View style={styles.statCell}>
-                    <Text style={[styles.statValue, { color: colors.foreground }]}>{summaryQuery.data.stats.new_pub_bonuses}</Text>
-                    <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>NEW PUB BONUSES</Text>
                   </View>
                   <View style={styles.statCell}>
                     <Text style={[styles.statValue, { color: colors.foreground }]}>{summaryQuery.data.stats.reviews}</Text>
@@ -469,7 +477,7 @@ export default function LeagueDashboardScreen() {
                 ) : null}
                 {logError ? <ErrorText>{logError}</ErrorText> : null}
                 <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 21 }}>
-                  Take a fresh photo with your pint. Verified visits update your score, including eligible first-pub bonuses.
+                  Take a fresh photo with your pint. Every valid pint adds {CURRENT_LEAGUE_SCORING.pointsPerValidPint} point; a new pub visit adds no bonus.
                 </Text>
               </>
             )}
@@ -524,7 +532,7 @@ export default function LeagueDashboardScreen() {
           <View style={[styles.pubSheet, { backgroundColor: colors.background, alignItems: 'center', paddingVertical: 40 }]}>
             <Title>Pint Logged!</Title>
             <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', textAlign: 'center', marginBottom: 24, fontSize: 16, lineHeight: 24 }}>
-               Your score has been updated for visiting {justLoggedPub?.pub.name}.
+              Your score gained {CURRENT_LEAGUE_SCORING.pointsPerValidPint} point for this pint at {justLoggedPub?.pub.name}.
             </Text>
             <View style={{ width: '100%', gap: 12 }}>
               <Button label="Review this pub" onPress={() => {
@@ -659,6 +667,8 @@ const styles = StyleSheet.create({
   kicker: { fontFamily: 'Inter_700Bold', fontSize: 12, letterSpacing: 1.5 },
   endTime: { fontFamily: 'Inter_400Regular', fontSize: 13 },
   summary: { gap: 12 },
+  scoringRules: { gap: 8 },
+  scoringRule: { fontFamily: 'Inter_600SemiBold', fontSize: 16, lineHeight: 23 },
   resultCard: { gap: 7 },
   resultNames: { fontFamily: 'Inter_700Bold', fontSize: 22, lineHeight: 28 },
   resultText: { fontFamily: 'Inter_400Regular', lineHeight: 21 },

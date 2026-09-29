@@ -1,5 +1,11 @@
 export type LeagueStatus = 'active' | 'completed';
 export type MembershipStatus = 'active' | 'retired' | 'removed';
+export type LeaguePoints = number;
+
+export const CURRENT_LEAGUE_SCORING = {
+  pointsPerValidPint: 1,
+  reviewBonusPoints: 1,
+} as const;
 
 export type League = {
   id: string;
@@ -25,7 +31,7 @@ export type LeagueMembership = {
   retired_at: string | null;
   removed_at: string | null;
   display_name: string;
-  points: number;
+  points: LeaguePoints;
 };
 
 export type MyLeague = {
@@ -46,7 +52,7 @@ export type LeagueSummaryStats = {
   pubs_visited: number;
   new_pub_bonuses: number;
   reviews: number;
-  total_points: number;
+  total_points: LeaguePoints;
 };
 
 export type LeagueSummary = {
