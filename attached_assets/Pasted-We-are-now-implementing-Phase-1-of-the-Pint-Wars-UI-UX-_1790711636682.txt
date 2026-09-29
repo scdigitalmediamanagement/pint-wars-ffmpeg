@@ -1,0 +1,51 @@
+We are now implementing Phase 1 of the Pint Wars UI/UX and commercial-product improvement plan.
+
+FIRST TASK ONLY: Fix the paid league capacity/product mismatch.
+
+The audit found that a user can select one league size in Create a Pint War and then purchase a different capacity through RevenueCat. The actual purchased RevenueCat product currently determines the league capacity.
+
+This must be made impossible/confusion-free.
+
+LOCKED PRODUCT MODEL:
+- 6 players = £2.99
+- 10 players = £3.99
+- 14 players = £4.99
+- 16 players = £5.99
+- Paid duration = 1–30 days
+- Price depends ONLY on player capacity
+- Do not change any prices
+- Do not create new RevenueCat products
+- Do not change the existing RevenueCat product IDs
+- Do not change the duration rules
+
+Requirements:
+
+1. When the user selects a league size, checkout must correspond ONLY to that selected size.
+2. The user must not be able to accidentally purchase a different capacity from the RevenueCat checkout.
+3. Before purchase, clearly show:
+   - selected player capacity
+   - price
+   - selected duration
+4. After RevenueCat purchase succeeds, verify that the purchased product corresponds to the selected capacity before creating the league.
+5. If the purchased product does not match the selected capacity, do NOT create the league. Show a clear user-facing error and allow recovery.
+6. Preserve the existing RevenueCat purchase verification/webhook flow.
+7. Preserve server-side verification. Do not trust the client alone.
+8. Do not change Supabase scoring, duration, account deletion or any unrelated functionality.
+9. Do not redesign the entire Create a Pint War screen yet.
+10. Do not add new features.
+
+IMPORTANT:
+The four existing RevenueCat products remain:
+- pint_war_6_players
+- pint_war_10_players
+- pint_war_14_players
+- pint_war_16_players
+
+After making the change:
+- Run Pint Wars typecheck
+- Run API typecheck
+- Run Expo dependency check
+- Run git diff --check
+- Report exactly which files changed and the test results.
+
+Only implement this first task.
