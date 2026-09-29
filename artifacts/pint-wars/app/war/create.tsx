@@ -354,7 +354,7 @@ export default function CreateWarScreen() {
             <Title eyebrow="New competition">Create a Pint War</Title>
             <Card style={{ gap: 16 }}>
               <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 22 }}>
-                Choose your league size. Free trials run for 10 days; paid durations can be selected from 1 to 30 days.
+                {'Choose your league size and duration.\nPaid Pint Wars can run for 1–30 days.'}
               </Text>
               <View style={styles.planList}>
                 <Text style={[styles.sectionLabel, { color: colors.foreground }]}>League size</Text>
