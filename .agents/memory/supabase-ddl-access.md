@@ -26,3 +26,9 @@ Supabase-managed extensions such as `pgcrypto` may be installed in the `extensio
 **Why:** An unqualified `gen_random_bytes( integer )` worked when called directly through REST but failed inside a `search_path = public` league RPC with PostgreSQL error `42883`.
 
 **How to apply:** Inspect the extension schema before changing a function, then use a schema-qualified call in the smallest `create or replace function` repair migration.
+
+For `psql` migrations, do not rely on workspace `PGHOST` or `PGDATABASE` defaults. A malformed connection URI can fall back to Replit's local `helium` database; pass the Supabase Session Pooler host, port, user, SSL mode, and password explicitly, then verify the database identity before DDL.
+
+**Why:** A production migration attempt using an invalid URI reached the workspace's default database, while a direct pooler connection succeeded only after the project-specific settings were supplied.
+
+**How to apply:** Validate URI format or pass explicit libpq connection options, run a read-only identity/schema preflight, verify it is not the disposable test project, and apply the migration transactionally.
