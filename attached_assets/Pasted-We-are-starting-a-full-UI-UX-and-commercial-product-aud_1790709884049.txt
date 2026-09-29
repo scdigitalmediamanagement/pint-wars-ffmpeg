@@ -1,0 +1,87 @@
+We are starting a full UI/UX and commercial-product audit of Pint Wars.
+
+IMPORTANT:
+Do NOT modify any files.
+Do NOT redesign anything.
+Do NOT install packages.
+Do NOT change database/backend logic.
+Do NOT make any code changes.
+
+I want an audit only.
+
+Review the current Pint Wars app screen-by-screen and produce a structured audit of the existing product.
+
+Audit these areas wherever they exist in the current app:
+
+1. Welcome / onboarding
+2. Sign up / login
+3. Home/dashboard
+4. Profile
+5. Create a Pint War
+6. League-size selection
+7. Duration selection
+8. Payment / RevenueCat
+9. Purchase confirmation
+10. Invite friends
+11. Join a Pint War
+12. Active Pint War dashboard
+13. Leaderboard
+14. Log a Pint
+15. Camera / proof photo
+16. Pub selection
+17. Pub details
+18. Pub reviews
+19. Activity / history
+20. Completed Pint War
+21. Winner / results
+22. Privacy
+23. Support
+24. Account deletion
+
+For every screen that exists, assess:
+
+- What the screen currently does
+- Visual quality
+- UX clarity
+- Navigation
+- Information hierarchy
+- Whether it feels like a polished commercial app
+- Whether it feels worth paying £2.99–£5.99 for
+- What is confusing or weak
+- What should be improved
+- Priority: A = must fix before launch, B = important improvement, C = later
+
+Also identify:
+
+- Screens that are currently too basic
+- Repeated/stale wording
+- Inconsistent design patterns
+- Weak calls to action
+- Missing loading/empty/error states
+- Areas where the app feels unfinished
+- Areas that could become more engaging
+- Opportunities to make Pint Wars feel social and competitive
+- Opportunities to support the planned Live War Activity/Photo Feed
+- Opportunities to support Pint War Memories
+- Opportunities to support the future War Gallery/League History
+- Opportunities to support the future Pint Wars for Business pub product
+
+Commercial review:
+
+Assess whether the current product experience gives a user a convincing reason to pay £2.99 / £3.99 / £4.99 / £5.99 for a Pint War.
+
+Do not suggest changing the agreed pricing.
+
+Do not suggest adding random features simply to increase feature count.
+
+Focus on making the existing core experience feel polished, social, competitive and worth paying for.
+
+At the end provide:
+
+A. Complete screen-by-screen audit
+B. Top 10 highest-impact improvements
+C. Recommended implementation order
+D. Any technical considerations we need to account for before redesigning
+E. Features that should NOT be changed because they are already working correctly
+
+Again: AUDIT ONLY. Make no code or configuration changes.
