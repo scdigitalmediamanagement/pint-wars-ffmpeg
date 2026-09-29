@@ -127,11 +127,18 @@ export default function CreateWarScreen() {
     offeringHasExactlyLeagueProducts &&
     paidAvailabilityQuery.data === true;
 
-  const finishLeagueCreation = async (result: { league_id: string; invite_code: string }) => {
+  const finishLeagueCreation = async (
+    result: { league_id: string; invite_code: string },
+    purchasePrice?: string,
+  ) => {
     await client.invalidateQueries({ queryKey: ['my-leagues'] });
     router.replace({
       pathname: '/war/invite',
-      params: { leagueId: result.league_id, code: result.invite_code },
+      params: {
+        leagueId: result.league_id,
+        code: result.invite_code,
+        ...(purchasePrice ? { purchasePrice } : {}),
+      },
     });
   };
 
@@ -164,9 +171,12 @@ export default function CreateWarScreen() {
         purchase.transactionIdentifier,
         purchase.durationDays,
       ),
-    onSuccess: async (result) => {
+    onSuccess: async (result, purchase) => {
       setPendingPurchase(null);
-      await finishLeagueCreation(result);
+      const purchasePrice = revenueCat.offering?.availablePackages.find(
+        (item) => item.product.identifier === purchase.productIdentifier,
+      )?.product.priceString;
+      await finishLeagueCreation(result, purchasePrice);
     },
     onError: (cause) => {
       setError(

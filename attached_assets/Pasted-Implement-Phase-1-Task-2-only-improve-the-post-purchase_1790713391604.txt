@@ -1,0 +1,72 @@
+Implement Phase 1 Task 2 only: improve the post-purchase confirmation and invite experience.
+
+LOCKED PRODUCT MODEL:
+- 6 players = £2.99
+- 10 players = £3.99
+- 14 players = £4.99
+- 16 players = £5.99
+- Paid duration = 1–30 days
+- Price depends ONLY on player capacity
+- Do not change products, prices, duration rules or payment logic.
+
+POST-PURCHASE CONFIRMATION:
+
+After a paid Pint War has been successfully verified and created, show the host a clear confirmation before/with the invite experience.
+
+It must clearly show:
+- Pint War name
+- Player capacity purchased
+- Price paid
+- Duration selected
+- League end date/time
+- Invite code
+- Number of remaining places
+
+Make it obvious that the purchase has completed successfully.
+
+Do not display technical RevenueCat transaction information unless needed for support/recovery.
+
+INVITE SCREEN:
+
+Make all invite wording dynamic based on the actual league capacity.
+
+Examples:
+- 6-player league: “Share this code with up to 5 friends.”
+- 10-player league: “Share this code with up to 9 friends.”
+- 14-player league: “Share this code with up to 13 friends.”
+- 16-player league: “Share this code with up to 15 friends.”
+
+Remove any stale wording such as:
+“free 4-player Pint War”
+or
+“up to 3 friends”
+when the league is paid.
+
+The invite screen should show:
+- League name
+- Actual player capacity
+- Current players / maximum players
+- Invite code
+- Share button
+- Remaining places
+
+FREE 4-PLAYER LEAGUES:
+
+Preserve their existing correct free-trial wording. Do not apply paid wording to free leagues.
+
+IMPORTANT:
+- Do not change Supabase schema.
+- Do not change RevenueCat products.
+- Do not change scoring.
+- Do not change account deletion.
+- Do not change the paid duration implementation.
+- Do not add Live Activity, photo feed, Memories or Gallery yet.
+- Do not redesign the entire app yet.
+- Only improve the post-purchase confirmation and invite experience.
+
+After implementation:
+1. Run Pint Wars typecheck.
+2. Run API typecheck.
+3. Run git diff --check.
+4. Run Expo dependency check.
+5. Report exactly which files changed and the test results.
