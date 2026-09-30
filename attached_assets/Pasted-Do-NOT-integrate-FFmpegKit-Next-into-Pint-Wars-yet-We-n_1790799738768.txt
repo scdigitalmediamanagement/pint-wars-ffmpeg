@@ -1,0 +1,56 @@
+Do NOT integrate FFmpegKit Next into Pint Wars yet.
+
+We now have the bounded POC result:
+- Android POC passed.
+- Linux montage export passed.
+- iOS native artifact is the main missing platform.
+- H.264/non-GPL and licensing remain gates.
+- Expo/EAS integration remains unverified.
+
+I want you to investigate and produce the cleanest practical route to build the required FFmpegKit Next iOS XCFramework for Pint Wars.
+
+Do NOT change Pint Wars app code.
+Do NOT install dependencies.
+Do NOT change app.json or eas.json.
+
+Investigate these options in this order:
+
+1. A standard macOS CI/build environment capable of running the documented FFmpegKit Next iOS build.
+2. Whether GitHub Actions macOS runners can be used to produce a pinned iOS XCFramework artifact.
+3. Whether EAS Build itself can safely perform the required native FFmpegKit Next iOS build during an iOS build.
+4. Any other practical macOS-based route that does not require buying a dedicated Mac.
+
+For each option report:
+- exact build requirements
+- expected complexity
+- whether it can produce a reproducible pinned artifact
+- whether the artifact can be supplied to the Pint Wars Expo/CNG project
+- whether it is compatible with EAS Build
+- likely cost
+- biggest risks
+
+LICENSING GATE:
+
+Also inspect the exact Android POC dependency/license inventory and determine:
+- which libraries are actually linked
+- which are LGPL
+- which are GPL
+- whether x264 is definitely absent
+- what the libiconv notice represents in the actual linked build
+- what notices/attributions Pint Wars would need to distribute
+- whether H.264 encoding can use Android MediaCodec / Apple VideoToolbox or another acceptable non-GPL encoder without enabling x264
+
+Do not enable GPL components.
+
+Do not claim the app is production-cleared.
+
+FINAL OUTPUT:
+
+Give me:
+A. Recommended iOS artifact build route
+B. Recommended artifact version/pinning strategy
+C. Recommended licensing/notice action
+D. Exact next technical steps
+E. Whether we should proceed to the native integration after those steps
+
+No application or production files should be modified during this investigation.
