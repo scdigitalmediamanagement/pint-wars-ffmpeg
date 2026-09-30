@@ -4,7 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
+import { getGetPintWarActivityQueryKey } from '@workspace/api-client-react';
 import { Button, Card, ErrorText, Screen, Title, uiStyles } from '@/components/AppUi';
+import { WarActivityFeed } from '@/src/components/WarActivityFeed';
 import { endLeagueEarly, getLeagueDashboard, getLeagueSummary, logPint, retireFromLeague } from '@/src/lib/league-service';
 import { getCurrentLocation } from '@/src/lib/location-service';
 import { findNearbyPubs, type Coordinates, type NearbyPub } from '@/src/lib/pub-service';
@@ -95,7 +97,7 @@ type JustLoggedPub = {
 
 export default function LeagueDashboardScreen() {
   const colors = useColors();
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const { leagueId } = useLocalSearchParams<{ leagueId: string }>();
   const queryClient = useQueryClient();
   const [now, setNow] = useState(() => Date.now());
@@ -143,6 +145,9 @@ export default function LeagueDashboardScreen() {
     onSuccess: (result, variables) => {
       setIsPreparingPint(false);
       void queryClient.invalidateQueries({ queryKey: ['league-dashboard', leagueId] });
+      void queryClient.invalidateQueries({
+        queryKey: getGetPintWarActivityQueryKey(leagueId),
+      });
       void queryClient.invalidateQueries({ queryKey: ['pub-passport'] });
       if (variables.pub && user) {
         void queryClient.invalidateQueries({
@@ -750,6 +755,13 @@ export default function LeagueDashboardScreen() {
             })}
           </Card>
         </View>
+        {league.status === 'active' && user ? (
+          <WarActivityFeed
+            leagueId={league.id}
+            currentUserId={user.id}
+            accessToken={session?.access_token ?? null}
+          />
+        ) : null}
         {league.status === 'completed' ? (
           <Button label="Start Another Pint War" onPress={() => router.push('/war/create')} />
         ) : null}

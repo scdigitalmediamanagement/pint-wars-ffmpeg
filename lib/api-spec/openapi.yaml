@@ -14,6 +14,8 @@ tags:
     description: Pub identification operations
   - name: account
     description: Account management operations
+  - name: pint-wars
+    description: Member-only Pint War activity and proof photos
 paths:
   /healthz:
     get:
@@ -118,6 +120,145 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /pint-proofs/leagues/{leagueId}/activity:
+    get:
+      operationId: getPintWarActivity
+      tags: [pint-wars]
+      summary: Get recent Pint War activity
+      description: Returns a bounded, newest-first activity feed for an authenticated member of the Pint War.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: leagueId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PintWarActivityFeed"
+        "400":
+          description: Invalid Pint War identifier
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Missing or invalid Supabase session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: The authenticated user is not a member of this Pint War
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Activity could not be loaded or membership could not be verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Activity service is not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /pint-proofs/leagues/{leagueId}/photos/{pintLogId}:
+    get:
+      operationId: getPintWarActivityPhoto
+      tags: [pint-wars]
+      summary: Get a private Pint War proof photo
+      description: Streams a proof photo only after verifying the caller is a member of the Pint War and the pint log belongs to that war.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: leagueId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: pintLogId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Private proof image bytes
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/heic:
+              schema:
+                type: string
+                format: binary
+            image/heif:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: Invalid Pint War or pint log identifier
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Missing or invalid Supabase session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: The authenticated user is not a member of this Pint War
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Pint log or proof image is missing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "415":
+          description: Unsupported proof image format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Proof image could not be loaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Proof photo service is not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 components:
   securitySchemes:
     bearerAuth:
@@ -156,6 +297,55 @@ components:
           const: true
       required:
         - ok
+    PintWarActivityFeed:
+      type: object
+      additionalProperties: false
+      properties:
+        events:
+          type: array
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/PintWarActivityEvent"
+      required:
+        - events
+    PintWarActivityEvent:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          minLength: 1
+        type:
+          type: string
+          enum: [pint_logged, pub_review, legacy_pub_bonus]
+        userId:
+          type: string
+          format: uuid
+        playerName:
+          type: string
+          minLength: 1
+        occurredAt:
+          type: string
+          format: date-time
+        pubName:
+          type: [string, "null"]
+        scoreImpact:
+          type: [integer, "null"]
+        historicalScore:
+          type: boolean
+        photoPintLogId:
+          type: [string, "null"]
+          format: uuid
+      required:
+        - id
+        - type
+        - userId
+        - playerName
+        - occurredAt
+        - pubName
+        - scoreImpact
+        - historicalScore
+        - photoPintLogId
     Coordinates:
       type: object
       additionalProperties: false

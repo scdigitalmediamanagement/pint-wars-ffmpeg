@@ -27,6 +27,37 @@ export const AccountDeletionResponseValue = {
 } as const;
 export type AccountDeletionResponse = typeof AccountDeletionResponseValue;
 
+export type PintWarActivityEventType = typeof PintWarActivityEventType[keyof typeof PintWarActivityEventType];
+
+
+export const PintWarActivityEventType = {
+  pint_logged: 'pint_logged',
+  pub_review: 'pub_review',
+  legacy_pub_bonus: 'legacy_pub_bonus',
+} as const;
+
+export interface PintWarActivityEvent {
+  /** @minLength 1 */
+  id: string;
+  type: PintWarActivityEventType;
+  userId: string;
+  /** @minLength 1 */
+  playerName: string;
+  occurredAt: string;
+  /** @nullable */
+  pubName: string | null;
+  /** @nullable */
+  scoreImpact: number | null;
+  historicalScore: boolean;
+  /** @nullable */
+  photoPintLogId: string | null;
+}
+
+export interface PintWarActivityFeed {
+  /** @maxItems 20 */
+  events: PintWarActivityEvent[];
+}
+
 export interface Coordinates {
   latitude: number;
   longitude: number;

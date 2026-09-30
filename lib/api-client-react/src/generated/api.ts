@@ -24,7 +24,8 @@ import type {
   ApiError,
   HealthStatus,
   NearbyPubSearch,
-  NearbyPubsRequest
+  NearbyPubsRequest,
+  PintWarActivityFeed
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -125,13 +126,6 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-
-
-
-
-
-
-
 export const getFindNearbyPubsUrl = () => {
 
 
@@ -295,3 +289,151 @@ export const useDeleteMyAccount = <TError = ErrorType<ApiError>,
       > => {
       return useMutation(getDeleteMyAccountMutationOptions(options));
     }
+
+export const getGetPintWarActivityUrl = (leagueId: string,) => {
+
+
+
+
+  return `/api/pint-proofs/leagues/${leagueId}/activity`
+}
+
+/**
+ * Returns a bounded, newest-first activity feed for an authenticated member of the Pint War.
+ * @summary Get recent Pint War activity
+ */
+export const getPintWarActivity = async (leagueId: string, options?: Parameters<typeof customFetch>[1]): Promise<PintWarActivityFeed> => {
+
+  return customFetch<PintWarActivityFeed>(getGetPintWarActivityUrl(leagueId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPintWarActivityQueryKey = (leagueId: string,) => {
+    return [
+    `/api/pint-proofs/leagues/${leagueId}/activity`
+    ] as const;
+    }
+
+
+export const getGetPintWarActivityQueryOptions = <TData = Awaited<ReturnType<typeof getPintWarActivity>>, TError = ErrorType<ApiError>>(leagueId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPintWarActivity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPintWarActivityQueryKey(leagueId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPintWarActivity>>> = ({ signal }) => getPintWarActivity(leagueId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: leagueId !== null && leagueId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPintWarActivity>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPintWarActivityQueryResult = NonNullable<Awaited<ReturnType<typeof getPintWarActivity>>>
+export type GetPintWarActivityQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Get recent Pint War activity
+ */
+
+export function useGetPintWarActivity<TData = Awaited<ReturnType<typeof getPintWarActivity>>, TError = ErrorType<ApiError>>(
+ leagueId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPintWarActivity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPintWarActivityQueryOptions(leagueId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+export const getGetPintWarActivityPhotoUrl = (leagueId: string,
+    pintLogId: string,) => {
+
+
+
+
+  return `/api/pint-proofs/leagues/${leagueId}/photos/${pintLogId}`
+}
+
+/**
+ * Streams a proof photo only after verifying the caller is a member of the Pint War and the pint log belongs to that war.
+ * @summary Get a private Pint War proof photo
+ */
+export const getPintWarActivityPhoto = async (leagueId: string,
+    pintLogId: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetPintWarActivityPhotoUrl(leagueId,pintLogId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPintWarActivityPhotoQueryKey = (leagueId: string,
+    pintLogId: string,) => {
+    return [
+    `/api/pint-proofs/leagues/${leagueId}/photos/${pintLogId}`
+    ] as const;
+    }
+
+
+export const getGetPintWarActivityPhotoQueryOptions = <TData = Awaited<ReturnType<typeof getPintWarActivityPhoto>>, TError = ErrorType<ApiError>>(leagueId: string,
+    pintLogId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPintWarActivityPhoto>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPintWarActivityPhotoQueryKey(leagueId,pintLogId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPintWarActivityPhoto>>> = ({ signal }) => getPintWarActivityPhoto(leagueId,pintLogId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: leagueId !== null && leagueId !== undefined && pintLogId !== null && pintLogId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPintWarActivityPhoto>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPintWarActivityPhotoQueryResult = NonNullable<Awaited<ReturnType<typeof getPintWarActivityPhoto>>>
+export type GetPintWarActivityPhotoQueryError = ErrorType<ApiError>
+
+
+/**
+ * @summary Get a private Pint War proof photo
+ */
+
+export function useGetPintWarActivityPhoto<TData = Awaited<ReturnType<typeof getPintWarActivityPhoto>>, TError = ErrorType<ApiError>>(
+ leagueId: string,
+    pintLogId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPintWarActivityPhoto>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPintWarActivityPhotoQueryOptions(leagueId,pintLogId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}

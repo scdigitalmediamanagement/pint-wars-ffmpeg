@@ -14,3 +14,6 @@ export * from './nearbyPub';
 export * from './nearbyPubProvider';
 export * from './nearbyPubSearch';
 export * from './nearbyPubsRequest';
+export * from './pintWarActivityEvent';
+export * from './pintWarActivityEventType';
+export * from './pintWarActivityFeed';

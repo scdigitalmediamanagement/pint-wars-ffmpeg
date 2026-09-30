@@ -63,3 +63,44 @@ export const FindNearbyPubsResponse = zod.object({
 export const DeleteMyAccountResponse = zod.object({
   "ok": zod.literal(true)
 })
+
+
+/**
+ * Returns a bounded, newest-first activity feed for an authenticated member of the Pint War.
+ * @summary Get recent Pint War activity
+ */
+export const GetPintWarActivityParams = zod.object({
+  "leagueId": zod.coerce.string().uuid()
+})
+
+
+
+export const getPintWarActivityResponseEventsMax = 20;
+
+
+
+export const GetPintWarActivityResponse = zod.object({
+  "events": zod.array(zod.object({
+  "id": zod.string().min(1),
+  "type": zod.enum(['pint_logged', 'pub_review', 'legacy_pub_bonus']),
+  "userId": zod.string().uuid(),
+  "playerName": zod.string().min(1),
+  "occurredAt": zod.coerce.date(),
+  "pubName": zod.string().nullable(),
+  "scoreImpact": zod.number().int().nullable(),
+  "historicalScore": zod.boolean(),
+  "photoPintLogId": zod.string().uuid().nullable()
+})).max(getPintWarActivityResponseEventsMax)
+})
+
+
+/**
+ * Streams a proof photo only after verifying the caller is a member of the Pint War and the pint log belongs to that war.
+ * @summary Get a private Pint War proof photo
+ */
+export const GetPintWarActivityPhotoParams = zod.object({
+  "leagueId": zod.coerce.string().uuid(),
+  "pintLogId": zod.coerce.string().uuid()
+})
+
+export const GetPintWarActivityPhotoResponse = zod.unknown()
