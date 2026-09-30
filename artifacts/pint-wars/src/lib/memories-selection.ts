@@ -4,6 +4,8 @@ const MIN_TARGET_PHOTOS = 16;
 const MAX_TARGET_PHOTOS = 20;
 const TARGET_PHOTO_RATIO = 0.8;
 const TIME_COVERAGE_BINS = 5;
+const DIVERSITY_LOOKAHEAD = 48;
+const END_OF_WAR_WEIGHT = 5;
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 
@@ -118,19 +120,15 @@ function selectionWeight(candidate: TimedCandidate, counts: SelectionCounts, tim
   const pubCount = candidate.photo.pubName
     ? counts.pubs.get(candidate.photo.pubName) ?? 0
     : 0;
-  const timeBinCount = candidate.timeBin === null
-    ? 0
-    : counts.timeBins.get(candidate.timeBin) ?? 0;
   const isInFinalPortion = timeRange !== null
     && timeRange.durationMs > 0
     && candidate.timestampMs !== null
     && candidate.timestampMs >= timeRange.finalPortionStartMs;
-  const endOfWarWeight = isInFinalPortion ? 3 : 1;
-  const playerVarietyWeight = 1 / (1 + playerCount * 0.75);
-  const pubVarietyWeight = 1 / (1 + pubCount * 0.5);
-  const timeCoverageWeight = 1 / (1 + timeBinCount * 0.65);
+  const endOfWarWeight = isInFinalPortion ? END_OF_WAR_WEIGHT : 1;
+  const playerVarietyWeight = 1 / (1 + playerCount * 0.4);
+  const pubVarietyWeight = 1 / (1 + pubCount * 0.25);
 
-  return endOfWarWeight * playerVarietyWeight * pubVarietyWeight * timeCoverageWeight;
+  return endOfWarWeight * playerVarietyWeight * pubVarietyWeight;
 }
 
 function weightedIndex(
@@ -201,8 +199,9 @@ function diverseRandomOrder(
     let bestIndex = 0;
     let bestScore = Number.POSITIVE_INFINITY;
     let bestTieBreaker = Number.NEGATIVE_INFINITY;
+    const candidateLimit = Math.min(remaining.length, DIVERSITY_LOOKAHEAD);
 
-    for (let index = 0; index < remaining.length; index += 1) {
+    for (let index = 0; index < candidateLimit; index += 1) {
       const candidate = remaining[index];
       let score = (counts.players.get(candidate.photo.userId) ?? 0) * 100
         + (candidate.photo.pubName ? counts.pubs.get(candidate.photo.pubName) ?? 0 : 0) * 10;
