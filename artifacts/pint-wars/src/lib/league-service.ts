@@ -423,6 +423,13 @@ function photoExtension(mimeType: string | null) {
   }
 }
 
+export class PintPhotoUploadError extends Error {
+  constructor() {
+    super('Pint proof photo upload failed.');
+    this.name = 'PintPhotoUploadError';
+  }
+}
+
 export async function logPint({
   leagueId,
   userId,
@@ -436,21 +443,26 @@ export async function logPint({
   const extension = photoExtension(mimeType);
   const uniquePart = `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
   const photoPath = `${userId}/${leagueId}/${uniquePart}.${extension}`;
-  const photoResponse = await expoFetch(photoUri);
-
-  if (!photoResponse.ok) {
-    throw new Error('The pint photo could not be prepared for upload.');
+  let photoBytes: ArrayBuffer;
+  try {
+    const photoResponse = await expoFetch(photoUri);
+    if (!photoResponse.ok) throw new Error('Photo could not be read.');
+    photoBytes = await photoResponse.arrayBuffer();
+  } catch {
+    throw new PintPhotoUploadError();
   }
 
-  const photoBytes = await photoResponse.arrayBuffer();
-  const { error: uploadError } = await client.storage
-    .from(PINT_PROOF_BUCKET)
-    .upload(photoPath, photoBytes, {
-      contentType: mimeType ?? 'image/jpeg',
-      upsert: false,
-    });
-
-  if (uploadError) throw uploadError;
+  try {
+    const { error: uploadError } = await client.storage
+      .from(PINT_PROOF_BUCKET)
+      .upload(photoPath, photoBytes, {
+        contentType: mimeType ?? 'image/jpeg',
+        upsert: false,
+      });
+    if (uploadError) throw uploadError;
+  } catch {
+    throw new PintPhotoUploadError();
+  }
 
   let shouldCleanup = true;
   try {

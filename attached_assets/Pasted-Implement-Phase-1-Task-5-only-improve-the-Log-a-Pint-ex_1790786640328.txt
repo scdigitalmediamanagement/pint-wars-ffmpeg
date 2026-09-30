@@ -1,0 +1,77 @@
+Implement Phase 1 Task 5 only: improve the Log a Pint experience.
+
+The underlying pint logging, scoring and Live Activity functionality already works and has been tested on real devices.
+
+Do NOT change the backend scoring rules or pint-log architecture.
+
+LOCKED SCORING:
+- 1 logged pint = +1 point
+- Qualifying pub review = +1 bonus
+- No new-pub bonus
+- Review bonus only once per player per pub
+
+Improve the user experience from tapping “Log a Pint” through successful submission.
+
+DESIRED FLOW:
+
+1. User taps Log a Pint.
+2. Clearly explain that they need a fresh proof photo.
+3. Open the camera.
+4. Capture the photo.
+5. Clearly show the captured photo before submission.
+6. Allow the user to retake/cancel.
+7. Identify the pub when location/provider data allows.
+8. Clearly show the selected/identified pub.
+9. Allow the user to continue without a pub when identification is unavailable.
+10. Submit the pint.
+11. Show a strong success state:
+    “PINT LOGGED”
+    “+1 POINT”
+12. Return/show the updated score and Live Activity entry.
+
+IMPORTANT:
+- Do not require location.
+- Do not require pub identification.
+- Do not change photo-proof security.
+- Keep proof photos private to the relevant Pint War members.
+- Do not change the existing Storage bucket.
+- Do not change scoring.
+- Do not change RevenueCat.
+- Do not change league duration.
+- Do not change account deletion.
+
+UX improvements:
+- Make the camera/capture state clear.
+- Make Retake and Cancel obvious.
+- Make submission/loading state clear.
+- Prevent accidental double submission.
+- Give clear feedback if photo upload fails.
+- Give a real retry path if upload fails.
+- Give clear feedback if pub identification fails.
+- Do not expose technical errors to the user.
+- Make the successful +1 point feel like a game action rather than a database confirmation.
+
+If the existing camera implementation forces the front camera, assess whether that is appropriate for taking pint proof photos. If changing camera direction is safe within the existing Expo/native setup, use the more useful default for photographing the pint/pub scene. Do not add unnecessary camera packages.
+
+Do not redesign the entire Active Pint War screen.
+
+Do not implement:
+- Pint War Memories
+- War Gallery
+- Pub Business
+- new scoring
+- new league features
+
+After implementation run:
+1. Pint Wars typecheck
+2. API typecheck
+3. git diff --check
+4. Expo dependency check
+5. Any relevant existing pint-log tests
+
+Report:
+- files changed
+- exact user flow implemented
+- camera behaviour
+- error/retry behaviour
+- tests passed

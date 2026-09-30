@@ -1,13 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Image, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { getGetPintWarActivityQueryKey } from '@workspace/api-client-react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Card, ErrorText, Screen, Title, uiStyles } from '@/components/AppUi';
 import { WarActivityFeed } from '@/src/components/WarActivityFeed';
-import { endLeagueEarly, getLeagueDashboard, getLeagueSummary, logPint, retireFromLeague } from '@/src/lib/league-service';
+import { endLeagueEarly, getLeagueDashboard, getLeagueSummary, logPint, PintPhotoUploadError, retireFromLeague } from '@/src/lib/league-service';
 import { getCurrentLocation } from '@/src/lib/location-service';
 import { findNearbyPubs, type Coordinates, type NearbyPub } from '@/src/lib/pub-service';
 import { CURRENT_LEAGUE_SCORING, type LeaguePoints } from '@/src/types/league';
@@ -85,18 +86,17 @@ function completedDurationDays(startsAt: string, completedAt: string | null, sch
 type PendingPint = {
   photoUri: string;
   mimeType: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  location: Coordinates;
+  location: Coordinates | null;
 };
 
-type JustLoggedPub = {
-  pub: NearbyPub;
+type JustLoggedPint = {
+  pub: NearbyPub | null;
   pintLogId: string;
 };
 
 export default function LeagueDashboardScreen() {
   const colors = useColors();
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { leagueId } = useLocalSearchParams<{ leagueId: string }>();
   const queryClient = useQueryClient();
@@ -104,14 +104,19 @@ export default function LeagueDashboardScreen() {
   const [cameraError, setCameraError] = useState('');
   const [cameraBlocked, setCameraBlocked] = useState(false);
   const [logError, setLogError] = useState('');
+  const [logErrorKind, setLogErrorKind] = useState<'photo' | 'submission' | null>(null);
   const [isPreparingPint, setIsPreparingPint] = useState(false);
-  const [pubPickerVisible, setPubPickerVisible] = useState(false);
+  const [photoIntroVisible, setPhotoIntroVisible] = useState(false);
+  const [photoReviewVisible, setPhotoReviewVisible] = useState(false);
   const [isSearchingPubs, setIsSearchingPubs] = useState(false);
   const [nearbyPubs, setNearbyPubs] = useState<NearbyPub[]>([]);
   const [selectedPub, setSelectedPub] = useState<NearbyPub | null>(null);
   const [nearbyPubMessage, setNearbyPubMessage] = useState('');
   const [pendingPint, setPendingPint] = useState<PendingPint | null>(null);
-  const [justLoggedPub, setJustLoggedPub] = useState<JustLoggedPub | null>(null);
+  const [justLoggedPint, setJustLoggedPint] = useState<JustLoggedPint | null>(null);
+  const cameraLaunchInFlight = useRef(false);
+  const pintSubmissionInFlight = useRef(false);
+  const pubSearchGeneration = useRef(0);
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(timer);
@@ -143,6 +148,7 @@ export default function LeagueDashboardScreen() {
       });
     },
     onSuccess: (result, variables) => {
+      pintSubmissionInFlight.current = false;
       setIsPreparingPint(false);
       void queryClient.invalidateQueries({ queryKey: ['league-dashboard', leagueId] });
       void queryClient.invalidateQueries({
@@ -155,17 +161,28 @@ export default function LeagueDashboardScreen() {
         });
       }
       setLogError('');
-
-      if (variables.pub) {
-          setJustLoggedPub({
-            pub: variables.pub,
-            pintLogId: result.pintLogId,
-          });
-      }
+      setLogErrorKind(null);
+      setPendingPint(null);
+      setPhotoReviewVisible(false);
+      setIsSearchingPubs(false);
+      setNearbyPubs([]);
+      setSelectedPub(null);
+      setNearbyPubMessage('');
+      setJustLoggedPint({
+        pub: variables.pub,
+        pintLogId: result.pintLogId,
+      });
     },
     onError: (error) => {
+      pintSubmissionInFlight.current = false;
       setIsPreparingPint(false);
-      setLogError(error instanceof Error ? error.message : 'The pint could not be logged. Try again.');
+      const isPhotoError = error instanceof PintPhotoUploadError;
+      setLogErrorKind(isPhotoError ? 'photo' : 'submission');
+      setLogError(
+        isPhotoError
+          ? 'Your photo could not be uploaded. Check your connection and retry; the photo is still ready.'
+          : 'We could not finish logging this pint. Try again; your photo is still ready.',
+      );
     },
   });
   const retireMutation = useMutation({
@@ -205,123 +222,156 @@ export default function LeagueDashboardScreen() {
     },
   });
 
-  function continueWithPintLog(
-    pint: Omit<PendingPint, 'location'>,
-    pub: NearbyPub | null,
-  ) {
-    setPubPickerVisible(false);
+  function cancelPintReview() {
+    if (logMutation.isPending || pintSubmissionInFlight.current) return;
+    pubSearchGeneration.current += 1;
+    setPhotoReviewVisible(false);
+    setPhotoIntroVisible(false);
     setPendingPint(null);
-    setSelectedPub(null);
-    setIsPreparingPint(true);
-    logMutation.mutate({ ...pint, pub });
-  }
-
-  function continueWithoutPub() {
-    if (!pendingPint) return;
-    const { location: _location, ...pint } = pendingPint;
-    continueWithPintLog(pint, null);
-  }
-
-  function confirmSelectedPub() {
-    if (!pendingPint || !selectedPub) return;
-    const { location: _location, ...pint } = pendingPint;
-    continueWithPintLog(pint, selectedPub);
-  }
-
-  async function getOptionalLocation(): Promise<Coordinates | null> {
-    const result = await getCurrentLocation();
-    return result.status === 'success' ? result.coordinates : null;
-  }
-
-  async function takePintPhoto() {
-    setIsPreparingPint(true);
-    setCameraError('');
-    setCameraBlocked(false);
-    setLogError('');
-
-    let permission: ImagePicker.PermissionResponse;
-    try {
-      permission = await ImagePicker.requestCameraPermissionsAsync();
-    } catch {
-      setIsPreparingPint(false);
-      setCameraError('The camera could not be opened. Please try again.');
-      return;
-    }
-    if (!permission.granted) {
-      setCameraBlocked(!permission.canAskAgain);
-      setCameraError(
-        permission.canAskAgain
-          ? 'Camera access is required to photograph your fresh pint. Tap “Try camera again” to retry.'
-          : 'Camera access is turned off. Enable it in your device settings, then try again.',
-      );
-      setIsPreparingPint(false);
-      return;
-    }
-
-    let photo: ImagePicker.ImagePickerResult;
-    try {
-      photo = await ImagePicker.launchCameraAsync({
-        mediaTypes: ['images'],
-        allowsEditing: false,
-        quality: 0.8,
-        cameraType: ImagePicker.CameraType.front,
-      });
-    } catch {
-      setIsPreparingPint(false);
-      setCameraError('The camera could not take a photo. Please try again.');
-      return;
-    }
-    if (photo.canceled || !photo.assets[0]) {
-      setIsPreparingPint(false);
-      return;
-    }
-
-    const capturedPhoto = {
-      photoUri: photo.assets[0].uri,
-      mimeType: photo.assets[0].mimeType ?? null,
-    };
-
-    let location: Coordinates | null = null;
-    try {
-      location = await getOptionalLocation();
-    } catch {
-      location = null;
-    }
-
-    if (!location) {
-      setIsPreparingPint(false);
-      continueWithPintLog({
-        ...capturedPhoto,
-        latitude: null,
-        longitude: null,
-      }, null);
-      return;
-    }
-
-    const nextPendingPint = {
-      ...capturedPhoto,
-      latitude: location.latitude,
-      longitude: location.longitude,
-      location,
-    };
-    setPendingPint(nextPendingPint);
     setNearbyPubs([]);
     setSelectedPub(null);
     setNearbyPubMessage('');
-    setPubPickerVisible(true);
+    setIsSearchingPubs(false);
+    setLogError('');
+    setLogErrorKind(null);
+    setCameraError('');
+    setCameraBlocked(false);
+  }
+
+  function cancelPhotoIntro() {
+    if (cameraLaunchInFlight.current) return;
+    setPhotoIntroVisible(false);
+    setCameraError('');
+    setCameraBlocked(false);
+  }
+
+  function submitPendingPint(pub: NearbyPub | null) {
+    const pint = pendingPint;
+    if (!pint || logMutation.isPending || pintSubmissionInFlight.current) return;
+    pintSubmissionInFlight.current = true;
+    pubSearchGeneration.current += 1;
+    setIsSearchingPubs(false);
+    setLogError('');
+    setLogErrorKind(null);
+    logMutation.mutate({
+      photoUri: pint.photoUri,
+      mimeType: pint.mimeType,
+      latitude: pint.location?.latitude ?? null,
+      longitude: pint.location?.longitude ?? null,
+      pub,
+    });
+  }
+
+  async function identifyNearbyPubs() {
+    if (!pendingPint || isSearchingPubs) return;
+    const generation = ++pubSearchGeneration.current;
     setIsSearchingPubs(true);
+    setNearbyPubs([]);
+    setSelectedPub(null);
+    setNearbyPubMessage('');
 
     try {
-      const search = await findNearbyPubs(location);
+      const locationResult = await getCurrentLocation();
+      if (generation !== pubSearchGeneration.current) return;
+      if (locationResult.status !== 'success') {
+        setNearbyPubMessage(
+          locationResult.status === 'permission-denied'
+            ? 'Location is off. You can still log without a pub.'
+            : 'We could not get your location. You can still log without a pub.',
+        );
+        setPendingPint((current) => current ? { ...current, location: null } : current);
+        return;
+      }
+
+      setPendingPint((current) => current
+        ? { ...current, location: locationResult.coordinates }
+        : current);
+      const search = await findNearbyPubs(locationResult.coordinates);
+      if (generation !== pubSearchGeneration.current) return;
       setNearbyPubs(search.pubs);
       if (!search.providerConfigured) {
-        setNearbyPubMessage('Nearby pub search will appear here when a places provider is connected.');
+        setNearbyPubMessage('Pub search is unavailable right now. You can still log without a pub.');
       } else if (!search.pubs.length) {
-        setNearbyPubMessage('No nearby pubs were found. You can continue without selecting one.');
+        setNearbyPubMessage('No nearby pubs were found. You can still log without a pub.');
       }
     } catch {
-      setNearbyPubMessage('Nearby pubs could not be loaded. You can continue without selecting one.');
+      if (generation === pubSearchGeneration.current) {
+        setNearbyPubMessage('Nearby pubs could not be found. You can still log without a pub.');
+      }
     } finally {
+      if (generation === pubSearchGeneration.current) {
+        setIsSearchingPubs(false);
+      }
+    }
+  }
+
+  async function takePintPhoto(isRetake = false) {
+    if (
+      cameraLaunchInFlight.current ||
+      pintSubmissionInFlight.current ||
+      (isRetake && !pendingPint)
+    ) return;
+    cameraLaunchInFlight.current = true;
+    pubSearchGeneration.current += 1;
+    setIsSearchingPubs(false);
+    setPhotoIntroVisible(false);
+    setPhotoReviewVisible(false);
+    setIsPreparingPint(true);
+    setCameraError('');
+    setCameraBlocked(false);
+    try {
+      const permission: ImagePicker.PermissionResponse =
+        await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted) {
+        setCameraBlocked(!permission.canAskAgain);
+        setCameraError(
+          permission.canAskAgain
+            ? 'Camera access is needed for a fresh proof photo. You can allow it and try again.'
+            : 'Camera access is off. Enable it in device settings, then try again.',
+        );
+        if (isRetake && pendingPint) {
+          setPhotoReviewVisible(true);
+        } else {
+          setPhotoIntroVisible(true);
+        }
+        return;
+      }
+
+      const photo: ImagePicker.ImagePickerResult = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        allowsEditing: false,
+        quality: 0.8,
+        cameraType: ImagePicker.CameraType.back,
+      });
+      if (photo.canceled || !photo.assets[0]) {
+        if (isRetake && pendingPint) {
+          setPhotoReviewVisible(true);
+        } else {
+          setPhotoIntroVisible(true);
+        }
+        return;
+      }
+
+      setPendingPint({
+        photoUri: photo.assets[0].uri,
+        mimeType: photo.assets[0].mimeType ?? null,
+        location: null,
+      });
+      setNearbyPubs([]);
+      setSelectedPub(null);
+      setNearbyPubMessage('');
+      setLogError('');
+      setLogErrorKind(null);
+      setPhotoReviewVisible(true);
+    } catch {
+      setCameraError('The camera could not be opened. Please try again.');
+      if (isRetake && pendingPint) {
+        setPhotoReviewVisible(true);
+      } else {
+        setPhotoIntroVisible(true);
+      }
+    } finally {
+      cameraLaunchInFlight.current = false;
       setIsSearchingPubs(false);
       setIsPreparingPint(false);
     }
@@ -512,25 +562,22 @@ export default function LeagueDashboardScreen() {
             <Button
               label={cameraError ? 'Try camera again' : 'Log a Pint'}
               loading={isPreparingPint || logMutation.isPending}
-              onPress={() => void takePintPhoto()}
+              onPress={() => {
+                setCameraError('');
+                setCameraBlocked(false);
+                setPhotoIntroVisible(true);
+              }}
               testID="log-a-pint"
             />
             <Text style={[styles.primaryHint, { color: colors.mutedForeground }]}>
-              Take a fresh photo to log your pint.
+              A fresh photo is required. Location and pub selection are optional.
             </Text>
-            {cameraError ? <ErrorText>{cameraError}</ErrorText> : null}
-            {cameraBlocked && Platform.OS !== 'web' ? (
-              <Button
-                label="Open device settings"
-                variant="quiet"
-                onPress={() => {
-                  void Linking.openSettings().catch(() => {
-                    setCameraError('Open your device settings and allow camera access for Pint Wars.');
-                  });
-                }}
-              />
+            {!photoIntroVisible && !photoReviewVisible && cameraError ? (
+              <ErrorText>{cameraError}</ErrorText>
             ) : null}
-            {logError ? <ErrorText>{logError}</ErrorText> : null}
+            {!photoIntroVisible && !photoReviewVisible && logError ? (
+              <ErrorText>{logError}</ErrorText>
+            ) : null}
           </View>
         ) : null}
 
@@ -805,52 +852,341 @@ export default function LeagueDashboardScreen() {
         ) : null}
       </ScrollView>
 
-      <Modal visible={!!justLoggedPub} transparent animationType="fade" statusBarTranslucent>
-        <View style={styles.modalBackdrop}>
-          <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.foreground, opacity: 0.45 }]} />
-          <View style={[styles.pubSheet, { backgroundColor: colors.background, alignItems: 'center', paddingVertical: 40 }]}>
-            <Title>Pint Logged!</Title>
-            <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', textAlign: 'center', marginBottom: 24, fontSize: 16, lineHeight: 24 }}>
-              Your score gained {CURRENT_LEAGUE_SCORING.pointsPerValidPint} point for this pint at {justLoggedPub?.pub.name}.
-            </Text>
-            <View style={{ width: '100%', gap: 12 }}>
-              <Button label="Review this pub" onPress={() => {
-                  const loggedPub = justLoggedPub;
-                 setJustLoggedPub(null);
-                  router.push({
-                    pathname: '/pub/[placeId]',
-                    params: {
-                      placeId: loggedPub!.pub.placeId,
-                      provider: loggedPub!.pub.provider,
-                      name: loggedPub!.pub.name,
-                      address: loggedPub!.pub.address,
-                      pintLogId: loggedPub!.pintLogId,
-                    },
-                  });
-              }} />
-              <Button label="Done" variant="quiet" onPress={() => setJustLoggedPub(null)} />
-            </View>
-          </View>
-        </View>
-      </Modal>
-
       <Modal
-        visible={pubPickerVisible}
+        visible={photoIntroVisible}
         transparent
         animationType="slide"
         statusBarTranslucent
-        onRequestClose={continueWithoutPub}
+        onRequestClose={cancelPhotoIntro}
       >
         <View style={styles.modalBackdrop}>
           <View
             pointerEvents="none"
             style={[StyleSheet.absoluteFill, { backgroundColor: colors.foreground, opacity: 0.45 }]}
           />
-          <View style={[styles.pubSheet, { backgroundColor: colors.background }]}>
-            <View style={styles.pubSheetHeader}>
-              <Text style={[styles.pubSheetTitle, { color: colors.foreground }]}>Choose the pub</Text>
-              <Text style={[styles.pubSheetSubtitle, { color: colors.mutedForeground }]}>
-                Select a nearby pub, then confirm it before your pint is logged.
+          <View
+            style={[
+              styles.pintFlowSheet,
+              {
+                backgroundColor: colors.background,
+                paddingBottom: Math.max(insets.bottom, Platform.OS === 'web' ? 34 : 16) + 16,
+              },
+            ]}
+          >
+            <View style={[styles.photoIntroIcon, { backgroundColor: colors.muted }]}>
+              <Ionicons name="camera-outline" size={28} color={colors.accent} />
+            </View>
+            <Text style={[styles.flowKicker, { color: colors.accent }]}>FRESH PHOTO PROOF</Text>
+            <Text style={[styles.flowTitle, { color: colors.foreground }]}>Show us this pint.</Text>
+            <Text style={[styles.flowBody, { color: colors.mutedForeground }]}>
+              Take a new photo of your pint. You’ll review it before logging. Finding the pub is optional—you can continue without location or pub identification.
+            </Text>
+
+            {cameraError ? <ErrorText>{cameraError}</ErrorText> : null}
+            {cameraBlocked && Platform.OS !== 'web' ? (
+              <Button
+                label="Open device settings"
+                variant="quiet"
+                onPress={() => {
+                  void Linking.openSettings().catch(() => {
+                    setCameraError('Open device settings and allow camera access for Pint Wars.');
+                  });
+                }}
+              />
+            ) : null}
+            <Button
+              label="Open camera"
+              loading={isPreparingPint}
+              onPress={() => void takePintPhoto()}
+              testID="pint-intro-camera"
+            />
+            <Button
+              label="Cancel"
+              variant="quiet"
+              disabled={isPreparingPint}
+              onPress={cancelPhotoIntro}
+              testID="pint-intro-cancel"
+            />
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={photoReviewVisible && Boolean(pendingPint)}
+        transparent
+        animationType="slide"
+        statusBarTranslucent
+        onRequestClose={cancelPintReview}
+      >
+        <View style={styles.modalBackdrop}>
+          <View
+            pointerEvents="none"
+            style={[StyleSheet.absoluteFill, { backgroundColor: colors.foreground, opacity: 0.45 }]}
+          />
+          <View
+            style={[
+              styles.pintReviewSheet,
+              {
+                backgroundColor: colors.background,
+                paddingBottom: Math.max(insets.bottom, Platform.OS === 'web' ? 34 : 16) + 12,
+              },
+            ]}
+          >
+            <ScrollView
+              style={styles.reviewScroll}
+              contentContainerStyle={styles.reviewContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.pubSheetHeader}>
+                <Text style={[styles.flowKicker, { color: colors.accent }]}>PHOTO READY</Text>
+                <Text style={[styles.pubSheetTitle, { color: colors.foreground }]}>Review your pint</Text>
+                <Text style={[styles.pubSheetSubtitle, { color: colors.mutedForeground }]}>
+                  Check the fresh photo before it goes on the war board.
+                </Text>
+              </View>
+
+              {pendingPint ? (
+                <Image
+                  source={{ uri: pendingPint.photoUri }}
+                  resizeMode="cover"
+                  accessibilityLabel="Preview of the fresh pint proof photo"
+                  style={styles.pintPhotoPreview}
+                />
+              ) : null}
+
+              <View style={styles.photoReviewActions}>
+                <View style={styles.photoReviewAction}>
+                  <Button
+                    label="Retake photo"
+                    variant="secondary"
+                    disabled={logMutation.isPending || isPreparingPint}
+                    onPress={() => void takePintPhoto(true)}
+                    testID="pint-photo-retake"
+                  />
+                </View>
+                <View style={styles.photoReviewAction}>
+                  <Button
+                    label="Cancel"
+                    variant="quiet"
+                    disabled={logMutation.isPending || isPreparingPint}
+                    onPress={cancelPintReview}
+                    testID="pint-photo-cancel"
+                  />
+                </View>
+              </View>
+
+              {cameraError ? <ErrorText>{cameraError}</ErrorText> : null}
+              {cameraBlocked && Platform.OS !== 'web' ? (
+                <Button
+                  label="Open device settings"
+                  variant="quiet"
+                  onPress={() => {
+                    void Linking.openSettings().catch(() => {
+                      setCameraError('Open device settings and allow camera access for Pint Wars.');
+                    });
+                  }}
+                />
+              ) : null}
+
+              <Card style={styles.pubIdentificationCard}>
+                <View style={styles.pubIdentificationHeading}>
+                  <View style={[styles.pubIdentificationIcon, { backgroundColor: colors.muted }]}>
+                    <Ionicons name="location-outline" size={20} color={colors.accent} />
+                  </View>
+                  <View style={styles.pubIdentificationCopy}>
+                    <Text style={[styles.pubName, { color: colors.foreground }]}>Pub (optional)</Text>
+                    <Text style={[styles.pubAddress, { color: colors.mutedForeground }]}>
+                      Find a nearby pub, or log without one.
+                    </Text>
+                  </View>
+                </View>
+
+                {isSearchingPubs ? (
+                  <View style={styles.pubLoading}>
+                    <ActivityIndicator color={colors.accent} />
+                    <Text style={[styles.pubAddress, { color: colors.mutedForeground }]}>
+                      Checking nearby pubs. You can still log without one.
+                    </Text>
+                  </View>
+                ) : null}
+
+                {!isSearchingPubs && !nearbyPubs.length && !nearbyPubMessage ? (
+                  <Button
+                    label="Find nearby pubs"
+                    variant="secondary"
+                    onPress={() => void identifyNearbyPubs()}
+                    testID="find-nearby-pubs"
+                  />
+                ) : null}
+
+                {nearbyPubMessage ? (
+                  <View style={styles.pubSearchMessage}>
+                    <Text style={[styles.pubEmptyText, { color: colors.mutedForeground }]}>
+                      {nearbyPubMessage}
+                    </Text>
+                    <Button
+                      label="Try again"
+                      variant="quiet"
+                      onPress={() => void identifyNearbyPubs()}
+                      testID="retry-nearby-pubs"
+                    />
+                  </View>
+                ) : null}
+
+                {nearbyPubs.map((pub) => {
+                  const isSelected =
+                    selectedPub?.provider === pub.provider &&
+                    selectedPub.placeId === pub.placeId;
+                  return (
+                    <Pressable
+                      key={`${pub.provider}:${pub.placeId}`}
+                      accessibilityRole="radio"
+                      accessibilityLabel={`${pub.name}${pub.address ? `, ${pub.address}` : ''}`}
+                      accessibilityState={{ selected: isSelected }}
+                      onPress={() => setSelectedPub(pub)}
+                      style={[
+                        styles.pubRow,
+                        {
+                          borderColor: isSelected ? colors.accent : colors.border,
+                          backgroundColor: colors.card,
+                        },
+                      ]}
+                    >
+                      <View style={styles.pubResultCopy}>
+                        <Text style={[styles.pubName, { color: colors.foreground }]}>{pub.name}</Text>
+                        <Text style={[styles.pubAddress, { color: colors.mutedForeground }]}>
+                          {pub.address || 'Address unavailable'}
+                        </Text>
+                      </View>
+                      <Text style={[styles.pubDistance, { color: colors.accent }]}>
+                        {pub.distanceMeters < 1000
+                          ? `${Math.round(pub.distanceMeters)} m`
+                          : `${(pub.distanceMeters / 1000).toFixed(1)} km`}
+                      </Text>
+                      <Ionicons
+                        name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
+                        size={22}
+                        color={isSelected ? colors.accent : colors.mutedForeground}
+                      />
+                    </Pressable>
+                  );
+                })}
+
+                {selectedPub ? (
+                  <View style={[styles.selectedPubCard, { borderTopColor: colors.border }]}>
+                    <Text style={[styles.selectedLabel, { color: colors.accent }]}>SELECTED PUB</Text>
+                    <Text style={[styles.pubName, { color: colors.foreground }]}>{selectedPub.name}</Text>
+                    <Text style={[styles.pubAddress, { color: colors.mutedForeground }]}>
+                      {selectedPub.address || 'Address unavailable'}
+                    </Text>
+                  </View>
+                ) : null}
+              </Card>
+            </ScrollView>
+
+            <View style={styles.logReviewFooter}>
+              {logError ? <ErrorText>{logError}</ErrorText> : null}
+              {logMutation.isPending ? (
+                <View style={styles.submissionStatus}>
+                  <ActivityIndicator color={colors.accent} />
+                  <Text style={[styles.pubAddress, { color: colors.mutedForeground }]}>
+                    Uploading your photo and logging the pint…
+                  </Text>
+                </View>
+              ) : null}
+              <Button
+                label={
+                  logError
+                    ? logErrorKind === 'photo'
+                      ? 'Retry photo upload'
+                      : 'Try logging again'
+                    : selectedPub
+                      ? 'Log this pint'
+                      : 'Log without a pub'
+                }
+                loading={logMutation.isPending}
+                disabled={!pendingPint || isPreparingPint}
+                onPress={() => submitPendingPint(selectedPub)}
+                testID={logError ? 'retry-log-pint' : 'submit-log-pint'}
+              />
+              {selectedPub ? (
+                <Button
+                  label="Log without a pub"
+                  variant="quiet"
+                  disabled={logMutation.isPending || isPreparingPint}
+                  onPress={() => submitPendingPint(null)}
+                  testID="submit-log-pint-without-pub"
+                />
+              ) : null}
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={Boolean(justLoggedPint)}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={() => setJustLoggedPint(null)}
+      >
+        <View style={[styles.modalBackdrop, styles.successBackdrop]}>
+          <View
+            pointerEvents="none"
+            style={[StyleSheet.absoluteFill, { backgroundColor: colors.foreground, opacity: 0.55 }]}
+          />
+          <View
+            style={[
+              styles.successSheet,
+              {
+                backgroundColor: colors.background,
+                paddingBottom: Math.max(insets.bottom, Platform.OS === 'web' ? 34 : 16) + 16,
+              },
+            ]}
+          >
+            <View style={[styles.successIcon, { backgroundColor: colors.muted }]}>
+              <Ionicons name="checkmark" size={34} color={colors.accent} />
+            </View>
+            <Text style={[styles.successKicker, { color: colors.accent }]}>PINT LOGGED</Text>
+            <Text style={[styles.successPoints, { color: colors.foreground }]}>
+              +{CURRENT_LEAGUE_SCORING.pointsPerValidPint} POINT
+            </Text>
+            <Text style={[styles.flowBody, { color: colors.mutedForeground }]}>
+              {justLoggedPint?.pub
+                ? `${justLoggedPint.pub.name} is on the board.`
+                : 'Your pint is on the war board.'}
+            </Text>
+            <View style={styles.successActions}>
+              {justLoggedPint?.pub ? (
+                <Button
+                  label="Review this pub"
+                  onPress={() => {
+                    const loggedPint = justLoggedPint;
+                    if (!loggedPint?.pub) return;
+                    setJustLoggedPint(null);
+                    router.push({
+                      pathname: '/pub/[placeId]',
+                      params: {
+                        placeId: loggedPint.pub.placeId,
+                        provider: loggedPint.pub.provider,
+                        name: loggedPint.pub.name,
+                        address: loggedPint.pub.address,
+                        pintLogId: loggedPint.pintLogId,
+                      },
+                    });
+                  }}
+                />
+              ) : null}
+              <Button
+                label="Back to the war"
+                variant={justLoggedPint?.pub ? 'quiet' : 'primary'}
+                onPress={() => setJustLoggedPint(null)}
+                testID="pint-logged-done"
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
               </Text>
             </View>
 
