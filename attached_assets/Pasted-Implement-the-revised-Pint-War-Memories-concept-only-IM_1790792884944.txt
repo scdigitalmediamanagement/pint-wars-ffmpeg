@@ -1,0 +1,140 @@
+Implement the revised Pint War Memories concept only.
+
+IMPORTANT:
+The previous chronological in-app Memories recap is NOT the final product direction.
+
+LOCKED PRODUCT DECISION:
+
+When a Pint War finishes, the user can tap:
+
+CREATE MEMORIES
+
+This should create a roughly 30-second randomized highlight video from photos captured during the ENTIRE Pint War.
+
+FINAL EXPERIENCE:
+
+Completed Pint War
+→ Create Memories
+→ Select photos from across the full war
+→ Create ~30-second highlight video
+→ Show key stats/winner
+→ Allow sharing when technically supported
+
+PHOTO SELECTION:
+
+Use the existing Pint-proof photos already stored for the Pint War.
+
+Do NOT create another photo-upload system.
+
+The selection should:
+- Draw from the entire completed Pint War, not only the latest 20 activity events.
+- Avoid duplicate photos.
+- Randomize the selection so repeated generations can produce different highlights.
+- Prefer variety across players where enough photos exist.
+- Prefer variety across pubs where enough photos exist.
+- If there are only a few photos, use all available photos.
+- Ignore unavailable/deleted photos gracefully.
+
+IMPORTANT:
+The final Memories data source must be able to retrieve photos/events from the ENTIRE completed Pint War. Do not retain the current 20-event limitation as the source for Memories.
+
+VIDEO EXPERIENCE:
+
+Target approximately 30 seconds.
+
+Suggested structure:
+- Opening title: Pint War name
+- Fast photo montage with simple transitions
+- Occasional overlay of meaningful stats
+- Final result/winner
+- End on a strong Pint Wars Memories screen
+
+Possible overlays:
+- Number of players
+- Number of pints
+- Number of pubs
+- Number of reviews
+- Winner
+
+Only use authoritative existing data.
+
+Do not invent statistics.
+
+SCORING:
+- 1 logged pint = +1 point
+- Qualifying pub review = +1 bonus
+- No new-pub bonus
+- Existing immutable score ledger remains authoritative.
+
+SECURITY:
+
+Proof photos remain private.
+
+Only authenticated members of the completed Pint War may access the photos used by Memories.
+
+Do not:
+- make Storage public
+- expose Storage paths
+- expose public URLs
+- expose unrestricted signed URLs
+- weaken existing membership checks
+
+Reuse the secure photo-access architecture already implemented for Live War Activity.
+
+TECHNICAL IMPLEMENTATION:
+
+Do NOT introduce a third-party video service yet.
+
+First determine what can safely be implemented with the existing Expo/React Native stack.
+
+If actual MP4 generation/export cannot be safely performed in the current app architecture, build the correct Memories selection/data/presentation layer and report exactly what is still needed for final video rendering/export.
+
+Do not fake a video if the current implementation cannot produce one.
+
+The product direction must remain a real ~30-second highlight video, not a chronological statistics screen.
+
+SHARING:
+
+Do not implement broad social sharing yet unless the existing platform can support it safely.
+
+We will decide the final export/share mechanism separately.
+
+PRESERVE:
+- Existing completed-war results
+- Existing scoring
+- Existing league history data
+- Existing photo security
+- Existing authentication
+- Existing RevenueCat
+- Existing pricing
+- Existing duration rules
+- Existing Rematch functionality
+
+Do not change:
+- Live Activity
+- Log a Pint
+- Review scoring
+- Account deletion
+- League creation
+- RevenueCat
+- pricing
+- duration
+
+Before changing anything, inspect the current Memories implementation and existing photo/activity data.
+
+After implementation run:
+1. Pint Wars typecheck
+2. API typecheck
+3. git diff --check
+4. Expo dependency check
+5. All existing API/security tests
+
+Report:
+- Every file changed
+- How the entire-war photo selection works
+- How randomisation works
+- How duplicates are prevented
+- How player/pub variety is handled
+- Whether a real video is generated or only the presentation/data layer is currently implemented
+- How photo security is preserved
+- All test results
