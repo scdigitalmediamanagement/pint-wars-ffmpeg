@@ -1,34 +1,79 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useColors } from '@/hooks/useColors';
 
-export function StarRating({ 
-  rating, 
-  onChange, 
-  size = 20, 
-  readonly = false 
-}: { 
-  rating: number; 
-  onChange?: (r: number) => void; 
+export function StarRating({
+  rating,
+  onChange,
+  size = 20,
+  readonly = false,
+  accessibilityLabel = 'Rating',
+  testID,
+}: {
+  rating: number;
+  onChange?: (r: number) => void;
   size?: number;
   readonly?: boolean;
+  accessibilityLabel?: string;
+  testID?: string;
 }) {
   const colors = useColors();
+  const safeRating = Number.isFinite(rating) ? Math.max(0, Math.min(5, rating)) : 0;
+
+  if (readonly) {
+    return (
+      <View
+        accessible
+        accessibilityRole="image"
+        accessibilityLabel={`${accessibilityLabel}: ${safeRating.toFixed(1)} out of 5 stars`}
+        style={styles.stars}
+      >
+        {[1, 2, 3, 4, 5].map((star) => {
+          const isFull = safeRating >= star;
+          const isHalf = safeRating >= star - 0.5 && safeRating < star;
+          return (
+            <FontAwesome
+              key={star}
+              accessible={false}
+              name={isFull ? 'star' : isHalf ? 'star-half-o' : 'star-o'}
+              size={size}
+              color={colors.accent}
+            />
+          );
+        })}
+      </View>
+    );
+  }
+
   return (
-    <View style={{ flexDirection: 'row', gap: 4 }}>
-      {[1, 2, 3, 4, 5].map(star => {
-        const isFull = rating >= star;
-        const isHalf = rating >= star - 0.5 && rating < star;
-        const name = isFull ? 'star' : isHalf ? 'star-half-o' : 'star-o';
+    <View
+      accessibilityLabel={`${accessibilityLabel} rating`}
+      style={styles.stars}
+    >
+      {[1, 2, 3, 4, 5].map((star) => {
+        const isSelected = safeRating === star;
         return (
-          <Pressable 
-            key={star} 
-            disabled={readonly} 
+          <Pressable
+            key={star}
+            testID={testID ? `${testID}-${star}` : undefined}
+            accessibilityRole="radio"
+            accessibilityLabel={`${accessibilityLabel}, ${star} out of 5 stars`}
+            accessibilityState={{ selected: isSelected }}
             onPress={() => onChange?.(star)}
-            hitSlop={readonly ? 0 : 8}
+            hitSlop={4}
+            style={({ pressed }) => [
+              styles.starButton,
+              { backgroundColor: isSelected ? colors.muted : 'transparent' },
+              pressed ? styles.starPressed : null,
+            ]}
           >
-            <FontAwesome name={name} size={size} color={colors.accent} />
+            <FontAwesome
+              accessible={false}
+              name={safeRating >= star ? 'star' : 'star-o'}
+              size={size}
+              color={colors.accent}
+            />
           </Pressable>
         );
       })}
@@ -46,6 +91,18 @@ export function RatingBadge({ label, rating }: { label: string; rating: number }
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  stars: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  starButton: {
+    minWidth: 36,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  starPressed: { opacity: 0.65 },
+});
 
 export function PubReviewSummaryBadge({
   reviewCount,

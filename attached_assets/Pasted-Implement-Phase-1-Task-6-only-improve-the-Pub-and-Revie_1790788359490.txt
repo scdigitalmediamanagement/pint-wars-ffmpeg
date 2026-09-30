@@ -1,0 +1,129 @@
+Implement Phase 1 Task 6 only: improve the Pub and Review experience in Pint Wars.
+
+The existing pub and review functionality works. This task is a UX/product-polish improvement only.
+
+LOCKED SCORING:
+- 1 logged pint = +1 point
+- Qualifying pub review = +1 bonus point
+- No new-pub bonus
+- Review bonus only once per player per pub
+- Editing a review = +0
+- Deleting and recreating a review = +0
+- Review reports = +0
+
+Do NOT change these rules.
+
+PUB EXPERIENCE:
+
+Improve the pub details screen so the user immediately understands:
+
+- Which pub they are looking at
+- Location/details where available
+- Overall rating
+- Number of reviews
+- Relevant pub information already available
+- Their own relationship with the pub where existing data supports it
+
+Where existing data supports it, show useful Pint Wars context such as:
+- Whether the user has visited/logged a pint there
+- Their review
+- Their review status/eligibility
+- Relevant Pint Wars activity
+
+Do not invent information that isn't available.
+
+REVIEWS:
+
+Improve the review experience so it is clear:
+
+1. Whether the current user can review the pub.
+2. Why they are or aren't eligible where the existing rules support that explanation.
+3. That a qualifying review awards +1 bonus point.
+4. That the bonus is awarded only once.
+5. Editing does not award another point.
+6. Deleting/recreating cannot generate another bonus.
+
+Do not change backend scoring enforcement. This is presentation only.
+
+REVIEW FORM:
+
+Make the review form feel simpler and more polished.
+
+Improve:
+- Rating controls
+- Selected/unselected states
+- Accessible labels
+- Text input
+- Submit button
+- Loading state
+- Success state
+- Error state
+- Retry behaviour
+- Cancel/back behaviour
+
+After a successful qualifying review, make the result clear, for example:
+
+“REVIEW ADDED”
+“+1 POINT”
+
+Do not award or calculate the point on the client. The server remains authoritative.
+
+EDIT REVIEW:
+
+Make it obvious that the user is editing an existing review.
+
+After saving an edit, clearly confirm that the review was updated but **no additional competition point was awarded**.
+
+DELETE REVIEW:
+
+Make the destructive action clear and require confirmation.
+
+After deletion, explain the resulting review state accurately.
+
+Do not remove the existing anti-farming protection.
+
+REPORT REVIEW:
+
+Keep the existing report functionality.
+
+Do not award points for reports.
+
+PUB DATA:
+
+Do not create fake ratings, reviews, visits, or statistics.
+
+Do not add new third-party services.
+
+Do not redesign the whole app.
+
+Do not implement:
+- Pint War Memories
+- War Gallery
+- Pub Business
+- Live Activity changes
+- New scoring
+- New league features
+
+Preserve:
+- Existing pub lookup
+- Existing review moderation/reporting
+- Existing scoring enforcement
+- Existing Supabase security
+- Existing authentication
+- Existing Pint War functionality
+
+Before changing anything, inspect the current pub and review implementation and reuse existing data.
+
+After implementation:
+1. Pint Wars typecheck
+2. API typecheck
+3. git diff --check
+4. Expo dependency check
+5. Run all existing API/security tests
+
+Report:
+- Files changed
+- What changed on the pub screen
+- What changed in the review flow
+- How the existing server-side scoring remains authoritative
+- Tests passed

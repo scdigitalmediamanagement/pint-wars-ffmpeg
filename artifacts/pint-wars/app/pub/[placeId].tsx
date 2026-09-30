@@ -1,12 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Alert, Modal, TextInput } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  ActivityIndicator,
+  Alert,
+  Modal,
+  TextInput,
+  Platform,
+} from 'react-native';
+import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { useColors } from '@/hooks/useColors';
 import { Button, Card, ErrorText, Screen, Title, uiStyles } from '@/components/AppUi';
-import { FontAwesome } from '@expo/vector-icons';
 import { usePubReviewSummary, usePubReviews, reviewKeys } from '@/hooks/usePubReviews';
+import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { 
   deletePubReview, 
   reportPubReview, 
@@ -16,37 +29,145 @@ import {
   canReviewPub,
   type ReviewRow 
 } from '@/src/lib/review-service';
+import { getMyPubPassport, type PubPassportEntry } from '@/src/lib/league-service';
 import { StarRating, RatingBadge } from '@/components/Reviews';
 
-function RatingInput({ label, rating, onChange }: { label: string; rating: number; onChange: (r: number) => void }) {
+function RatingInput({
+  label,
+  rating,
+  onChange,
+  required = false,
+  testID,
+}: {
+  label: string;
+  rating: number;
+  onChange: (r: number) => void;
+  required?: boolean;
+  testID: string;
+}) {
   const colors = useColors();
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-      <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 16, color: colors.foreground }}>{label}</Text>
-      <StarRating rating={rating} onChange={onChange} size={28} />
+    <View style={styles.ratingInput}>
+      <View style={styles.ratingInputHeader}>
+        <Text style={[styles.ratingInputLabel, { color: colors.foreground }]}>{label}</Text>
+        <Text style={[styles.ratingRequirement, { color: required ? colors.accent : colors.mutedForeground }]}>
+          {required ? 'REQUIRED' : 'OPTIONAL'}
+        </Text>
+      </View>
+      <StarRating
+        rating={rating}
+        onChange={onChange}
+        size={22}
+        accessibilityLabel={label}
+        testID={testID}
+      />
     </View>
   );
 }
 
-function ReportModal({ visible, onClose, onSubmit }: { visible: boolean; onClose: () => void; onSubmit: (reason: string) => void }) {
+function formatVisitDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Date unavailable';
+  return date.toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function ReportModal({
+  visible,
+  onClose,
+  onSubmit,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onSubmit: (reason: string) => Promise<void>;
+}) {
   const [reason, setReason] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const submissionInFlight = useRef(false);
   const colors = useColors();
+
+  useEffect(() => {
+    if (visible) {
+      setReason('');
+      setError('');
+    }
+  }, [visible]);
+
+  async function submitReport() {
+    const trimmedReason = reason.trim();
+    if (!trimmedReason || submissionInFlight.current) return;
+    submissionInFlight.current = true;
+    setIsSubmitting(true);
+    setError('');
+    try {
+      await onSubmit(trimmedReason);
+      setReason('');
+      onClose();
+    } catch {
+      setError('We could not send the report. Your reason is saved; try again.');
+    } finally {
+      submissionInFlight.current = false;
+      setIsSubmitting(false);
+    }
+  }
+
+  function closeReport() {
+    if (!submissionInFlight.current) onClose();
+  }
+
   return (
-    <Modal visible={visible} transparent animationType="fade">
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 }}>
-        <View style={{ backgroundColor: colors.card, padding: 24, borderRadius: 24, gap: 16, borderWidth: 1, borderColor: colors.border }}>
-          <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 20, color: colors.foreground }}>Report Review</Text>
-          <TextInput 
-            value={reason} 
-            onChangeText={setReason} 
-            placeholder="Why are you reporting this review?"
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={closeReport}
+    >
+      <View style={[styles.reportBackdrop, { backgroundColor: colors.overlay }]}>
+        <View style={[styles.reportSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={styles.modalHeading}>
+            <View style={[styles.modalIcon, { backgroundColor: colors.muted }]}>
+              <Ionicons name="flag-outline" size={21} color={colors.accent} />
+            </View>
+            <View style={styles.modalHeadingCopy}>
+              <Text style={[styles.modalTitle, { color: colors.foreground }]}>Report review</Text>
+              <Text style={[styles.modalSubtitle, { color: colors.mutedForeground }]}>
+                Reports help us review content. They do not award Pint Wars points.
+              </Text>
+            </View>
+          </View>
+          <TextInput
+            value={reason}
+            onChangeText={(value) => {
+              setReason(value);
+              if (error) setError('');
+            }}
+            accessibilityLabel="Reason for reporting this review"
+            accessibilityHint="Explain why this review should be checked."
+            placeholder="Tell us what needs attention…"
             placeholderTextColor={colors.mutedForeground}
-            style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 16, color: colors.foreground, minHeight: 100, fontFamily: 'Inter_400Regular', backgroundColor: colors.background }}
+            style={[styles.reportInput, { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.background }]}
             multiline
+            textAlignVertical="top"
+            testID="review-report-reason"
           />
-          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 4 }}>
-            <Button label="Cancel" variant="quiet" onPress={onClose} />
-            <Button label="Submit" onPress={() => { onSubmit(reason); setReason(''); onClose(); }} disabled={!reason.trim()} />
+          {error ? <ErrorText>{error}</ErrorText> : null}
+          <View style={styles.modalActions}>
+            <View style={styles.modalAction}>
+              <Button label="Cancel" variant="quiet" onPress={closeReport} disabled={isSubmitting} />
+            </View>
+            <View style={styles.modalAction}>
+              <Button
+                label="Send report"
+                onPress={() => void submitReport()}
+                loading={isSubmitting}
+                disabled={!reason.trim()}
+                testID="submit-review-report"
+              />
+            </View>
           </View>
         </View>
       </View>
