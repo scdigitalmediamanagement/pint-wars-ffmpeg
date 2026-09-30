@@ -95,8 +95,8 @@ export function RatingBadge({ label, rating }: { label: string; rating: number }
 const styles = StyleSheet.create({
   stars: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   starButton: {
-    minWidth: 36,
-    height: 40,
+    minWidth: 44,
+    height: 44,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
