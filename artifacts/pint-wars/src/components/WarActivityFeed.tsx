@@ -22,6 +22,7 @@ import { useColors } from '@/hooks/useColors';
 type WarActivityFeedProps = {
   leagueId: string;
   currentUserId: string;
+  presentation?: 'live' | 'memories';
 };
 
 function activityAction(event: PintWarActivityEvent) {
@@ -197,40 +198,53 @@ function PrivateActivityPhoto({
 export function WarActivityFeed({
   leagueId,
   currentUserId,
+  presentation = 'live',
 }: WarActivityFeedProps) {
   const colors = useColors();
+  const isMemories = presentation === 'memories';
   const query = useGetPintWarActivity(leagueId, {
     query: {
       queryKey: getGetPintWarActivityQueryKey(leagueId),
-      refetchInterval: 30_000,
+      refetchInterval: isMemories ? false : 30_000,
       refetchOnReconnect: true,
       refetchOnWindowFocus: true,
     },
   });
+  const events = query.data?.events ?? [];
+  const displayedEvents = isMemories ? [...events].reverse() : events;
 
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <View style={styles.sectionHeadingCopy}>
-          <Text style={[styles.kicker, { color: colors.accent }]}>LIVE WAR</Text>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            Activity
+          <Text style={[styles.kicker, { color: colors.accent }]}>
+            {isMemories ? 'PINT WAR MEMORIES' : 'LIVE WAR'}
           </Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+            {isMemories ? 'Moments from the War' : 'Activity'}
+          </Text>
+          {isMemories ? (
+            <Text style={[styles.stateText, { color: colors.mutedForeground }]}>
+              The latest recorded moments, shown oldest to newest. Proof photos remain private to Pint War members.
+            </Text>
+          ) : null}
         </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Refresh war activity"
-          accessibilityState={{ disabled: query.isFetching }}
-          disabled={query.isFetching}
-          onPress={() => void query.refetch()}
-          style={styles.refreshButton}
-        >
-          {query.isFetching ? (
-            <ActivityIndicator size="small" color={colors.accent} />
-          ) : (
-            <Ionicons name="refresh-outline" size={20} color={colors.accent} />
-          )}
-        </Pressable>
+        {!isMemories ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Refresh war activity"
+            accessibilityState={{ disabled: query.isFetching }}
+            disabled={query.isFetching}
+            onPress={() => void query.refetch()}
+            style={styles.refreshButton}
+          >
+            {query.isFetching ? (
+              <ActivityIndicator size="small" color={colors.accent} />
+            ) : (
+              <Ionicons name="refresh-outline" size={20} color={colors.accent} />
+            )}
+          </Pressable>
+        ) : null}
       </View>
 
       <Card style={styles.feedCard}>
@@ -255,23 +269,25 @@ export function WarActivityFeed({
               <Text style={[styles.retryText, { color: colors.accent }]}>Try again</Text>
             </Pressable>
           </View>
-        ) : !query.data?.events.length ? (
+        ) : !events.length ? (
           <View style={styles.emptyState}>
-            <Ionicons name="beer-outline" size={24} color={colors.accent} />
+            <Ionicons name={isMemories ? 'images-outline' : 'beer-outline'} size={24} color={colors.accent} />
             <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
-              No activity yet
+              {isMemories ? 'No moments to show' : 'No activity yet'}
             </Text>
             <Text style={[styles.stateText, { color: colors.mutedForeground }]}>
-              Start the Pint War by logging your first pint.
+              {isMemories
+                ? 'No scored events were recorded for this Pint War. The final results are still shown above.'
+                : 'Start the Pint War by logging your first pint.'}
             </Text>
           </View>
         ) : (
-          query.data.events.map((event, index) => (
+          displayedEvents.map((event, index) => (
             <View
               key={event.id}
               style={[
                 styles.event,
-                index < query.data.events.length - 1
+                index < displayedEvents.length - 1
                   ? { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }
                   : null,
               ]}

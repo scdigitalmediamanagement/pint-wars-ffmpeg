@@ -694,6 +694,30 @@ export default function LeagueDashboardScreen() {
                 />
               </Card>
             ) : null}
+            <Card style={{ gap: 14, borderWidth: 1, borderColor: colors.accent }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={{ width: 44, height: 44, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.muted }}>
+                  <Ionicons name="sparkles-outline" size={22} color={colors.accent} />
+                </View>
+                <View style={{ flex: 1, gap: 4 }}>
+                  <Text style={[styles.selectedLabel, { color: colors.accent }]}>PINT WAR MEMORIES</Text>
+                  <Text style={{ color: colors.foreground, fontFamily: 'Inter_700Bold', fontSize: 17 }}>
+                    Relive the war
+                  </Text>
+                </View>
+              </View>
+              <Text style={[styles.resultText, { color: colors.mutedForeground }]}>
+                Bring together the final results and recorded moments from this Pint War.
+              </Text>
+              <Button
+                label="Create Memories"
+                onPress={() => router.push({
+                  pathname: '/war/[leagueId]/memories',
+                  params: { leagueId },
+                })}
+                testID="create-pint-war-memories"
+              />
+            </Card>
           </>
         ) : null}
 
