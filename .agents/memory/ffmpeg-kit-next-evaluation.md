@@ -10,3 +10,9 @@ The LGPL-only build path must be explicit: x264 is GPL; the current build script
 **Why:** The maintained upstream is substantially more credible than the deprecated v6 package, but local binary packaging, Expo config generation, codec licensing, and device-runtime verification remain operational risks; a nearby RN test target or successful native compile is not proof of Expo/EAS compatibility.
 
 **How to apply:** Prefer upstream FFmpegKit Next for a bounded native proof of concept. Build every shipping ABI, confirm filter/encoder flags from each platform artifact, then verify Expo SDK/RN builds, on-device encode/playback, share/save handoff, shipped-size impact, and LGPL/patent obligations before production adoption. Keep Memories selection and private photo retrieval unchanged.
+
+For reproducible Nix builds, protect both profile discovery and build-shell entry: the upstream `nix-ios.sh --list-profiles` path runs `nix eval` on the flake, while the build runs `nix develop`. Apply `--no-update-lock-file --no-write-lock-file` to both and compare the checked-in `flake.lock` before and after.
+
+**Why:** Protecting only `nix develop` leaves the earlier flake evaluation free to update lock inputs before the build begins.
+
+**How to apply:** When wrapping upstream Nix scripts, identify every flake-evaluating subcommand, preserve the repository lockfile, and record its checksum and locked input revisions with the artifact.
