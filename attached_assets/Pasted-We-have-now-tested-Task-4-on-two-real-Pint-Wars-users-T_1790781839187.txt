@@ -1,0 +1,83 @@
+We have now tested Task 4 on two real Pint Wars users.
+
+The Live Activity feed itself works correctly.
+
+Player 1 (Tall Paul) logged a pint:
+- The Prospect Inn
+- +1 point
+- Photo uploaded successfully
+- Player 1 can see the photo in the activity feed.
+
+Player 2 (Luke), who is a member of the SAME Pint War, can see:
+- Tall Paul logged a pint
+- The Prospect Inn
+- 30 Sep at 09:18
+- +1 point
+
+BUT Player 2 sees:
+
+“Photo unavailable”
+
+instead of the proof photo.
+
+This is a real-device functional bug.
+
+IMPORTANT:
+Do not weaken the security model.
+Do not make the pint-proofs bucket public.
+Do not expose Storage paths or public URLs.
+Do not remove same-war membership checks.
+
+The intended behaviour is:
+
+Authenticated member of the SAME Pint War
+→ can view the proof photo.
+
+Non-member / removed member / different-war member / unauthenticated user
+→ cannot view the proof photo.
+
+Please investigate the complete photo retrieval/rendering path:
+
+1. How the API authenticates the requesting user.
+2. How same-war membership is checked.
+3. How the API locates the pint log and proof photo.
+4. How the protected photo is streamed/returned.
+5. The response content type and headers.
+6. How the React Native client requests the photo.
+7. How authentication headers/session tokens are supplied to the photo request.
+8. Whether React Native Image can display the protected response as currently implemented.
+9. Whether the photo URL is being generated correctly.
+10. Whether the problem only occurs for another league member or for all non-uploader members.
+
+Do NOT assume the security tests prove the client works. They only proved the mocked API authorization logic.
+
+Add a real regression test for the actual failure mode if practical.
+
+The desired result is that another authenticated member of the same Pint War can see the proof photo in the Live Activity feed.
+
+Keep:
+- private Storage bucket
+- same-war access control
+- no public Storage URL
+- no signed/public URL exposed to the client
+- existing scoring
+- existing activity feed
+- existing pint logging
+- existing RevenueCat
+- existing pricing/duration
+
+Do not implement Memories or War Gallery yet.
+
+After fixing:
+- Pint Wars typecheck
+- API typecheck
+- git diff --check
+- security tests
+- any new photo/API tests
+- Expo dependency check
+
+Report exactly:
+- root cause
+- files changed
+- how the fix preserves photo security
+- tests passed
