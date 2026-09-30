@@ -1,0 +1,70 @@
+Prepare the isolated GitHub Actions workflow to build the Pint Wars FFmpegKit Next iOS XCFramework.
+
+IMPORTANT:
+This is an isolated artifact-build workflow only.
+
+Do NOT:
+- modify Pint Wars app code
+- modify app.json
+- modify eas.json
+- install FFmpegKit into Pint Wars
+- add Expo packages
+- add expo-video
+- add expo-sharing
+- add expo-media-library
+- change the Memories implementation
+- change Supabase
+- change RevenueCat
+- change any production app configuration
+
+Use the exact FFmpegKit Next version/commit already identified by the POC:
+
+Version: 9.0.0
+Commit: 5e51b2da4c3593c0f2f9b49f53eeb497d93e39d3
+
+Pin the checked-in flake.lock.
+
+The workflow should:
+
+1. Run on a macOS GitHub Actions runner suitable for the iOS build.
+2. Assert the expected Xcode version.
+3. Install/use Nix according to the upstream FFmpegKit Next build process.
+4. Build an iOS device-only arm64 XCFramework.
+5. Enable Apple VideoToolbox.
+6. Keep GPL components disabled.
+7. Do NOT enable x264.
+8. Capture the complete build log.
+9. Verify the resulting XCFramework contents and architectures.
+10. Verify that the resulting FFmpeg build exposes the h264_videotoolbox encoder.
+11. Record the exact:
+    - FFmpegKit commit
+    - flake.lock revision
+    - Xcode version
+    - macOS runner image/version
+    - architecture
+    - build flags
+12. Generate SHA-256 checksums for all output artifacts.
+13. Generate a source/license/notice manifest describing exactly what was built.
+14. Upload the resulting XCFramework/archive and checksum/manifest files as GitHub Actions artifacts.
+
+IMPORTANT:
+Do not attempt to build an iOS simulator slice yet.
+Do not integrate the output into Pint Wars yet.
+
+Also inspect the current Android POC notice/licensing issue and document it in the workflow/report, but do not alter the Android artifact in this task.
+
+At the end report:
+
+A. Did the iOS XCFramework build successfully?
+B. Exact Xcode version used.
+C. Exact runner image used.
+D. Exact FFmpegKit commit.
+E. Whether h264_videotoolbox is actually present.
+F. Whether GPL/x264 remained disabled.
+G. XCFramework size.
+H. Artifact SHA-256.
+I. Any build warnings/errors.
+J. Any remaining licensing issue.
+K. Exact artifact filenames produced.
+
+No Pint Wars production files should be changed.
