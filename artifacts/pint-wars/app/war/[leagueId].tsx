@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
@@ -17,22 +18,52 @@ function leagueDurationDays(startsAt: string, endsAt: string) {
   return Math.max(1, Math.ceil((end - start) / 86400000));
 }
 
-function dayNumber(startsAt: string, endsAt: string, status: string) {
+function dayNumber(startsAt: string, endsAt: string, status: string, now: number) {
   const start = new Date(startsAt).getTime();
   const end = new Date(endsAt).getTime();
   const durationDays = leagueDurationDays(startsAt, endsAt);
   if (status === 'completed') return durationDays;
-  const now = Date.now();
   return Math.max(1, Math.min(durationDays, Math.floor((Math.min(now, end) - start) / 86400000) + 1));
 }
 
 function endTimeLabel(endsAt: string) {
   const end = new Date(endsAt);
   if (Number.isNaN(end.getTime())) return null;
-  return `Ends ${end.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} at ${end.toLocaleTimeString(undefined, {
+  return `Ends ${end.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })} at ${end.toLocaleTimeString(undefined, {
     hour: 'numeric',
     minute: '2-digit',
+    timeZoneName: 'short',
   })}`;
+}
+
+function remainingTimeLabel(endsAt: string, now: number) {
+  const end = new Date(endsAt).getTime();
+  if (!Number.isFinite(end)) return 'End time unavailable';
+  const remaining = end - now;
+  if (remaining <= 0) return 'Time limit reached';
+
+  const totalMinutes = Math.floor(remaining / 60_000);
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
+  const minutes = totalMinutes % 60;
+  if (days > 0) return `${days}d ${hours}h remaining`;
+  if (hours > 0) return `${hours}h ${minutes}m remaining`;
+  return `${Math.max(1, minutes)}m remaining`;
+}
+
+function rankOrdinal(rank: number) {
+  const lastTwoDigits = rank % 100;
+  const suffix =
+    lastTwoDigits >= 11 && lastTwoDigits <= 13
+      ? 'th'
+      : rank % 10 === 1
+        ? 'st'
+        : rank % 10 === 2
+          ? 'nd'
+          : rank % 10 === 3
+            ? 'rd'
+            : 'th';
+  return `${rank}${suffix}`;
 }
 
 function completedDateLabel(value: string | null) {
@@ -67,6 +98,7 @@ export default function LeagueDashboardScreen() {
   const { user } = useAuth();
   const { leagueId } = useLocalSearchParams<{ leagueId: string }>();
   const queryClient = useQueryClient();
+  const [now, setNow] = useState(() => Date.now());
   const [cameraError, setCameraError] = useState('');
   const [cameraBlocked, setCameraBlocked] = useState(false);
   const [logError, setLogError] = useState('');
@@ -78,6 +110,10 @@ export default function LeagueDashboardScreen() {
   const [nearbyPubMessage, setNearbyPubMessage] = useState('');
   const [pendingPint, setPendingPint] = useState<PendingPint | null>(null);
   const [justLoggedPub, setJustLoggedPub] = useState<JustLoggedPub | null>(null);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
   const query = useQuery({
     queryKey: ['league-dashboard', leagueId],
     queryFn: () => getLeagueDashboard(leagueId as string),
@@ -286,22 +322,54 @@ export default function LeagueDashboardScreen() {
     }
   }
 
-  if (query.isLoading || !query.data) {
+  if (query.isLoading && !query.data) {
     return (
       <Screen>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator color={colors.accent} />
+        <View style={[uiStyles.content, styles.loadState]}>
+          <Title eyebrow="Pint Wars">Loading your war</Title>
+          <Card style={styles.loadingCard}>
+            <ActivityIndicator color={colors.accent} size="large" />
+            <Text style={[styles.loadingCopy, { color: colors.mutedForeground }]}>
+              Getting your league, score, and leaderboard ready.
+            </Text>
+          </Card>
         </View>
       </Screen>
     );
   }
 
-  if (query.isError) {
+  if (query.isError && !query.data) {
     return (
       <Screen>
-        <View style={[uiStyles.content, { paddingTop: 40, gap: 16 }]}>
-          <Title>Could not load this war</Title>
-          <Text style={{ color: colors.destructive }}>{query.error instanceof Error ? query.error.message : 'Try again.'}</Text>
+        <View style={[uiStyles.content, styles.loadState]}>
+          <Title eyebrow="Pint Wars">Could not load this war</Title>
+          <Card style={styles.errorCard}>
+            <Text style={[styles.errorCopy, { color: colors.mutedForeground }]}>
+              Your league and standings could not be loaded. Check your connection and try again.
+            </Text>
+            <Button
+              label="Retry"
+              loading={query.isFetching}
+              onPress={() => void query.refetch()}
+              testID="retry-league-dashboard"
+            />
+          </Card>
+        </View>
+      </Screen>
+    );
+  }
+
+  if (!query.data) {
+    return (
+      <Screen>
+        <View style={[uiStyles.content, styles.loadState]}>
+          <Title eyebrow="Pint Wars">League unavailable</Title>
+          <Card style={styles.errorCard}>
+            <Text style={[styles.errorCopy, { color: colors.mutedForeground }]}>
+              This league could not be identified. Return to your Pint Wars list and open it again.
+            </Text>
+            <Button label="Back to Pint Wars" onPress={() => router.replace('/(tabs)/wars')} />
+          </Card>
         </View>
       </Screen>
     );
@@ -315,64 +383,210 @@ export default function LeagueDashboardScreen() {
     && currentMembership?.status === 'active'
     && !isCurrentUserHost;
   const canEndLeagueEarly = league.status === 'active' && isCurrentUserHost;
-  const day = dayNumber(league.starts_at, league.ends_at, league.status);
+  const day = dayNumber(league.starts_at, league.ends_at, league.status, now);
   const durationDays = leagueDurationDays(league.starts_at, league.ends_at);
   const leagueEndLabel = endTimeLabel(league.ends_at);
+  const remainingLabel = remainingTimeLabel(league.ends_at, now);
   const completedDuration = completedDurationDays(league.starts_at, league.completed_at, league.ends_at);
   const sortedMembers = [...members].sort((a, b) => b.points - a.points || a.joined_at.localeCompare(b.joined_at));
+  const rankedMembers: Array<{
+    member: (typeof sortedMembers)[number];
+    rank: number;
+    isTied: boolean;
+  }> = [];
+  sortedMembers.forEach((member, index) => {
+    const previous = rankedMembers[index - 1];
+    const tiedWithPrevious = previous?.member.points === member.points;
+    const tiedWithNext = sortedMembers[index + 1]?.points === member.points;
+    rankedMembers.push({
+      member,
+      rank: tiedWithPrevious ? previous.rank : index + 1,
+      isTied: tiedWithPrevious || tiedWithNext,
+    });
+  });
   const totalPoints: LeaguePoints = members.reduce((total, member) => total + member.points, 0);
   const highestPoints = sortedMembers[0]?.points ?? 0;
-  const winners = sortedMembers.filter((member) => member.points === highestPoints);
+  const hasScores = highestPoints > 0;
+  const leaders = hasScores
+    ? sortedMembers.filter((member) => member.points === highestPoints)
+    : [];
+  const currentStanding = rankedMembers.find((entry) => entry.member.user_id === user?.id);
+  const winners = hasScores
+    ? sortedMembers.filter((member) => member.points === highestPoints)
+    : [];
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={[uiStyles.content, { paddingTop: 28, gap: 18 }]} showsVerticalScrollIndicator={false}>
-        <View style={styles.heading}>
-          <Text style={[styles.kicker, { color: colors.accent }]}>{league.status === 'active' ? `DAY ${day} / ${durationDays}` : 'WAR OVER'}</Text>
-          {league.status === 'active' && leagueEndLabel ? (
-            <Text style={[styles.endTime, { color: colors.mutedForeground }]}>{leagueEndLabel}</Text>
-          ) : null}
-          <Title>{league.name}</Title>
-        </View>
-        <Card style={styles.summary}>
-          <View style={uiStyles.row}>
-            <View>
-              <Text style={[styles.metricValue, { color: colors.foreground }]}>{members.length}</Text>
-              <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>PLAYERS</Text>
-            </View>
-            <View>
-              <Text style={[styles.metricValue, { color: colors.foreground }]}>{totalPoints}</Text>
-              <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>TOTAL POINTS</Text>
-            </View>
-            <View>
-              <Text style={[styles.metricValue, { color: colors.foreground }]}>{league.capacity}</Text>
-              <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>MAX PLAYERS</Text>
-            </View>
-          </View>
-        </Card>
+      <ScrollView
+        contentContainerStyle={[uiStyles.content, styles.pageContent]}
+        showsVerticalScrollIndicator={false}
+      >
         {league.status === 'active' ? (
-          <Card style={styles.scoringRules}>
-            <Text style={[styles.selectedLabel, { color: colors.accent }]}>SCORING</Text>
-            <Text style={[styles.scoringRule, { color: colors.foreground }]}>
-              {CURRENT_LEAGUE_SCORING.pointsPerValidPint} pint = {CURRENT_LEAGUE_SCORING.pointsPerValidPint} point. Leave a pub review = +{CURRENT_LEAGUE_SCORING.reviewBonusPoints} bonus point.
+          <Card style={styles.activeWarCard}>
+            <View style={styles.activeHeaderRow}>
+              <View style={styles.activeHeaderCopy}>
+                <Text style={[styles.kicker, { color: colors.accent }]}>
+                  DAY {day} OF {durationDays}
+                </Text>
+                <Text style={[styles.activeWarTitle, { color: colors.foreground }]}>
+                  {league.name}
+                </Text>
+              </View>
+              <View style={[styles.liveBadge, { backgroundColor: colors.muted }]}>
+                <View style={[styles.liveDot, { backgroundColor: colors.accent }]} />
+                <Text style={[styles.liveLabel, { color: colors.accent }]}>LIVE</Text>
+              </View>
+            </View>
+
+            <View style={[styles.timePanel, { backgroundColor: colors.muted }]}>
+              <Ionicons name="time-outline" size={23} color={colors.accent} />
+              <View style={styles.timeCopy}>
+                <Text style={[styles.remainingTime, { color: colors.foreground }]}>
+                  {remainingLabel}
+                </Text>
+                <Text style={[styles.endTime, { color: colors.mutedForeground }]}>
+                  {leagueEndLabel ?? 'End date unavailable'}
+                </Text>
+              </View>
+            </View>
+
+            <View style={[styles.standingPanel, { borderTopColor: colors.border }]}>
+              <View style={styles.standingMetric}>
+                <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>YOUR PLACE</Text>
+                <Text style={[styles.standingValue, { color: colors.foreground }]}>
+                  {!hasScores
+                    ? '—'
+                    : currentStanding
+                      ? `${currentStanding.isTied ? 'Tied ' : ''}${rankOrdinal(currentStanding.rank)}`
+                      : '—'}
+                </Text>
+              </View>
+              <View style={styles.standingMetric}>
+                <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>YOUR SCORE</Text>
+                <Text style={[styles.standingValue, { color: colors.foreground }]}>
+                  {currentMembership
+                    ? `${currentMembership.points} ${currentMembership.points === 1 ? 'pt' : 'pts'}`
+                    : '—'}
+                </Text>
+              </View>
+              <View style={styles.standingMetric}>
+                <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>PLAYERS</Text>
+                <Text style={[styles.standingValue, { color: colors.foreground }]}>
+                  {members.length}/{league.capacity}
+                </Text>
+              </View>
+            </View>
+          </Card>
+        ) : (
+          <>
+            <View style={styles.heading}>
+              <Text style={[styles.kicker, { color: colors.accent }]}>WAR OVER</Text>
+              <Title>{league.name}</Title>
+            </View>
+            <Card style={styles.summary}>
+              <View style={uiStyles.row}>
+                <View>
+                  <Text style={[styles.metricValue, { color: colors.foreground }]}>{members.length}</Text>
+                  <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>PLAYERS</Text>
+                </View>
+                <View>
+                  <Text style={[styles.metricValue, { color: colors.foreground }]}>{totalPoints}</Text>
+                  <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>TOTAL POINTS</Text>
+                </View>
+                <View>
+                  <Text style={[styles.metricValue, { color: colors.foreground }]}>{league.capacity}</Text>
+                  <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>MAX PLAYERS</Text>
+                </View>
+              </View>
+            </Card>
+          </>
+        )}
+
+        {league.status === 'active' && !isCurrentUserRetired ? (
+          <View style={styles.primaryAction}>
+            <Button
+              label={cameraError ? 'Try camera again' : 'Log a Pint'}
+              loading={isPreparingPint || logMutation.isPending}
+              onPress={() => void takePintPhoto()}
+              testID="log-a-pint"
+            />
+            <Text style={[styles.primaryHint, { color: colors.mutedForeground }]}>
+              Take a fresh photo to log your pint.
             </Text>
-            <Text style={[styles.resultText, { color: colors.mutedForeground }]}>
-              The review bonus is once per player per pub. Editing, reporting, or recreating a review adds no points. Visiting a new pub adds no bonus. Past score events keep their original point values.
+            {cameraError ? <ErrorText>{cameraError}</ErrorText> : null}
+            {cameraBlocked && Platform.OS !== 'web' ? (
+              <Button
+                label="Open device settings"
+                variant="quiet"
+                onPress={() => {
+                  void Linking.openSettings().catch(() => {
+                    setCameraError('Open your device settings and allow camera access for Pint Wars.');
+                  });
+                }}
+              />
+            ) : null}
+            {logError ? <ErrorText>{logError}</ErrorText> : null}
+          </View>
+        ) : null}
+
+        {league.status === 'active' && isCurrentUserRetired ? (
+          <Card style={styles.retiredCard}>
+            <Text style={[styles.retiredTitle, { color: colors.foreground }]}>Retired from this Pint War</Text>
+            <Text style={[styles.retiredText, { color: colors.mutedForeground }]}>
+              Your existing points remain visible, but you cannot log more pints or earn more points in this league.
             </Text>
           </Card>
         ) : null}
+
+        {league.status === 'active' ? (
+          <Card style={styles.scoringRules}>
+            <Text style={[styles.selectedLabel, { color: colors.accent }]}>HOW POINTS WORK</Text>
+            <View style={styles.scoringRows}>
+              <View style={styles.scoringRow}>
+                <Ionicons name="add-circle-outline" size={19} color={colors.accent} />
+                <Text style={[styles.scoringLabel, { color: colors.foreground }]}>Pint</Text>
+                <Text style={[styles.scoringValue, { color: colors.foreground }]}>
+                  +{CURRENT_LEAGUE_SCORING.pointsPerValidPint} point
+                </Text>
+              </View>
+              <View style={styles.scoringRow}>
+                <Ionicons name="chatbubble-ellipses-outline" size={19} color={colors.accent} />
+                <Text style={[styles.scoringLabel, { color: colors.foreground }]}>Qualifying pub review</Text>
+                <Text style={[styles.scoringValue, { color: colors.foreground }]}>
+                  +{CURRENT_LEAGUE_SCORING.reviewBonusPoints} bonus
+                </Text>
+              </View>
+            </View>
+            <Text style={[styles.resultText, { color: colors.mutedForeground }]}>
+              A review bonus is earned once per player per pub. Editing a review adds no points; older score events keep their original values.
+            </Text>
+          </Card>
+        ) : null}
+
         {league.status === 'completed' ? (
           <>
             <Card style={styles.resultCard}>
-              <Text style={[styles.selectedLabel, { color: colors.accent }]}>
-                {winners.length === 1 ? 'WINNER' : 'TIED WINNERS'}
-              </Text>
-              <Text style={[styles.resultNames, { color: colors.foreground }]}>
-                {winners.map((winner) => winner.display_name).join(' · ')}
-              </Text>
-              <Text style={[styles.resultText, { color: colors.mutedForeground }]}>
-                Final score: {highestPoints} {highestPoints === 1 ? 'point' : 'points'}
-              </Text>
+              {hasScores ? (
+                <>
+                  <Text style={[styles.selectedLabel, { color: colors.accent }]}>
+                    {winners.length === 1 ? 'WINNER' : 'TIED WINNERS'}
+                  </Text>
+                  <Text style={[styles.resultNames, { color: colors.foreground }]}>
+                    {winners.map((winner) => winner.display_name).join(' · ')}
+                  </Text>
+                  <Text style={[styles.resultText, { color: colors.mutedForeground }]}>
+                    Final score: {highestPoints} {highestPoints === 1 ? 'point' : 'points'}
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Text style={[styles.selectedLabel, { color: colors.accent }]}>WAR COMPLETE</Text>
+                  <Text style={[styles.resultNames, { color: colors.foreground }]}>No points scored</Text>
+                  <Text style={[styles.resultText, { color: colors.mutedForeground }]}>
+                    No score events were recorded in this Pint War.
+                  </Text>
+                </>
+              )}
               <View style={styles.resultMeta}>
                 <Text style={[styles.resultText, { color: colors.mutedForeground }]}>
                   Completed {completedDateLabel(league.completed_at)}
@@ -415,76 +629,130 @@ export default function LeagueDashboardScreen() {
                 </View>
               </Card>
             ) : summaryQuery.isError ? (
-              <ErrorText>War Summary is unavailable right now.</ErrorText>
+              <Card style={styles.errorCard}>
+                <Text style={[styles.errorCopy, { color: colors.mutedForeground }]}>
+                  War Summary is unavailable right now.
+                </Text>
+                <Button
+                  label="Retry summary"
+                  variant="secondary"
+                  loading={summaryQuery.isFetching}
+                  onPress={() => void summaryQuery.refetch()}
+                  testID="retry-league-summary"
+                />
+              </Card>
             ) : null}
           </>
         ) : null}
-        <View style={{ gap: 12 }}>
+
+        {league.status === 'active' ? (
+          hasScores ? (
+            <Card style={styles.leaderCard}>
+              <View style={[styles.leaderIcon, { backgroundColor: colors.muted }]}>
+                <Ionicons name="trophy-outline" size={22} color={colors.accent} />
+              </View>
+              <View style={styles.leaderCopy}>
+                <Text style={[styles.selectedLabel, { color: colors.accent }]}>
+                  {leaders.length > 1 ? 'JOINT LEAD' : 'CURRENT LEADER'}
+                </Text>
+                <Text style={[styles.leaderNames, { color: colors.foreground }]}>
+                  {leaders.map((leader) =>
+                    `${leader.display_name}${leader.user_id === user?.id ? ' (you)' : ''}`,
+                  ).join(' · ')}
+                </Text>
+                <Text style={[styles.resultText, { color: colors.mutedForeground }]}>
+                  {highestPoints} {highestPoints === 1 ? 'point' : 'points'}
+                </Text>
+              </View>
+            </Card>
+          ) : (
+            <Card style={styles.emptyScoreCard}>
+              <Ionicons name="trophy-outline" size={23} color={colors.accent} />
+              <View style={styles.emptyScoreCopy}>
+                <Text style={[styles.emptyScoreTitle, { color: colors.foreground }]}>
+                  The race starts with the first pint
+                </Text>
+                <Text style={[styles.resultText, { color: colors.mutedForeground }]}>
+                  No points on the board yet. The leaderboard will update as points are earned.
+                </Text>
+              </View>
+            </Card>
+          )
+        ) : null}
+
+        <View style={styles.leaderboardSection}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
             {league.status === 'completed' ? 'Final leaderboard' : 'Leaderboard'}
           </Text>
-          <Card style={{ paddingVertical: 8 }}>
-            {sortedMembers.map((member, index) => {
+          <Card style={styles.leaderboardCard}>
+            {rankedMembers.length === 0 ? (
+              <View style={styles.noPlayers}>
+                <Ionicons name="people-outline" size={22} color={colors.accent} />
+                <Text style={[styles.emptyScoreTitle, { color: colors.foreground }]}>
+                  No players to show yet
+                </Text>
+              </View>
+            ) : rankedMembers.map(({ member, rank, isTied }) => {
               const isCurrentUser = member.user_id === user?.id;
-              const isWinner = league.status === 'completed' && member.points === highestPoints;
+              const isWinner = league.status === 'completed' && hasScores && member.points === highestPoints;
+              const tieLabel = isWinner
+                ? winners.length > 1
+                  ? 'TIED LEAD'
+                  : 'WINNER'
+                : hasScores && isTied
+                  ? 'TIED'
+                  : null;
               return (
-                <View key={member.id} style={[styles.playerRow, { borderBottomColor: colors.border }]}>
-                  <Text style={[styles.rank, { color: colors.accent }]}>{index + 1}</Text>
-                  <View style={{ flex: 1, gap: 3 }}>
-                    <Text style={[styles.playerName, { color: colors.foreground }]}>{member.display_name}{isCurrentUser ? '  (you)' : ''}</Text>
-                     <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', fontSize: 12 }}>
-                       {member.role === 'host' ? 'Host' : member.status === 'retired' ? 'Retired' : 'Player'}
-                     </Text>
-                  </View>
-                  {isWinner ? (
-                    <Text style={[styles.winnerLabel, { color: colors.accent }]}>
-                      {winners.length === 1 ? 'WINNER' : 'TIED'}
+                <View
+                  key={member.id}
+                  style={[
+                    styles.playerRow,
+                    { borderBottomColor: colors.border },
+                    isCurrentUser
+                      ? {
+                          backgroundColor: colors.muted,
+                          borderColor: colors.accent,
+                          borderWidth: 1,
+                          borderRadius: 16,
+                          paddingHorizontal: 10,
+                          marginHorizontal: 4,
+                          marginVertical: 4,
+                        }
+                      : null,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.rankBadge,
+                      { backgroundColor: isCurrentUser ? colors.primary : colors.muted },
+                    ]}
+                  >
+                    <Text style={[styles.rank, { color: isCurrentUser ? colors.primaryForeground : colors.accent }]}>
+                      {hasScores ? rank : '—'}
                     </Text>
+                  </View>
+                  <View style={{ flex: 1, gap: 3 }}>
+                    <Text style={[styles.playerName, { color: colors.foreground }]} numberOfLines={1}>
+                      {member.display_name}{isCurrentUser ? ' (you)' : ''}
+                    </Text>
+                    <Text style={[styles.playerStatus, { color: colors.mutedForeground }]}>
+                      {member.role === 'host' ? 'Host' : member.status === 'retired' ? 'Retired' : 'Player'}
+                    </Text>
+                  </View>
+                  {tieLabel ? (
+                    <Text style={[styles.winnerLabel, { color: colors.accent }]}>{tieLabel}</Text>
                   ) : null}
-                  <Text style={[styles.pints, { color: colors.foreground }]}>{member.points} pts</Text>
+                  <Text style={[styles.pints, { color: colors.foreground }]}>
+                    {member.points} {member.points === 1 ? 'pt' : 'pts'}
+                  </Text>
                 </View>
               );
             })}
           </Card>
         </View>
-        {league.status === 'active' ? (
-          <>
-            {isCurrentUserRetired ? (
-              <Card style={styles.retiredCard}>
-                <Text style={[styles.retiredTitle, { color: colors.foreground }]}>Retired from this Pint War</Text>
-                <Text style={[styles.retiredText, { color: colors.mutedForeground }]}>
-                  Your existing points remain visible, but you cannot log more pints or earn more points in this league.
-                </Text>
-              </Card>
-            ) : (
-              <>
-                <Button
-                  label={cameraError ? 'Try camera again' : 'Log Pint'}
-                  loading={isPreparingPint || logMutation.isPending}
-                  onPress={() => void takePintPhoto()}
-                />
-                {cameraError ? <ErrorText>{cameraError}</ErrorText> : null}
-                {cameraBlocked && Platform.OS !== 'web' ? (
-                  <Button
-                    label="Open device settings"
-                    variant="quiet"
-                    onPress={() => {
-                      void Linking.openSettings().catch(() => {
-                        setCameraError('Open your device settings and allow camera access for Pint Wars.');
-                      });
-                    }}
-                  />
-                ) : null}
-                {logError ? <ErrorText>{logError}</ErrorText> : null}
-                <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', lineHeight: 21 }}>
-                  Take a fresh photo with your pint. Every valid pint adds {CURRENT_LEAGUE_SCORING.pointsPerValidPint} point; a new pub visit adds no bonus.
-                </Text>
-              </>
-            )}
-          </>
-        ) : (
+        {league.status === 'completed' ? (
           <Button label="Start Another Pint War" onPress={() => router.push('/war/create')} />
-        )}
+        ) : null}
         {canRetire ? (
           <Button
             label={retireMutation.isPending ? 'Retiring…' : 'Retire from this Pint War'}
@@ -663,12 +931,36 @@ export default function LeagueDashboardScreen() {
 }
 
 const styles = StyleSheet.create({
+  pageContent: { paddingTop: 24, gap: 16 },
+  loadState: { flex: 1, justifyContent: 'center', gap: 18 },
+  loadingCard: { minHeight: 150, alignItems: 'center', justifyContent: 'center', gap: 14 },
+  loadingCopy: { fontFamily: 'Inter_400Regular', fontSize: 14, lineHeight: 21, textAlign: 'center' },
+  errorCard: { gap: 16 },
+  errorCopy: { fontFamily: 'Inter_400Regular', fontSize: 14, lineHeight: 21 },
+  activeWarCard: { gap: 16, padding: 20 },
+  activeHeaderRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
+  activeHeaderCopy: { flex: 1, gap: 5 },
+  activeWarTitle: { fontFamily: 'Inter_700Bold', fontSize: 27, lineHeight: 33 },
+  liveBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7 },
+  liveDot: { width: 7, height: 7, borderRadius: 4 },
+  liveLabel: { fontFamily: 'Inter_700Bold', fontSize: 10, letterSpacing: 1 },
+  timePanel: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 16, padding: 14 },
+  timeCopy: { flex: 1, gap: 3 },
+  remainingTime: { fontFamily: 'Inter_700Bold', fontSize: 18, lineHeight: 23 },
+  standingPanel: { flexDirection: 'row', justifyContent: 'space-between', gap: 8, borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 14 },
+  standingMetric: { flex: 1, alignItems: 'center', gap: 7 },
+  standingValue: { fontFamily: 'Inter_700Bold', fontSize: 16, textAlign: 'center' },
+  primaryAction: { gap: 8 },
+  primaryHint: { fontFamily: 'Inter_400Regular', fontSize: 13, lineHeight: 19, textAlign: 'center' },
   heading: { gap: 3 },
   kicker: { fontFamily: 'Inter_700Bold', fontSize: 12, letterSpacing: 1.5 },
   endTime: { fontFamily: 'Inter_400Regular', fontSize: 13 },
   summary: { gap: 12 },
-  scoringRules: { gap: 8 },
-  scoringRule: { fontFamily: 'Inter_600SemiBold', fontSize: 16, lineHeight: 23 },
+  scoringRules: { gap: 12 },
+  scoringRows: { gap: 10 },
+  scoringRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  scoringLabel: { flex: 1, fontFamily: 'Inter_500Medium', fontSize: 14, lineHeight: 20 },
+  scoringValue: { fontFamily: 'Inter_700Bold', fontSize: 15 },
   resultCard: { gap: 7 },
   resultNames: { fontFamily: 'Inter_700Bold', fontSize: 22, lineHeight: 28 },
   resultText: { fontFamily: 'Inter_400Regular', lineHeight: 21 },
@@ -682,11 +974,23 @@ const styles = StyleSheet.create({
   metricValue: { fontFamily: 'Inter_700Bold', fontSize: 26 },
   metricLabel: { fontFamily: 'Inter_700Bold', fontSize: 10, letterSpacing: 1 },
   sectionTitle: { fontFamily: 'Inter_700Bold', fontSize: 21 },
-  playerRow: { minHeight: 64, borderBottomWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', gap: 13 },
-  rank: { width: 25, fontFamily: 'Inter_700Bold', fontSize: 18, textAlign: 'center' },
+  leaderCard: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  leaderIcon: { width: 46, height: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  leaderCopy: { flex: 1, gap: 4 },
+  leaderNames: { fontFamily: 'Inter_600SemiBold', fontSize: 16, lineHeight: 22 },
+  emptyScoreCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  emptyScoreCopy: { flex: 1, gap: 4 },
+  emptyScoreTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 15, lineHeight: 21 },
+  leaderboardSection: { gap: 12 },
+  leaderboardCard: { paddingVertical: 8, gap: 2 },
+  noPlayers: { alignItems: 'center', gap: 10, paddingVertical: 24 },
+  playerRow: { minHeight: 68, borderBottomWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 9 },
+  rankBadge: { width: 34, height: 34, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  rank: { fontFamily: 'Inter_700Bold', fontSize: 14, textAlign: 'center' },
   playerName: { fontFamily: 'Inter_600SemiBold', fontSize: 15 },
-  pints: { fontFamily: 'Inter_700Bold', fontSize: 22 },
-  winnerLabel: { fontFamily: 'Inter_700Bold', fontSize: 10, letterSpacing: 1 },
+  playerStatus: { fontFamily: 'Inter_400Regular', fontSize: 12 },
+  pints: { fontFamily: 'Inter_700Bold', fontSize: 16 },
+  winnerLabel: { fontFamily: 'Inter_700Bold', fontSize: 9, letterSpacing: 0.7 },
   retiredCard: { gap: 8 },
   retiredTitle: { fontFamily: 'Inter_700Bold', fontSize: 16 },
   retiredText: { fontFamily: 'Inter_400Regular', lineHeight: 21 },
