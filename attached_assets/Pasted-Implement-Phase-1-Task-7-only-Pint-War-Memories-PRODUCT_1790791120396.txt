@@ -1,0 +1,181 @@
+Implement Phase 1 Task 7 only: Pint War Memories.
+
+PRODUCT DECISION:
+
+When a Pint War finishes, a Memories option should automatically be available.
+
+The actual recap/video should NOT be generated automatically in the background.
+
+When a player taps “Create Memories”, generate/create the recap from the existing Pint War photos and key events.
+
+IMPORTANT:
+The existing pint-proof photos are the raw material for Memories.
+
+Do NOT create a second photo-upload system.
+
+Do NOT make proof photos public.
+
+Only members of the completed Pint War may access its Memories/photos.
+
+CORE EXPERIENCE:
+
+On a completed Pint War, add a prominent:
+
+“PINT WAR MEMORIES”
+
+or
+
+“CREATE MEMORIES”
+
+action.
+
+The Memories experience should include, where data exists:
+
+- Pint War name
+- Number of players
+- Duration
+- Total pints
+- Total qualifying reviews
+- Pubs visited
+- Winner
+- Final leaderboard
+- Relevant proof photos
+- Important Pint War activity/events
+
+The experience should feel like a celebration of the completed war, not an administrative report.
+
+RECAP STRUCTURE:
+
+Aim for a future recap roughly like:
+
+PINT WAR MEMORIES
+
+[War name]
+
+6 PLAYERS
+7 DAYS
+42 PINTS
+
+Then a chronological visual sequence using the available photos/events.
+
+Examples of event captions:
+
+“THE WAR BEGINS”
+
+“THE SHIP”
+
+“DAVE TOOK THE LEAD”
+
+“STEVE LOGGED ANOTHER PINT”
+
+“FINAL NIGHT”
+
+Then:
+
+FINAL RESULTS
+
+WINNER
+[Name]
+
+[Final statistics]
+
+REMATCH
+
+IMPORTANT:
+Do not invent statistics or events.
+
+Use authoritative existing data.
+
+SCORING:
+- 1 logged pint = +1 point
+- Qualifying pub review = +1 bonus point
+- No new-pub bonus
+- Existing immutable score ledger remains authoritative.
+
+PHOTO SECURITY:
+
+Keep pint-proof Storage private.
+
+Only authenticated members of the completed Pint War may access the photos.
+
+Do not expose Storage paths.
+
+Do not make the Storage bucket public.
+
+Do not create public/signed Storage URLs for general access.
+
+Reuse the existing secure photo-access architecture already implemented for Live War Activity where appropriate.
+
+VIDEO/RECAP IMPLEMENTATION:
+
+For this task, focus on the Memories experience and the data/architecture needed to generate the recap.
+
+Do NOT introduce a third-party video-generation service yet.
+
+Do NOT add unnecessary paid infrastructure.
+
+If the existing app can create a simple local/in-app animated Memories presentation from the existing photos, that is acceptable.
+
+If actual video rendering/export requires additional infrastructure, build the Memories presentation/data layer first and clearly identify what is still required for final video export.
+
+The final product direction is:
+
+User taps “Create Memories”
+→ photos/events are assembled
+→ recap is presented
+→ eventually this can become an exported/shareable short video.
+
+SHARING:
+
+Do not implement external social sharing yet unless it already exists safely.
+
+We will decide the final video export/share mechanism separately.
+
+REMATCH:
+
+If a Rematch button already exists, preserve it.
+
+Do not implement new league creation logic in this task.
+
+Do not change:
+- RevenueCat
+- pricing
+- duration
+- scoring
+- pint logging
+- review scoring
+- account deletion
+- authentication
+- Live Activity
+- pub-business features
+
+Use the existing Pint Wars visual design system.
+
+The Memories experience should feel more visually exciting than a normal settings/report screen.
+
+Before implementation, inspect:
+- completed-war data
+- score ledger
+- pint logs
+- proof photos
+- reviews
+- existing completed-war summary
+- existing member/security checks
+
+After implementation run:
+1. Pint Wars typecheck
+2. API typecheck
+3. git diff --check
+4. Expo dependency check
+5. All existing API/security tests
+
+Report:
+- Files changed
+- What the completed-war Memories experience now does
+- How photos are protected
+- What data is used
+- Whether this is an in-app animated recap or actual exported video
+- What remains required for final shareable video export
+- All test results
+
+Only implement this task.
