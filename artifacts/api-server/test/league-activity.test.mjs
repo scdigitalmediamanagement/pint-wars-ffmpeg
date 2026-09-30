@@ -94,6 +94,10 @@ function makeFixture() {
       { user_id: REMOVED_MEMBER_ID, league_id: LEAGUE_A, status: "removed" },
       { user_id: OTHER_WAR_MEMBER_ID, league_id: LEAGUE_B, status: "active" },
     ],
+    leagues: [
+      { id: LEAGUE_A, status: "completed" },
+      { id: LEAGUE_B, status: "completed" },
+    ],
     scoreEvents: [
       {
         id: SCORE_EVENT_ID,
@@ -168,8 +172,21 @@ globalThis.fetch = async (input, init = {}) => {
 
     if (table === "league_score_events") {
       const leagueId = equalsValue(requestUrl.searchParams.get("league_id"));
+      const offset = Number(requestUrl.searchParams.get("offset") ?? 0);
+      const limit = Number(
+        requestUrl.searchParams.get("limit") ?? fixture.scoreEvents.length,
+      );
       return jsonResponse(
-        fixture.scoreEvents.filter((event) => event.league_id === leagueId),
+        fixture.scoreEvents
+          .filter((event) => event.league_id === leagueId)
+          .slice(offset, offset + limit),
+      );
+    }
+
+    if (table === "leagues") {
+      const leagueId = equalsValue(requestUrl.searchParams.get("id"));
+      return jsonResponse(
+        fixture.leagues.filter((league) => league.id === leagueId),
       );
     }
 
@@ -254,6 +271,8 @@ function request(path, token) {
 
 const activityPath = `/api/pint-proofs/leagues/${LEAGUE_A}/activity`;
 const memberPhotoPath = `/api/pint-proofs/leagues/${LEAGUE_A}/photos/${PINT_LOG_A_ID}`;
+const memoriesPath = `/api/pint-proofs/leagues/${LEAGUE_A}/memories`;
+const memoriesPhotoPath = `/api/pint-proofs/leagues/${LEAGUE_A}/memories/photos/${PINT_LOG_A_ID}`;
 const otherWarPhotoPath = `/api/pint-proofs/leagues/${LEAGUE_A}/photos/${PINT_LOG_B_ID}`;
 
 async function assertDeniedPair(t, label, token) {
@@ -274,6 +293,23 @@ async function assertDeniedPair(t, label, token) {
     );
   });
 
+  await t.test(`${label} cannot read completed-war Memories data`, async () => {
+    resetFixture();
+    const response = await request(memoriesPath, token);
+    assert.equal(response.status, 403);
+    assert.deepEqual(JSON.parse(response.text), {
+      message: "You are not a member of this Pint War.",
+    });
+    assert.equal(
+      upstreamCalls.some((call) => call.pathname === "/rest/v1/league_score_events"),
+      false,
+    );
+    assert.equal(
+      upstreamCalls.some((call) => call.pathname === "/rest/v1/leagues"),
+      false,
+    );
+  });
+
   await t.test(`${label} cannot fetch proof photos`, async () => {
     resetFixture();
     const response = await request(otherWarPhotoPath, token);
@@ -283,6 +319,21 @@ async function assertDeniedPair(t, label, token) {
       upstreamCalls.filter((call) => call.pathname === "/rest/v1/league_memberships").length,
       1,
     );
+    assert.equal(
+      upstreamCalls.some(
+        (call) =>
+          call.pathname === "/rest/v1/pint_logs" ||
+          call.pathname.startsWith(STORAGE_OBJECT_PREFIX),
+      ),
+      false,
+    );
+  });
+
+  await t.test(`${label} cannot fetch a Memories proof photo`, async () => {
+    resetFixture();
+    const response = await request(memoriesPhotoPath, token);
+    assert.equal(response.status, 403);
+    assert.doesNotMatch(response.text, /photo_path|signedURL|signedUrl/i);
     assert.equal(
       upstreamCalls.some(
         (call) =>
@@ -309,6 +360,64 @@ test("an authenticated member of the same Pint War can access activity and proof
     assert.equal(response.text.includes("storage/v1/object"), false);
   });
 
+  await t.test("Memories returns the entire score history, not only the recent feed window", async () => {
+    resetFixture();
+    const extraPhotoLogs = Array.from({ length: 24 }, (_, index) => ({
+      id: `60000000-0000-4000-8000-${String(index + 3).padStart(12, "0")}`,
+      user_id: MEMBER_ID,
+      league_id: LEAGUE_A,
+      photo_path: `${MEMBER_ID}/${LEAGUE_A}/war-photo-${index}.jpg`,
+      pub_name: `Fixture Pub ${index % 5}`,
+    }));
+    fixture.pintLogs.push(...extraPhotoLogs);
+    fixture.scoreEvents.push(
+      ...Array.from({ length: 501 }, (_, index) => ({
+        id: `70000000-0000-4000-8000-${String(index + 2).padStart(12, "0")}`,
+        user_id: MEMBER_ID,
+        event_type: index < extraPhotoLogs.length ? "PINT_LOGGED" : "PUB_REVIEW",
+        points: 1,
+        pint_log_id: extraPhotoLogs[index]?.id ?? null,
+        created_at: new Date(Date.UTC(2026, 8, 30, 10, index)).toISOString(),
+        league_id: LEAGUE_A,
+      })),
+    );
+
+    const response = await request(memoriesPath, "member-token");
+    assert.equal(response.status, 200);
+    const payload = JSON.parse(response.text);
+    assert.equal(payload.events.length, 502);
+    assert.equal(payload.events[0].type, "pub_review");
+    assert.equal(payload.events.some((event) => event.type === "pub_review"), true);
+    assert.equal(
+      payload.events.some(
+        (event) => event.id === "70000000-0000-4000-8000-000000000502",
+      ),
+      true,
+    );
+    const photoIds = payload.events
+      .map((event) => event.photoPintLogId)
+      .filter((id) => id !== null);
+    assert.equal(photoIds.length, 25);
+    assert.equal(new Set(photoIds).size, 25);
+    assert.equal(
+      photoIds.includes("60000000-0000-4000-8000-000000000026"),
+      true,
+    );
+    assert.equal(response.text.includes(PRIVATE_PHOTO_PATH), false);
+    assert.equal(response.text.includes("storage/v1/object"), false);
+    for (const photoLog of extraPhotoLogs) {
+      assert.equal(response.text.includes(photoLog.photo_path), false);
+    }
+    const pages = upstreamCalls.filter(
+      (call) => call.pathname === "/rest/v1/league_score_events",
+    );
+    assert.equal(pages.length, 2);
+    assert.deepEqual(
+      pages.map((call) => new URLSearchParams(call.search).get("offset")),
+      ["0", "500"],
+    );
+  });
+
   await t.test("a same-war member can read the private proof image", async () => {
     resetFixture();
     const response = await request(memberPhotoPath, "member-token");
@@ -321,6 +430,16 @@ test("an authenticated member of the same Pint War can access activity and proof
       upstreamCalls.some((call) => call.pathname.startsWith(STORAGE_OBJECT_PREFIX)),
       true,
     );
+  });
+
+  await t.test("a same-war member can read a private Memories photo", async () => {
+    resetFixture();
+    const response = await request(memoriesPhotoPath, "member-token");
+    assert.equal(response.status, 200);
+    assert.equal(response.headers["content-type"], "image/jpeg");
+    assert.equal(response.headers["cache-control"], "private, no-store");
+    assert.equal(response.headers.vary, "Authorization");
+    assert.deepEqual(response.body, PRIVATE_PHOTO_BYTES);
   });
 
   await t.test("a different same-war member can read another member's private proof image", async () => {
@@ -357,7 +476,36 @@ test("a member of a different Pint War cannot access this Pint War", async (t) =
   await assertDeniedPair(t, "a different-war member", "other-war-member-token");
 });
 
-test("unauthenticated users receive 401 for activity and proof-photo requests", async (t) => {
+test("members of an active Pint War cannot access Memories data or photos", async (t) => {
+  resetFixture();
+  fixture.leagues[0].status = "active";
+
+  const memories = await request(memoriesPath, "member-token");
+  assert.equal(memories.status, 403);
+  assert.deepEqual(JSON.parse(memories.text), {
+    message: "Memories are only available to members after the Pint War is complete.",
+  });
+
+  const photo = await request(memoriesPhotoPath, "member-token");
+  assert.equal(photo.status, 403);
+  assert.deepEqual(JSON.parse(photo.text), {
+    message: "Memories are only available to members after the Pint War is complete.",
+  });
+  assert.equal(
+    upstreamCalls.some((call) => call.pathname === "/rest/v1/league_score_events"),
+    false,
+  );
+  assert.equal(
+    upstreamCalls.some(
+      (call) =>
+        call.pathname === "/rest/v1/pint_logs" ||
+        call.pathname.startsWith(STORAGE_OBJECT_PREFIX),
+    ),
+    false,
+  );
+});
+
+test("unauthenticated users receive 401 for activity, Memories, and proof-photo requests", async (t) => {
   await t.test("activity requires authentication", async () => {
     resetFixture();
     const response = await request(activityPath);
@@ -369,6 +517,22 @@ test("unauthenticated users receive 401 for activity and proof-photo requests", 
   await t.test("proof photos require authentication", async () => {
     resetFixture();
     const response = await request(memberPhotoPath);
+    assert.equal(response.status, 401);
+    assert.deepEqual(JSON.parse(response.text), { message: "You must be signed in." });
+    assert.equal(upstreamCalls.length, 0);
+  });
+
+  await t.test("Memories data requires authentication", async () => {
+    resetFixture();
+    const response = await request(memoriesPath);
+    assert.equal(response.status, 401);
+    assert.deepEqual(JSON.parse(response.text), { message: "You must be signed in." });
+    assert.equal(upstreamCalls.length, 0);
+  });
+
+  await t.test("Memories proof photos require authentication", async () => {
+    resetFixture();
+    const response = await request(memoriesPhotoPath);
     assert.equal(response.status, 401);
     assert.deepEqual(JSON.parse(response.text), { message: "You must be signed in." });
     assert.equal(upstreamCalls.length, 0);

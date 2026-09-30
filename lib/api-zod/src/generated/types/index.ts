@@ -17,3 +17,4 @@ export * from './nearbyPubsRequest';
 export * from './pintWarActivityEvent';
 export * from './pintWarActivityEventType';
 export * from './pintWarActivityFeed';
+export * from './pintWarMemoriesFeed';

@@ -5,10 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
   MutationFunction,
   QueryFunction,
@@ -16,8 +13,8 @@ import type {
   UseMutationOptions,
   UseMutationResult,
   UseQueryOptions,
-  UseQueryResult
-} from '@tanstack/react-query';
+  UseQueryResult,
+} from "@tanstack/react-query";
 
 import type {
   AccountDeletionResponse,
@@ -25,27 +22,28 @@ import type {
   HealthStatus,
   NearbyPubSearch,
   NearbyPubsRequest,
-  PintWarActivityFeed
-} from './api.schemas';
+  PintWarActivityFeed,
+  PintWarMemoriesFeed,
+} from "./api.schemas";
 
-import { customFetch } from '../custom-fetch';
-import type { ErrorType , BodyType } from '../custom-fetch';
+import { customFetch } from "../custom-fetch";
+import type { ErrorType, BodyType } from "../custom-fetch";
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
-      type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
-
+type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-
-
-const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
+const withQueryKey = <T extends object, K>(
+  query: T,
+  queryKey: K,
+): T & { queryKey: K } => {
   const result = { queryKey } as T & { queryKey: K };
   for (const key of Object.keys(query)) {
     // The explicit queryKey always wins, matching the previous
     // `{ ...query, queryKey }` spread where it was set last.
-    if (key === 'queryKey') continue;
+    if (key === "queryKey") continue;
     Object.defineProperty(result, key, {
       enumerable: true,
       configurable: true,
@@ -56,384 +54,675 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
 };
 
 export const getHealthCheckUrl = () => {
-
-
-
-
-  return `/api/healthz`
-}
+  return `/api/healthz`;
+};
 
 /**
  * Returns server health status
  * @summary Health check
  */
-export const healthCheck = async ( options?: Parameters<typeof customFetch>[1]): Promise<HealthStatus> => {
-
-  return customFetch<HealthStatus>(getHealthCheckUrl(),
-  {
+export const healthCheck = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<HealthStatus> => {
+  return customFetch<HealthStatus>(getHealthCheckUrl(), {
     ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
+    method: "GET",
+  });
+};
 
 export const getHealthCheckQueryKey = () => {
-    return [
-    `/api/healthz`
-    ] as const;
-    }
+  return [`/api/healthz`] as const;
+};
 
+export const getHealthCheckQueryOptions = <
+  TData = Awaited<ReturnType<typeof healthCheck>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof healthCheck>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
-export const getHealthCheckQueryOptions = <TData = Awaited<ReturnType<typeof healthCheck>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-) => {
+  const queryKey = queryOptions?.queryKey ?? getHealthCheckQueryKey();
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof healthCheck>>> = ({
+    signal,
+  }) => healthCheck({ signal, ...requestOptions });
 
-  const queryKey =  queryOptions?.queryKey ?? getHealthCheckQueryKey();
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof healthCheck>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
 
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof healthCheck>>> = ({ signal }) => healthCheck({ signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData> & { queryKey: QueryKey }
-}
-
-export type HealthCheckQueryResult = NonNullable<Awaited<ReturnType<typeof healthCheck>>>
-export type HealthCheckQueryError = ErrorType<unknown>
-
+export type HealthCheckQueryResult = NonNullable<
+  Awaited<ReturnType<typeof healthCheck>>
+>;
+export type HealthCheckQueryError = ErrorType<unknown>;
 
 /**
  * @summary Health check
  */
 
-export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export function useHealthCheck<
+  TData = Awaited<ReturnType<typeof healthCheck>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof healthCheck>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getHealthCheckQueryOptions(options);
 
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-
-  const queryOptions = getHealthCheckQueryOptions(options)
-
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
 export const getFindNearbyPubsUrl = () => {
-
-
-
-
-  return `/api/pubs/nearby`
-}
+  return `/api/pubs/nearby`;
+};
 
 /**
  * Returns Google Places pubs near an authenticated player's current location.
  * @summary Find nearby pubs
  */
-export const findNearbyPubs = async (nearbyPubsRequest: NearbyPubsRequest, options?: Parameters<typeof customFetch>[1]): Promise<NearbyPubSearch> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+export const findNearbyPubs = async (
+  nearbyPubsRequest: NearbyPubsRequest,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<NearbyPubSearch> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
     if (Symbol.iterator in h) {
       return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
       );
     }
     const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
       if (value !== undefined) headers[name] = value;
     }
     return headers;
   };
-return customFetch<NearbyPubSearch>(getFindNearbyPubsUrl(),
-  {
+  return customFetch<NearbyPubSearch>(getFindNearbyPubsUrl(), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(nearbyPubsRequest)
-  }
-);}
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(nearbyPubsRequest),
+  });
+};
 
+export const getFindNearbyPubsMutationKey = () => ["findNearbyPubs"] as const;
 
+export const getFindNearbyPubsMutationOptions = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof findNearbyPubs>>,
+    TError,
+    FindNearbyPubsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof findNearbyPubs>>,
+  TError,
+  FindNearbyPubsMutationVariables,
+  TContext
+> => {
+  const mutationKey = getFindNearbyPubsMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
 
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof findNearbyPubs>>,
+    FindNearbyPubsMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
 
+    return findNearbyPubs(data, requestOptions);
+  };
 
-export const getFindNearbyPubsMutationKey = () => ['findNearbyPubs'] as const;
+  return { mutationFn, ...mutationOptions };
+};
 
-export const getFindNearbyPubsMutationOptions = <TError = ErrorType<ApiError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof findNearbyPubs>>, TError,FindNearbyPubsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof findNearbyPubs>>, TError,FindNearbyPubsMutationVariables, TContext> => {
+export type FindNearbyPubsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof findNearbyPubs>>
+>;
+export type FindNearbyPubsMutationBody = BodyType<NearbyPubsRequest>;
+export type FindNearbyPubsMutationError = ErrorType<ApiError>;
+export type FindNearbyPubsMutationVariables = {
+  data: BodyType<NearbyPubsRequest>;
+};
 
-const mutationKey = getFindNearbyPubsMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof findNearbyPubs>>, FindNearbyPubsMutationVariables> = (props) => {
-          const {data} = props ?? {};
-
-          return  findNearbyPubs(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type FindNearbyPubsMutationResult = NonNullable<Awaited<ReturnType<typeof findNearbyPubs>>>
-    export type FindNearbyPubsMutationBody = BodyType<NearbyPubsRequest>
-    export type FindNearbyPubsMutationError = ErrorType<ApiError>
-    export type FindNearbyPubsMutationVariables = {data: BodyType<NearbyPubsRequest>}
-
-    /**
+/**
  * @summary Find nearby pubs
  */
-export const useFindNearbyPubs = <TError = ErrorType<ApiError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof findNearbyPubs>>, TError,FindNearbyPubsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof findNearbyPubs>>,
-        TError,
-        FindNearbyPubsMutationVariables,
-        TContext
-      > => {
-      return useMutation(getFindNearbyPubsMutationOptions(options));
-    }
+export const useFindNearbyPubs = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof findNearbyPubs>>,
+    TError,
+    FindNearbyPubsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof findNearbyPubs>>,
+  TError,
+  FindNearbyPubsMutationVariables,
+  TContext
+> => {
+  return useMutation(getFindNearbyPubsMutationOptions(options));
+};
 
 export const getDeleteMyAccountUrl = () => {
-
-
-
-
-  return `/api/account/delete`
-}
+  return `/api/account/delete`;
+};
 
 /**
  * De-identifies account data and removes pint-proof storage objects while preserving historical league and score records.
  * @summary Delete the authenticated account
  */
-export const deleteMyAccount = async ( options?: Parameters<typeof customFetch>[1]): Promise<AccountDeletionResponse> => {
-
-  return customFetch<AccountDeletionResponse>(getDeleteMyAccountUrl(),
-  {
+export const deleteMyAccount = async (
+  options?: Parameters<typeof customFetch>[1],
+): Promise<AccountDeletionResponse> => {
+  return customFetch<AccountDeletionResponse>(getDeleteMyAccountUrl(), {
     ...options,
-    method: 'POST'
+    method: "POST",
+  });
+};
 
+export const getDeleteMyAccountMutationKey = () => ["deleteMyAccount"] as const;
 
-  }
-);}
+export const getDeleteMyAccountMutationOptions = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteMyAccount>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteMyAccount>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = getDeleteMyAccountMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
 
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteMyAccount>>,
+    void
+  > = () => {
+    return deleteMyAccount(requestOptions);
+  };
 
+  return { mutationFn, ...mutationOptions };
+};
 
+export type DeleteMyAccountMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteMyAccount>>
+>;
 
+export type DeleteMyAccountMutationError = ErrorType<ApiError>;
 
-export const getDeleteMyAccountMutationKey = () => ['deleteMyAccount'] as const;
-
-export const getDeleteMyAccountMutationOptions = <TError = ErrorType<ApiError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMyAccount>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteMyAccount>>, TError,void, TContext> => {
-
-const mutationKey = getDeleteMyAccountMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteMyAccount>>, void> = () => {
-
-
-          return  deleteMyAccount(requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type DeleteMyAccountMutationResult = NonNullable<Awaited<ReturnType<typeof deleteMyAccount>>>
-
-    export type DeleteMyAccountMutationError = ErrorType<ApiError>
-
-
-    /**
+/**
  * @summary Delete the authenticated account
  */
-export const useDeleteMyAccount = <TError = ErrorType<ApiError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMyAccount>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof deleteMyAccount>>,
-        TError,
-        void,
-        TContext
-      > => {
-      return useMutation(getDeleteMyAccountMutationOptions(options));
-    }
+export const useDeleteMyAccount = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteMyAccount>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteMyAccount>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getDeleteMyAccountMutationOptions(options));
+};
 
-export const getGetPintWarActivityUrl = (leagueId: string,) => {
-
-
-
-
-  return `/api/pint-proofs/leagues/${leagueId}/activity`
-}
+export const getGetPintWarActivityUrl = (leagueId: string) => {
+  return `/api/pint-proofs/leagues/${leagueId}/activity`;
+};
 
 /**
  * Returns a bounded, newest-first activity feed for an authenticated member of the Pint War.
  * @summary Get recent Pint War activity
  */
-export const getPintWarActivity = async (leagueId: string, options?: Parameters<typeof customFetch>[1]): Promise<PintWarActivityFeed> => {
-
-  return customFetch<PintWarActivityFeed>(getGetPintWarActivityUrl(leagueId),
-  {
+export const getPintWarActivity = async (
+  leagueId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PintWarActivityFeed> => {
+  return customFetch<PintWarActivityFeed>(getGetPintWarActivityUrl(leagueId), {
     ...options,
-    method: 'GET'
+    method: "GET",
+  });
+};
 
+export const getGetPintWarActivityQueryKey = (leagueId: string) => {
+  return [`/api/pint-proofs/leagues/${leagueId}/activity`] as const;
+};
 
-  }
-);}
-
-
-
-
-
-export const getGetPintWarActivityQueryKey = (leagueId: string,) => {
-    return [
-    `/api/pint-proofs/leagues/${leagueId}/activity`
-    ] as const;
-    }
-
-
-export const getGetPintWarActivityQueryOptions = <TData = Awaited<ReturnType<typeof getPintWarActivity>>, TError = ErrorType<ApiError>>(leagueId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPintWarActivity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetPintWarActivityQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPintWarActivity>>,
+  TError = ErrorType<ApiError>,
+>(
+  leagueId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPintWarActivity>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
 ) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPintWarActivityQueryKey(leagueId);
 
-  const queryKey =  queryOptions?.queryKey ?? getGetPintWarActivityQueryKey(leagueId);
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPintWarActivity>>
+  > = ({ signal }) =>
+    getPintWarActivity(leagueId, { signal, ...requestOptions });
 
+  return {
+    queryKey,
+    queryFn,
+    enabled: leagueId !== null && leagueId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPintWarActivity>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
 
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPintWarActivity>>> = ({ signal }) => getPintWarActivity(leagueId, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: leagueId !== null && leagueId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPintWarActivity>>, TError, TData> & { queryKey: QueryKey }
-}
-
-export type GetPintWarActivityQueryResult = NonNullable<Awaited<ReturnType<typeof getPintWarActivity>>>
-export type GetPintWarActivityQueryError = ErrorType<ApiError>
-
+export type GetPintWarActivityQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPintWarActivity>>
+>;
+export type GetPintWarActivityQueryError = ErrorType<ApiError>;
 
 /**
  * @summary Get recent Pint War activity
  */
 
-export function useGetPintWarActivity<TData = Awaited<ReturnType<typeof getPintWarActivity>>, TError = ErrorType<ApiError>>(
- leagueId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPintWarActivity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export function useGetPintWarActivity<
+  TData = Awaited<ReturnType<typeof getPintWarActivity>>,
+  TError = ErrorType<ApiError>,
+>(
+  leagueId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPintWarActivity>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPintWarActivityQueryOptions(leagueId, options);
 
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-
-  const queryOptions = getGetPintWarActivityQueryOptions(leagueId,options)
-
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
 
   return withQueryKey(query, queryOptions.queryKey);
 }
-export const getGetPintWarActivityPhotoUrl = (leagueId: string,
-    pintLogId: string,) => {
 
+export const getGetPintWarMemoriesUrl = (leagueId: string) => {
+  return `/api/pint-proofs/leagues/${leagueId}/memories`;
+};
 
+/**
+ * Returns the full score-event history for an authenticated member of a completed Pint War. Photo IDs are opaque Pint-log identifiers; the Memories photo endpoint separately verifies membership and completion before streaming image bytes.
+ * @summary Get all recorded moments for completed Pint War Memories
+ */
+export const getPintWarMemories = async (
+  leagueId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<PintWarMemoriesFeed> => {
+  return customFetch<PintWarMemoriesFeed>(getGetPintWarMemoriesUrl(leagueId), {
+    ...options,
+    method: "GET",
+  });
+};
 
+export const getGetPintWarMemoriesQueryKey = (leagueId: string) => {
+  return [`/api/pint-proofs/leagues/${leagueId}/memories`] as const;
+};
 
-  return `/api/pint-proofs/leagues/${leagueId}/photos/${pintLogId}`
+export const getGetPintWarMemoriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPintWarMemories>>,
+  TError = ErrorType<ApiError>,
+>(
+  leagueId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPintWarMemories>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPintWarMemoriesQueryKey(leagueId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPintWarMemories>>
+  > = ({ signal }) =>
+    getPintWarMemories(leagueId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: leagueId !== null && leagueId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPintWarMemories>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPintWarMemoriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPintWarMemories>>
+>;
+export type GetPintWarMemoriesQueryError = ErrorType<ApiError>;
+
+/**
+ * @summary Get all recorded moments for completed Pint War Memories
+ */
+
+export function useGetPintWarMemories<
+  TData = Awaited<ReturnType<typeof getPintWarMemories>>,
+  TError = ErrorType<ApiError>,
+>(
+  leagueId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPintWarMemories>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPintWarMemoriesQueryOptions(leagueId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
 }
+
+export const getGetPintWarMemoriesPhotoUrl = (
+  leagueId: string,
+  pintLogId: string,
+) => {
+  return `/api/pint-proofs/leagues/${leagueId}/memories/photos/${pintLogId}`;
+};
+
+/**
+ * Streams a private proof photo only after verifying the caller is a member of the completed Pint War and the pint log belongs to that war.
+ * @summary Stream a private proof photo for completed Pint War Memories
+ */
+export const getPintWarMemoriesPhoto = async (
+  leagueId: string,
+  pintLogId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<Blob> => {
+  return customFetch<Blob>(getGetPintWarMemoriesPhotoUrl(leagueId, pintLogId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPintWarMemoriesPhotoQueryKey = (
+  leagueId: string,
+  pintLogId: string,
+) => {
+  return [
+    `/api/pint-proofs/leagues/${leagueId}/memories/photos/${pintLogId}`,
+  ] as const;
+};
+
+export const getGetPintWarMemoriesPhotoQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPintWarMemoriesPhoto>>,
+  TError = ErrorType<ApiError>,
+>(
+  leagueId: string,
+  pintLogId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPintWarMemoriesPhoto>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetPintWarMemoriesPhotoQueryKey(leagueId, pintLogId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPintWarMemoriesPhoto>>
+  > = ({ signal }) =>
+    getPintWarMemoriesPhoto(leagueId, pintLogId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled:
+      leagueId !== null &&
+      leagueId !== undefined &&
+      pintLogId !== null &&
+      pintLogId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPintWarMemoriesPhoto>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPintWarMemoriesPhotoQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPintWarMemoriesPhoto>>
+>;
+export type GetPintWarMemoriesPhotoQueryError = ErrorType<ApiError>;
+
+/**
+ * @summary Stream a private proof photo for completed Pint War Memories
+ */
+
+export function useGetPintWarMemoriesPhoto<
+  TData = Awaited<ReturnType<typeof getPintWarMemoriesPhoto>>,
+  TError = ErrorType<ApiError>,
+>(
+  leagueId: string,
+  pintLogId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPintWarMemoriesPhoto>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPintWarMemoriesPhotoQueryOptions(
+    leagueId,
+    pintLogId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetPintWarActivityPhotoUrl = (
+  leagueId: string,
+  pintLogId: string,
+) => {
+  return `/api/pint-proofs/leagues/${leagueId}/photos/${pintLogId}`;
+};
 
 /**
  * Streams a proof photo only after verifying the caller is a member of the Pint War and the pint log belongs to that war.
  * @summary Get a private Pint War proof photo
  */
-export const getPintWarActivityPhoto = async (leagueId: string,
-    pintLogId: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
-
-  return customFetch<Blob>(getGetPintWarActivityPhotoUrl(leagueId,pintLogId),
-  {
+export const getPintWarActivityPhoto = async (
+  leagueId: string,
+  pintLogId: string,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<Blob> => {
+  return customFetch<Blob>(getGetPintWarActivityPhotoUrl(leagueId, pintLogId), {
     ...options,
-    method: 'GET'
+    method: "GET",
+  });
+};
 
-
-  }
-);}
-
-
-
-
-
-export const getGetPintWarActivityPhotoQueryKey = (leagueId: string,
-    pintLogId: string,) => {
-    return [
-    `/api/pint-proofs/leagues/${leagueId}/photos/${pintLogId}`
-    ] as const;
-    }
-
-
-export const getGetPintWarActivityPhotoQueryOptions = <TData = Awaited<ReturnType<typeof getPintWarActivityPhoto>>, TError = ErrorType<ApiError>>(leagueId: string,
-    pintLogId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPintWarActivityPhoto>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetPintWarActivityPhotoQueryKey = (
+  leagueId: string,
+  pintLogId: string,
 ) => {
+  return [`/api/pint-proofs/leagues/${leagueId}/photos/${pintLogId}`] as const;
+};
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+export const getGetPintWarActivityPhotoQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPintWarActivityPhoto>>,
+  TError = ErrorType<ApiError>,
+>(
+  leagueId: string,
+  pintLogId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPintWarActivityPhoto>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetPintWarActivityPhotoQueryKey(leagueId,pintLogId);
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetPintWarActivityPhotoQueryKey(leagueId, pintLogId);
 
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPintWarActivityPhoto>>
+  > = ({ signal }) =>
+    getPintWarActivityPhoto(leagueId, pintLogId, { signal, ...requestOptions });
 
+  return {
+    queryKey,
+    queryFn,
+    enabled:
+      leagueId !== null &&
+      leagueId !== undefined &&
+      pintLogId !== null &&
+      pintLogId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPintWarActivityPhoto>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPintWarActivityPhoto>>> = ({ signal }) => getPintWarActivityPhoto(leagueId,pintLogId, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: leagueId !== null && leagueId !== undefined && pintLogId !== null && pintLogId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPintWarActivityPhoto>>, TError, TData> & { queryKey: QueryKey }
-}
-
-export type GetPintWarActivityPhotoQueryResult = NonNullable<Awaited<ReturnType<typeof getPintWarActivityPhoto>>>
-export type GetPintWarActivityPhotoQueryError = ErrorType<ApiError>
-
+export type GetPintWarActivityPhotoQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPintWarActivityPhoto>>
+>;
+export type GetPintWarActivityPhotoQueryError = ErrorType<ApiError>;
 
 /**
  * @summary Get a private Pint War proof photo
  */
 
-export function useGetPintWarActivityPhoto<TData = Awaited<ReturnType<typeof getPintWarActivityPhoto>>, TError = ErrorType<ApiError>>(
- leagueId: string,
-    pintLogId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPintWarActivityPhoto>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export function useGetPintWarActivityPhoto<
+  TData = Awaited<ReturnType<typeof getPintWarActivityPhoto>>,
+  TError = ErrorType<ApiError>,
+>(
+  leagueId: string,
+  pintLogId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPintWarActivityPhoto>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPintWarActivityPhotoQueryOptions(
+    leagueId,
+    pintLogId,
+    options,
+  );
 
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-
-  const queryOptions = getGetPintWarActivityPhotoQueryOptions(leagueId,pintLogId,options)
-
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
 
   return withQueryKey(query, queryOptions.queryKey);
 }

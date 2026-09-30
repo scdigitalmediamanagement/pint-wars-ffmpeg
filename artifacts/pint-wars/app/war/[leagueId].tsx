@@ -707,7 +707,7 @@ export default function LeagueDashboardScreen() {
                 </View>
               </View>
               <Text style={[styles.resultText, { color: colors.mutedForeground }]}>
-                Bring together the final results and recorded moments from this Pint War.
+                Create a randomized highlight preview from photos captured across this completed Pint War.
               </Text>
               <Button
                 label="Create Memories"

@@ -5,17 +5,15 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import * as zod from 'zod';
-
+import * as zod from "zod";
 
 /**
  * Returns server health status
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
-  "status": zod.string()
-})
-
+  status: zod.string(),
+});
 
 /**
  * Returns Google Places pubs near an authenticated player's current location.
@@ -27,80 +25,116 @@ export const findNearbyPubsBodyLatitudeMax = 90;
 export const findNearbyPubsBodyLongitudeMin = -180;
 export const findNearbyPubsBodyLongitudeMax = 180;
 
-
-
 export const FindNearbyPubsBody = zod.object({
-  "latitude": zod.number().min(findNearbyPubsBodyLatitudeMin).max(findNearbyPubsBodyLatitudeMax),
-  "longitude": zod.number().min(findNearbyPubsBodyLongitudeMin).max(findNearbyPubsBodyLongitudeMax)
-})
-
-
+  latitude: zod
+    .number()
+    .min(findNearbyPubsBodyLatitudeMin)
+    .max(findNearbyPubsBodyLatitudeMax),
+  longitude: zod
+    .number()
+    .min(findNearbyPubsBodyLongitudeMin)
+    .max(findNearbyPubsBodyLongitudeMax),
+});
 
 export const findNearbyPubsResponsePubsItemDistanceMetersMin = 0;
 
-
-
 export const FindNearbyPubsResponse = zod.object({
-  "pubs": zod.array(zod.object({
-  "provider": zod.enum(['google_places']),
-  "placeId": zod.string().min(1),
-  "name": zod.string().min(1),
-  "address": zod.string(),
-  "distanceMeters": zod.number().min(findNearbyPubsResponsePubsItemDistanceMetersMin),
-  "coordinates": zod.object({
-  "latitude": zod.number(),
-  "longitude": zod.number()
-})
-})),
-  "providerConfigured": zod.boolean()
-})
-
+  pubs: zod.array(
+    zod.object({
+      provider: zod.enum(["google_places"]),
+      placeId: zod.string().min(1),
+      name: zod.string().min(1),
+      address: zod.string(),
+      distanceMeters: zod
+        .number()
+        .min(findNearbyPubsResponsePubsItemDistanceMetersMin),
+      coordinates: zod.object({
+        latitude: zod.number(),
+        longitude: zod.number(),
+      }),
+    }),
+  ),
+  providerConfigured: zod.boolean(),
+});
 
 /**
  * De-identifies account data and removes pint-proof storage objects while preserving historical league and score records.
  * @summary Delete the authenticated account
  */
 export const DeleteMyAccountResponse = zod.object({
-  "ok": zod.literal(true)
-})
-
+  ok: zod.literal(true),
+});
 
 /**
  * Returns a bounded, newest-first activity feed for an authenticated member of the Pint War.
  * @summary Get recent Pint War activity
  */
 export const GetPintWarActivityParams = zod.object({
-  "leagueId": zod.coerce.string().uuid()
-})
-
-
+  leagueId: zod.coerce.string().uuid(),
+});
 
 export const getPintWarActivityResponseEventsMax = 20;
 
-
-
 export const GetPintWarActivityResponse = zod.object({
-  "events": zod.array(zod.object({
-  "id": zod.string().min(1),
-  "type": zod.enum(['pint_logged', 'pub_review', 'legacy_pub_bonus']),
-  "userId": zod.string().uuid(),
-  "playerName": zod.string().min(1),
-  "occurredAt": zod.coerce.date(),
-  "pubName": zod.string().nullable(),
-  "scoreImpact": zod.number().int().nullable(),
-  "historicalScore": zod.boolean(),
-  "photoPintLogId": zod.string().uuid().nullable()
-})).max(getPintWarActivityResponseEventsMax)
-})
+  events: zod
+    .array(
+      zod.object({
+        id: zod.string().min(1),
+        type: zod.enum(["pint_logged", "pub_review", "legacy_pub_bonus"]),
+        userId: zod.string().uuid(),
+        playerName: zod.string().min(1),
+        occurredAt: zod.coerce.date(),
+        pubName: zod.string().nullable(),
+        scoreImpact: zod.number().int().nullable(),
+        historicalScore: zod.boolean(),
+        photoPintLogId: zod.string().uuid().nullable(),
+      }),
+    )
+    .max(getPintWarActivityResponseEventsMax),
+});
 
+/**
+ * Returns the full score-event history for an authenticated member of a completed Pint War. Photo IDs are opaque Pint-log identifiers; the Memories photo endpoint separately verifies membership and completion before streaming image bytes.
+ * @summary Get all recorded moments for completed Pint War Memories
+ */
+export const GetPintWarMemoriesParams = zod.object({
+  leagueId: zod.coerce.string().uuid(),
+});
+
+export const GetPintWarMemoriesResponse = zod.object({
+  events: zod.array(
+    zod.object({
+      id: zod.string().min(1),
+      type: zod.enum(["pint_logged", "pub_review", "legacy_pub_bonus"]),
+      userId: zod.string().uuid(),
+      playerName: zod.string().min(1),
+      occurredAt: zod.coerce.date(),
+      pubName: zod.string().nullable(),
+      scoreImpact: zod.number().int().nullable(),
+      historicalScore: zod.boolean(),
+      photoPintLogId: zod.string().uuid().nullable(),
+    }),
+  ),
+});
+
+/**
+ * Streams a private proof photo only after verifying the caller is a member of the completed Pint War and the pint log belongs to that war.
+ * @summary Stream a private proof photo for completed Pint War Memories
+ */
+export const GetPintWarMemoriesPhotoParams = zod.object({
+  leagueId: zod.coerce.string().uuid(),
+  pintLogId: zod.coerce.string().uuid(),
+});
+
+export const GetPintWarMemoriesPhotoResponse = zod.unknown();
 
 /**
  * Streams a proof photo only after verifying the caller is a member of the Pint War and the pint log belongs to that war.
  * @summary Get a private Pint War proof photo
  */
 export const GetPintWarActivityPhotoParams = zod.object({
-  "leagueId": zod.coerce.string().uuid(),
-  "pintLogId": zod.coerce.string().uuid()
-})
+  leagueId: zod.coerce.string().uuid(),
+  pintLogId: zod.coerce.string().uuid(),
+});
 
-export const GetPintWarActivityPhotoResponse = zod.unknown()
+export const GetPintWarActivityPhotoResponse = zod.unknown();

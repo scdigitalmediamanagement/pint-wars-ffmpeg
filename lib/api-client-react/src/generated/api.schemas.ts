@@ -11,14 +11,14 @@ export interface HealthStatus {
 
 export interface NearbyPubsRequest {
   /**
-     * @minimum -90
-     * @maximum 90
-     */
+   * @minimum -90
+   * @maximum 90
+   */
   latitude: number;
   /**
-     * @minimum -180
-     * @maximum 180
-     */
+   * @minimum -180
+   * @maximum 180
+   */
   longitude: number;
 }
 
@@ -27,13 +27,13 @@ export const AccountDeletionResponseValue = {
 } as const;
 export type AccountDeletionResponse = typeof AccountDeletionResponseValue;
 
-export type PintWarActivityEventType = typeof PintWarActivityEventType[keyof typeof PintWarActivityEventType];
-
+export type PintWarActivityEventType =
+  (typeof PintWarActivityEventType)[keyof typeof PintWarActivityEventType];
 
 export const PintWarActivityEventType = {
-  pint_logged: 'pint_logged',
-  pub_review: 'pub_review',
-  legacy_pub_bonus: 'legacy_pub_bonus',
+  pint_logged: "pint_logged",
+  pub_review: "pub_review",
+  legacy_pub_bonus: "legacy_pub_bonus",
 } as const;
 
 export interface PintWarActivityEvent {
@@ -58,16 +58,20 @@ export interface PintWarActivityFeed {
   events: PintWarActivityEvent[];
 }
 
+export interface PintWarMemoriesFeed {
+  events: PintWarActivityEvent[];
+}
+
 export interface Coordinates {
   latitude: number;
   longitude: number;
 }
 
-export type NearbyPubProvider = typeof NearbyPubProvider[keyof typeof NearbyPubProvider];
-
+export type NearbyPubProvider =
+  (typeof NearbyPubProvider)[keyof typeof NearbyPubProvider];
 
 export const NearbyPubProvider = {
-  google_places: 'google_places',
+  google_places: "google_places",
 } as const;
 
 export interface NearbyPub {

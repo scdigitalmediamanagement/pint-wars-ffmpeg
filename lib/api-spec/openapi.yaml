@@ -172,6 +172,145 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /pint-proofs/leagues/{leagueId}/memories:
+    get:
+      operationId: getPintWarMemories
+      tags: [pint-wars]
+      summary: Get all recorded moments for completed Pint War Memories
+      description: Returns the full score-event history for an authenticated member of a completed Pint War. Photo IDs are opaque Pint-log identifiers; the Memories photo endpoint separately verifies membership and completion before streaming image bytes.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: leagueId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Full completed-war Memories event set
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PintWarMemoriesFeed"
+        "400":
+          description: Invalid Pint War identifier
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Missing or invalid Supabase session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: The authenticated user is not a member of a completed Pint War
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Memories data or membership could not be verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Memories service is not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /pint-proofs/leagues/{leagueId}/memories/photos/{pintLogId}:
+    get:
+      operationId: getPintWarMemoriesPhoto
+      tags: [pint-wars]
+      summary: Stream a private proof photo for completed Pint War Memories
+      description: Streams a private proof photo only after verifying the caller is a member of the completed Pint War and the pint log belongs to that war.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: leagueId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: pintLogId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Private proof image bytes
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/heic:
+              schema:
+                type: string
+                format: binary
+            image/heif:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: Invalid Pint War or pint log identifier
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Missing or invalid Supabase session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: The authenticated user is not a member of a completed Pint War
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Pint log or proof image is missing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "415":
+          description: Unsupported proof image format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Proof photo could not be loaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Proof photo service is not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
   /pint-proofs/leagues/{leagueId}/photos/{pintLogId}:
     get:
       operationId: getPintWarActivityPhoto
@@ -304,6 +443,16 @@ components:
         events:
           type: array
           maxItems: 20
+          items:
+            $ref: "#/components/schemas/PintWarActivityEvent"
+      required:
+        - events
+    PintWarMemoriesFeed:
+      type: object
+      additionalProperties: false
+      properties:
+        events:
+          type: array
           items:
             $ref: "#/components/schemas/PintWarActivityEvent"
       required:
