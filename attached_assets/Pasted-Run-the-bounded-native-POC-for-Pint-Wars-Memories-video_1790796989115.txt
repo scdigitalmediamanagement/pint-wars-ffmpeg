@@ -1,0 +1,80 @@
+Run the bounded native POC for Pint Wars Memories video export.
+
+IMPORTANT:
+Do NOT modify the Pint Wars app.
+Do NOT install FFmpegKit Next into the app yet.
+Do NOT change app.json.
+Do NOT change eas.json.
+Do NOT change Memories code.
+Do NOT add expo-sharing or expo-media-library yet.
+
+This is a feasibility POC only.
+
+GOALS:
+
+1. Determine whether FFmpegKit Next can produce the required REAL video for Pint Wars on BOTH:
+   - iOS
+   - Android
+
+2. Determine whether we can do this using an LGPL-only configuration.
+
+3. Do NOT enable GPL components such as x264.
+
+4. Verify whether the proposed build can encode H.264 using an acceptable non-GPL/platform-supported encoder on BOTH platforms.
+
+5. Determine the exact native artifact build process required.
+
+6. Determine whether the resulting native artifacts can be consumed safely by the current Expo SDK 57 / React Native 0.86.3 Pint Wars project through EAS Build.
+
+7. Determine whether a 16–20 photo, approximately 30-second portrait montage can support:
+   - image scaling/cropping
+   - transitions
+   - text overlays
+   - statistics cards
+   - winner card
+   - MP4 output
+
+8. Determine the likely app-size impact by measuring actual built artifacts if possible.
+
+9. Determine what native changes/config plugins would be required, but do NOT apply them.
+
+10. Determine whether the resulting local MP4 could then be:
+   - previewed in the app
+   - saved using Expo MediaLibrary
+   - shared using Expo Sharing
+
+Again, do not install those packages yet.
+
+POC ACCEPTANCE GATES:
+
+A. iOS native artifact can be built.
+B. Android native artifact can be built.
+C. Both expose a suitable H.264 encoder without GPL components.
+D. A representative 16–20 image montage can be encoded successfully.
+E. MP4 output is playable on iOS and Android.
+F. The required artifacts can realistically be incorporated into EAS Build.
+G. The resulting app-size impact is measured or estimated from actual artifacts.
+H. Licensing requirements are clearly identified.
+
+TEST CONTENT:
+
+Use a small representative test set of 16–20 locally generated/sample images.
+Do not use real Pint Wars user photos.
+Do not modify Supabase.
+Do not access production Pint Wars photo data.
+
+OUTPUT:
+
+Give me a clear PASS / FAIL for each acceptance gate.
+
+Then give a final verdict:
+
+1. SAFE TO PROCEED
+2. PROCEED WITH CONDITIONS
+3. STOP — NOT PRACTICAL
+
+If there is a blocker, state exactly what it is.
+
+Do not make any production code or configuration changes.
+Do not install dependencies.
+Do not enable GPL components.
