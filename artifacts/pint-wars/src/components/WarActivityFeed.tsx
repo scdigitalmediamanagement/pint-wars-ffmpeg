@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Image as ExpoImage } from 'expo-image';
 import {
+  getPintWarActivityPhoto,
   getGetPintWarActivityQueryKey,
   useGetPintWarActivity,
   type PintWarActivityEvent,
@@ -21,7 +22,6 @@ import { useColors } from '@/hooks/useColors';
 type WarActivityFeedProps = {
   leagueId: string;
   currentUserId: string;
-  accessToken: string | null;
 };
 
 function activityAction(event: PintWarActivityEvent) {
@@ -46,93 +46,95 @@ function formatActivityDate(value: string) {
   });
 }
 
-function activityPhotoUrl(leagueId: string, pintLogId: string) {
-  const domain = process.env.EXPO_PUBLIC_DOMAIN;
-  if (!domain) return null;
-  return `https://${domain}/api/pint-proofs/leagues/${encodeURIComponent(leagueId)}/photos/${encodeURIComponent(pintLogId)}`;
+function blobAsDataUri(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result);
+      } else {
+        reject(new Error('The proof photo could not be decoded.'));
+      }
+    };
+    reader.onerror = () => reject(reader.error ?? new Error('The proof photo could not be decoded.'));
+    reader.readAsDataURL(blob);
+  });
 }
 
 function PrivateActivityPhoto({
   leagueId,
   event,
-  accessToken,
 }: {
   leagueId: string;
   event: PintWarActivityEvent;
-  accessToken: string | null;
 }) {
   const colors = useColors();
-  const [webImageUri, setWebImageUri] = useState<string | null>(null);
+  const [imageUri, setImageUri] = useState<string | null>(null);
   const [imageState, setImageState] = useState<'loading' | 'loaded' | 'error'>('loading');
   const [viewerVisible, setViewerVisible] = useState(false);
-  const remoteUrl = event.photoPintLogId
-    ? activityPhotoUrl(leagueId, event.photoPintLogId)
-    : null;
+  const [retryVersion, setRetryVersion] = useState(0);
+  const pintLogId = event.photoPintLogId;
 
   useEffect(() => {
     let cancelled = false;
     let objectUrl: string | null = null;
-    setWebImageUri(null);
+    setImageUri(null);
     setImageState('loading');
 
-    if (!remoteUrl || !accessToken) {
+    if (!pintLogId) {
       setImageState('error');
       return () => {
         cancelled = true;
       };
     }
 
-    if (Platform.OS !== 'web') {
-      return () => {
-        cancelled = true;
-      };
-    }
+    async function loadProtectedPhoto(photoId: string) {
+      try {
+        const blob = await getPintWarActivityPhoto(leagueId, photoId);
+        if (cancelled) return;
 
-    fetch(remoteUrl, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error('The proof photo is unavailable.');
-        return response.blob();
-      })
-      .then((blob) => {
-        objectUrl = URL.createObjectURL(blob);
-        if (cancelled) {
-          URL.revokeObjectURL(objectUrl);
+        if (Platform.OS === 'web') {
+          objectUrl = URL.createObjectURL(blob);
+          setImageUri(objectUrl);
           return;
         }
-        setWebImageUri(objectUrl);
-      })
-      .catch(() => {
+
+        const dataUri = await blobAsDataUri(blob);
+        if (!cancelled) setImageUri(dataUri);
+      } catch {
         if (!cancelled) setImageState('error');
-      });
+      }
+    }
+
+    void loadProtectedPhoto(pintLogId);
 
     return () => {
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [accessToken, remoteUrl]);
+  }, [leagueId, pintLogId, retryVersion]);
 
-  if (!remoteUrl || !accessToken || imageState === 'error') {
+  if (!pintLogId || imageState === 'error') {
     return (
-      <View style={[styles.photoUnavailable, { backgroundColor: colors.muted }]}>
+      <Pressable
+        accessibilityRole={pintLogId ? 'button' : undefined}
+        accessibilityLabel="Retry loading proof photo"
+        disabled={!pintLogId}
+        onPress={() => {
+          setImageState('loading');
+          setRetryVersion((version) => version + 1);
+        }}
+        style={[styles.photoUnavailable, { backgroundColor: colors.muted }]}
+      >
         <Ionicons name="image-outline" size={21} color={colors.mutedForeground} />
         <Text style={[styles.photoUnavailableText, { color: colors.mutedForeground }]}>
-          Photo unavailable
+          {pintLogId ? 'Photo unavailable · Tap to retry' : 'Photo unavailable'}
         </Text>
-      </View>
+      </Pressable>
     );
   }
 
-  const imageSource =
-    Platform.OS === 'web'
-      ? webImageUri
-        ? { uri: webImageUri }
-        : null
-      : {
-          uri: remoteUrl,
-          headers: { Authorization: `Bearer ${accessToken}` },
-        };
+  const imageSource = imageUri ? { uri: imageUri } : null;
 
   return (
     <>
@@ -147,7 +149,7 @@ function PrivateActivityPhoto({
           <ExpoImage
             source={imageSource}
             contentFit="cover"
-            cachePolicy="memory"
+            cachePolicy="none"
             accessibilityLabel={`Pint proof photo from ${event.playerName}`}
             onLoad={() => setImageState('loaded')}
             onError={() => setImageState('error')}
@@ -182,7 +184,7 @@ function PrivateActivityPhoto({
             <ExpoImage
               source={imageSource}
               contentFit="contain"
-              cachePolicy="memory"
+              cachePolicy="none"
               style={styles.fullPhoto}
             />
           ) : null}
@@ -195,7 +197,6 @@ function PrivateActivityPhoto({
 export function WarActivityFeed({
   leagueId,
   currentUserId,
-  accessToken,
 }: WarActivityFeedProps) {
   const colors = useColors();
   const query = useGetPintWarActivity(leagueId, {
@@ -317,7 +318,6 @@ export function WarActivityFeed({
                 <PrivateActivityPhoto
                   leagueId={leagueId}
                   event={event}
-                  accessToken={accessToken}
                 />
               ) : null}
             </View>

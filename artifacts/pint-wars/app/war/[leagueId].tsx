@@ -97,7 +97,7 @@ type JustLoggedPub = {
 
 export default function LeagueDashboardScreen() {
   const colors = useColors();
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   const { leagueId } = useLocalSearchParams<{ leagueId: string }>();
   const queryClient = useQueryClient();
   const [now, setNow] = useState(() => Date.now());
@@ -759,7 +759,6 @@ export default function LeagueDashboardScreen() {
           <WarActivityFeed
             leagueId={league.id}
             currentUserId={user.id}
-            accessToken={session?.access_token ?? null}
           />
         ) : null}
         {league.status === 'completed' ? (

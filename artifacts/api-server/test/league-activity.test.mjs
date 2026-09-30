@@ -12,6 +12,7 @@ const cacheRoot = join(apiRoot, "node_modules", ".cache");
 await mkdir(cacheRoot, { recursive: true });
 const bundleDirectory = await mkdtemp(join(cacheRoot, "league-activity-test-"));
 const routeBundlePath = join(bundleDirectory, "league-activity.mjs");
+const apiClientBundlePath = join(bundleDirectory, "api-client-fetch.mjs");
 
 await build({
   entryPoints: [resolve(apiRoot, "src/routes/league-activity.ts")],
@@ -21,9 +22,19 @@ await build({
   platform: "node",
   format: "esm",
 });
+await build({
+  entryPoints: [resolve(apiRoot, "../../lib/api-client-react/src/custom-fetch.ts")],
+  outfile: apiClientBundlePath,
+  bundle: true,
+  platform: "node",
+  format: "esm",
+});
 
 const { default: leagueActivityRouter } = await import(
   pathToFileURL(routeBundlePath).href
+);
+const { customFetch, setAuthTokenGetter, setBaseUrl } = await import(
+  pathToFileURL(apiClientBundlePath).href
 );
 
 const LEAGUE_A = "40000000-0000-4000-8000-000000000001";
@@ -32,6 +43,7 @@ const MEMBER_ID = "10000000-0000-4000-8000-000000000001";
 const NON_MEMBER_ID = "20000000-0000-4000-8000-000000000001";
 const REMOVED_MEMBER_ID = "30000000-0000-4000-8000-000000000001";
 const OTHER_WAR_MEMBER_ID = "50000000-0000-4000-8000-000000000001";
+const SAME_WAR_VIEWER_ID = "80000000-0000-4000-8000-000000000001";
 const PINT_LOG_A_ID = "60000000-0000-4000-8000-000000000001";
 const PINT_LOG_B_ID = "60000000-0000-4000-8000-000000000002";
 const SCORE_EVENT_ID = "70000000-0000-4000-8000-000000000001";
@@ -74,9 +86,11 @@ function makeFixture() {
       "non-member-token": NON_MEMBER_ID,
       "removed-member-token": REMOVED_MEMBER_ID,
       "other-war-member-token": OTHER_WAR_MEMBER_ID,
+      "same-war-viewer-token": SAME_WAR_VIEWER_ID,
     },
     memberships: [
       { user_id: MEMBER_ID, league_id: LEAGUE_A, status: "active" },
+      { user_id: SAME_WAR_VIEWER_ID, league_id: LEAGUE_A, status: "active" },
       { user_id: REMOVED_MEMBER_ID, league_id: LEAGUE_A, status: "removed" },
       { user_id: OTHER_WAR_MEMBER_ID, league_id: LEAGUE_B, status: "active" },
     ],
@@ -120,6 +134,9 @@ globalThis.fetch = async (input, init = {}) => {
     input instanceof URL
       ? input
       : new URL(typeof input === "string" ? input : input.url);
+  if (requestUrl.origin === baseUrl) {
+    return originalFetch(input, init);
+  }
   const headers = new Headers(init.headers);
   upstreamCalls.push({ pathname: requestUrl.pathname, search: requestUrl.search });
 
@@ -304,6 +321,27 @@ test("an authenticated member of the same Pint War can access activity and proof
       upstreamCalls.some((call) => call.pathname.startsWith(STORAGE_OBJECT_PREFIX)),
       true,
     );
+  });
+
+  await t.test("a different same-war member can read another member's private proof image", async () => {
+    resetFixture();
+    setBaseUrl(baseUrl);
+    setAuthTokenGetter(() => "same-war-viewer-token");
+    try {
+      const photo = await customFetch(
+        `/api/pint-proofs/leagues/${LEAGUE_A}/photos/${PINT_LOG_A_ID}`,
+      );
+      assert.ok(photo instanceof Blob);
+      assert.equal(photo.type, "image/jpeg");
+      assert.deepEqual(Buffer.from(await photo.arrayBuffer()), PRIVATE_PHOTO_BYTES);
+      assert.equal(
+        upstreamCalls.some((call) => call.pathname.startsWith(STORAGE_OBJECT_PREFIX)),
+        true,
+      );
+    } finally {
+      setAuthTokenGetter(null);
+      setBaseUrl(null);
+    }
   });
 });
 
