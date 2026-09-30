@@ -1,0 +1,65 @@
+Run the bounded Pint Wars Memories video-export POC assessment.
+
+IMPORTANT:
+Do NOT install dependencies.
+Do NOT modify app code.
+Do NOT modify app.json.
+Do NOT modify eas.json.
+Do NOT change native configuration.
+Do NOT change the Memories implementation.
+
+We need to determine whether FFmpegKit Next is actually practical for Pint Wars before committing to it.
+
+Check the current Pint Wars environment against FFmpegKit Next and the existing Expo SDK 57 / React Native setup.
+
+Verify as far as possible:
+
+1. Expo SDK compatibility
+2. React Native version compatibility
+3. EAS Build compatibility
+4. Whether the required FFmpegKit Next native libraries can realistically be built for:
+   - iOS
+   - Android
+5. Whether those native artifacts can be incorporated into the current Expo managed/CNG project.
+6. Whether the required build process is possible through EAS Build.
+7. Whether an LGPL-only build can produce the required MP4/H.264 output without enabling GPL components.
+8. Whether the required H.264 encoder is actually available under the proposed build configuration.
+9. Expected app-size impact.
+10. Expected build complexity.
+11. Whether 16–20 still images can realistically be converted into a ~30-second portrait MP4 with:
+    - transitions
+    - text/stat cards
+    - winner screen
+12. Whether the generated local MP4 can then be:
+    - previewed
+    - saved with Expo MediaLibrary
+    - shared with Expo Sharing
+
+Also verify the current Expo SDK 57 versions of:
+- expo-sharing
+- expo-media-library
+
+Do not install either package yet.
+
+IMPORTANT:
+The current Replit environment is not evidence that the final EAS build environment can build FFmpegKit Next.
+
+Specifically investigate whether the upstream build requirements can be satisfied by EAS Build or whether prebuilt native artifacts would need to be generated elsewhere.
+
+DO NOT propose a cloud video-generation service.
+
+DO NOT propose iOS-only export.
+
+DO NOT propose a custom encoder yet.
+
+At the end give me a clear verdict:
+
+A. Practical with current Expo/EAS architecture
+B. Practical but requires a specific native build process
+C. Not practical for Pint Wars without major architecture changes
+
+If B, specify exactly what the required native build process would be.
+
+If C, explain the blocker and identify the least disruptive alternative.
+
+No files should be changed and no dependencies should be installed.
