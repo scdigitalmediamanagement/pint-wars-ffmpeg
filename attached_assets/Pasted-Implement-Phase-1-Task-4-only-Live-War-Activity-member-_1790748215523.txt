@@ -1,0 +1,156 @@
+Implement Phase 1 Task 4 only: Live War Activity + member-only photo feed.
+
+This is the next major Pint Wars feature.
+
+GOAL:
+
+Members of an active Pint War should be able to see what their mates are doing during the war.
+
+If one player is at home while the others are out, they should be able to open the Pint War and see recent activity and the proof photos submitted by other members.
+
+IMPORTANT PRIVACY REQUIREMENT:
+
+Pint-proof photos are currently stored privately.
+
+Do NOT make the pint-proof Storage bucket public.
+
+Do NOT expose Storage paths or unrestricted URLs.
+
+Only authenticated members of the same Pint War may view proof photos belonging to that Pint War.
+
+A user who is not a member of the Pint War must not be able to access those photos.
+
+ACTIVITY FEED:
+
+Add a Live Activity section to the active Pint War experience.
+
+It should show recent relevant activity such as:
+
+- Player logged a pint
+- Player logged a pint at a pub, when a pub was identified
+- Player submitted a qualifying pub review
+- Other existing meaningful Pint War events where the existing data supports them
+
+Each activity item should show, where available:
+
+- Player name
+- What happened
+- Pub name
+- Time/date
+- Score impact where appropriate
+- Associated proof photo when there is one
+
+PHOTO FEED:
+
+For pint-log events that have proof photos:
+
+- Show the photo inside the Pint War activity/feed.
+- Photos should be visible to authenticated members of that same Pint War.
+- Tapping a photo may open a larger view.
+- Handle missing/deleted photos gracefully.
+
+Do not create a separate public photo gallery yet.
+
+REAL-TIME BEHAVIOUR:
+
+The feed should update when new activity is created.
+
+Use the existing Supabase/database architecture where practical.
+
+Do not introduce unnecessary third-party services.
+
+If true realtime subscriptions are appropriate and supported by the existing architecture, use them.
+
+Otherwise implement a reliable refresh/revalidation approach that does not require the user to restart the app.
+
+ACTIVITY ORDER:
+
+Newest activity should appear first.
+
+Show a sensible recent-history window rather than loading an unlimited amount of data.
+
+Include an appropriate empty state such as:
+
+“No activity yet. Start the Pint War by logging your first pint.”
+
+LOADING / ERROR:
+
+Add proper loading treatment.
+
+If the activity feed fails to load, show a clear retry action.
+
+If an individual photo fails to load, show a graceful placeholder rather than breaking the feed.
+
+SECURITY:
+
+Before implementing, inspect the existing:
+
+- pint_logs table
+- pint-proofs Storage bucket
+- Storage policies
+- league membership data
+- score/event ledger
+- existing notifications/activity data
+
+Reuse existing structures where possible.
+
+Do not weaken existing Storage security.
+
+If additional database policies/RPCs are required, make them narrowly scoped so that:
+- authenticated users can access photos only when they are members of the relevant Pint War
+- users cannot browse another league's photos
+- unauthenticated users cannot access photos
+
+Do not expose service-role credentials to the client.
+
+DESIGN:
+
+Make the feed feel like part of the Pint Wars game.
+
+It should not look like an admin log.
+
+Use the existing Pint Wars visual design system.
+
+The active leaderboard and Log a Pint action should remain prominent.
+
+Do not redesign the entire active-war screen again.
+
+Do not implement Pint War Memories/video yet.
+
+Do not implement the War Gallery yet.
+
+Do not implement pub-business features yet.
+
+Do not change:
+- pricing
+- RevenueCat products
+- paid duration rules
+- scoring rules
+- league creation
+- account deletion
+- authentication
+
+CURRENT LOCKED SCORING:
+- 1 logged pint = +1 point
+- qualifying pub review = +1 bonus point
+- no new-pub bonus
+- review bonus only once per player per pub
+- editing a review gives no additional points
+- deleting/recreating a review cannot farm another point
+
+IMPORTANT:
+
+Before making changes, inspect the existing architecture and choose the smallest safe implementation that achieves the feature.
+
+After implementation:
+1. Run Pint Wars typecheck.
+2. Run API typecheck.
+3. Run git diff --check.
+4. Run Expo dependency check.
+5. If database migrations are required, report them clearly and do not apply production migrations automatically.
+6. Report exactly which files changed.
+7. Report how photo access is secured.
+8. Report how the activity feed refreshes.
+9. Report all test results.
+
+Only implement this task.
