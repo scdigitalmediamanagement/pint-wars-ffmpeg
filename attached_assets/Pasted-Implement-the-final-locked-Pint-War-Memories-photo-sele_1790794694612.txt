@@ -1,0 +1,110 @@
+Implement the final locked Pint War Memories photo-selection behaviour.
+
+IMPORTANT:
+Do not change the rest of the Pint Wars app.
+
+LOCKED MEMORIES PRODUCT:
+
+When a completed Pint War user taps “Create Memories”, create a roughly 30-second fun highlight experience using photos captured during the ENTIRE Pint War.
+
+The current implementation uses up to 8 photos. Replace that behaviour.
+
+PHOTO COUNT:
+- Target approximately 16–20 photos for a typical 30-second Memories video/preview.
+- Do NOT hard-code exactly 16 or exactly 20.
+- Choose the number dynamically based on available usable photos.
+- If fewer than 16 photos exist, use all usable photos.
+- If more than 20 exist, intelligently select a varied subset.
+- Never duplicate a photo.
+
+SMART RANDOM SELECTION:
+Selection must be randomized, but not purely random.
+
+The selector should:
+- Cover the entire Pint War where possible.
+- Give different players representation.
+- Give different pubs representation where possible.
+- Avoid consecutive excessive repetition of the same player or pub.
+- Avoid duplicate photos.
+- Randomize the selected sequence each time Memories is generated.
+
+END-OF-NIGHT EMPHASIS:
+This is important.
+
+The Memories experience should deliberately capture the final part of the night.
+
+For each completed Pint War:
+- Identify the final portion of the war using the available authoritative event timestamps.
+- Give late-night/end-of-war photos a higher selection weight than ordinary earlier photos.
+- Still retain photos from earlier in the Pint War.
+- Do not make the final video chronological.
+- Do not simply use the last 16–20 photos.
+- The final result should feel spontaneous while giving the ending of the night extra representation.
+
+For a multi-day war:
+- Include photos from across the duration.
+- Give extra weight to the final evening/night.
+
+For a short weekend war:
+- Give particularly strong representation to the final night.
+
+VIDEO/PREVIEW:
+Keep the target around 30 seconds.
+
+The experience should feel:
+- Fun
+- Fast
+- Social
+- Slightly chaotic
+- Like reliving a great night out with mates
+
+Use:
+- Fast photo changes
+- Simple transitions
+- Occasional stats/event cards
+- Final winner/results reveal
+
+Do not turn it into a chronological report.
+
+MUSIC:
+Do not add a third-party music service yet.
+Do not use copyrighted commercial music.
+Keep the architecture ready for a suitable licensed/royalty-free track to be added when actual video export is implemented.
+
+SECURITY:
+Continue using the existing member-authorized private photo access.
+Do not make Storage public.
+Do not expose Storage paths or unrestricted URLs.
+Only members of the completed Pint War can access the photos.
+
+IMPORTANT:
+Do not implement actual MP4 export yet unless the existing architecture already supports it safely.
+The current target remains the correct Memories experience/data selection layer.
+
+Do not change:
+- scoring
+- pricing
+- RevenueCat
+- duration
+- pint logging
+- reviews
+- Live Activity
+- account deletion
+- league creation
+- pub business features
+
+After implementation run:
+1. Pint Wars typecheck
+2. API typecheck
+3. git diff --check
+4. Expo dependency check
+5. All existing API/security tests
+
+Report:
+- Files changed
+- New photo-selection algorithm
+- Target photo count
+- How end-of-night weighting works
+- How player/pub variety is maintained
+- How duplicates are prevented
+- Test results

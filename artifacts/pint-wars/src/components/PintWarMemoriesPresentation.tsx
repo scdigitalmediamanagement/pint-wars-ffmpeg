@@ -22,14 +22,14 @@ import { Button, Card, uiStyles } from '@/components/AppUi';
 import { useColors } from '@/hooks/useColors';
 import type { LeagueSummary } from '@/src/types/league';
 import {
+  memoriesPhotoTargetCount,
   orderMemoriesPhotos,
   type MemoriesPhotoCandidate,
 } from '@/src/lib/memories-selection';
 
-const MAX_HIGHLIGHT_PHOTOS = 8;
-const PREVIEW_BEATS = 8;
+const PREVIEW_BEATS = 20;
 const OPENING_DURATION_MS = 2_500;
-const PREVIEW_BEAT_DURATION_MS = 3_375;
+const PREVIEW_BEAT_DURATION_MS = 1_350;
 
 type LeagueInfo = {
   id: string;
@@ -236,7 +236,7 @@ export function PintWarMemoriesPresentation({ userId, league, summary, events }:
     () => orderMemoriesPhotos(events),
     [events, generation],
   );
-  const targetCount = Math.min(MAX_HIGHLIGHT_PHOTOS, photoOrder.length);
+  const targetCount = memoriesPhotoTargetCount(photoOrder.length);
   const activeCandidate = phase === 'montage' && photosShown < targetCount
     ? photoOrder[candidateIndex]
     : undefined;
@@ -371,7 +371,11 @@ export function PintWarMemoriesPresentation({ userId, league, summary, events }:
   }
 
   const screenHeight = Math.max(540, Math.min(690, windowHeight * 0.72));
-  const overlayMetric = metricLabel(Math.max(0, finalCount + currentBeat - 1), summary);
+  const overlayMetric = metricLabel(
+    currentBeat > 0 ? Math.max(0, finalCount + currentBeat - 1) : Math.floor(finalCount / 4),
+    summary,
+  );
+  const showMetricOverlay = currentBeat > 0 || (photosShown > 0 && photosShown % 4 === 3);
   const activeProgress: DimensionValue = currentPhotoBeats > 0
     ? `${Math.round(((currentBeat + 1) / currentPhotoBeats) * 100)}%`
     : '0%';
@@ -390,7 +394,7 @@ export function PintWarMemoriesPresentation({ userId, league, summary, events }:
             <Text style={[styles.stageEyebrow, { color: colors.accent }]}>PINT WAR MEMORIES</Text>
             <Text style={[styles.openingTitle, { color: colors.primaryForeground }]}>{league.name}</Text>
             <Text style={[styles.openingCopy, { color: colors.primaryForeground }]}>
-              A randomized selection of proof photos from across the whole war, set to a ~30-second pace.
+              A fast, unpredictable mix spanning the whole war, with extra weight on its final stretch.
             </Text>
             <Text style={[styles.stageMeta, { color: colors.primaryForeground }]}>
               {targetCount} {targetCount === 1 ? 'photo' : 'photos'} selected · {dateLabel(league.completed_at)}
@@ -468,7 +472,7 @@ export function PintWarMemoriesPresentation({ userId, league, summary, events }:
                       </Text>
                     </View>
                   ) : null}
-                  {currentBeat > 0 ? (
+                  {showMetricOverlay ? (
                     <Animated.View
                       key={currentBeat}
                       entering={FadeInDown.duration(240)}
