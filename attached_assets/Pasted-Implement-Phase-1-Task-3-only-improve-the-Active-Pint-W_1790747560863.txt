@@ -1,0 +1,91 @@
+Implement Phase 1 Task 3 only: improve the Active Pint War dashboard and leaderboard UX.
+
+IMPORTANT:
+This is a UI/UX improvement only.
+
+Do NOT change:
+- Scoring rules
+- Score ledger
+- Pint logging backend
+- Review scoring
+- RevenueCat
+- Pricing
+- League duration
+- League creation
+- Account deletion
+- Supabase schema
+- Existing authentication
+
+CURRENT LOCKED SCORING:
+- 1 logged pint = +1 point
+- Qualifying pub review = +1 bonus point
+- No new-pub bonus
+- Review bonus can only be earned once per player per pub
+- Editing a review gives no additional points
+- Deleting/recreating a review cannot farm another point
+
+Improve the Active Pint War screen so that the user immediately understands:
+
+1. What Pint War they are currently playing.
+2. How much time remains.
+3. Their current score and position.
+4. Who is leading.
+5. How the other players are doing.
+6. How to log their next pint.
+
+ACTIVE WAR HEADER:
+Show prominently:
+- Pint War name
+- Current day / total days where available
+- Time/date remaining
+- Player count
+
+PRIMARY ACTION:
+Make “Log a Pint” the most obvious action on the active-war screen.
+
+LEADERBOARD:
+Make the leaderboard feel competitive and polished.
+
+For every player show:
+- Position
+- Player name
+- Points
+- Pints where available
+- Review bonus points where available
+
+Make the current user's row visually identifiable.
+
+Make ties visually clear and do not imply an arbitrary winner when players have equal scores.
+
+POINTS CLARITY:
+Add a concise explanation of how points are earned:
+- Pint +1
+- Qualifying pub review +1
+
+Do not add any new scoring rules.
+
+EMPTY STATES:
+If there are no score events yet, make the screen encouraging rather than looking broken.
+
+LOADING:
+Replace bare/ambiguous loading states with appropriate polished loading treatment where practical.
+
+ERRORS:
+Where the current screen says to try again but doesn't provide an actual retry action, add an appropriate retry action.
+
+Keep the existing functionality intact.
+
+IMPORTANT:
+Do NOT implement the Live Activity/Photo Feed yet.
+Do NOT implement Pint War Memories yet.
+Do NOT redesign unrelated screens.
+Do NOT change the underlying data model.
+
+After implementation:
+1. Run Pint Wars typecheck.
+2. Run API typecheck.
+3. Run git diff --check.
+4. Run Expo dependency check.
+5. Report exactly which files changed and the test results.
+
+Only implement this task.
