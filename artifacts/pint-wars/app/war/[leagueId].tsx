@@ -1187,92 +1187,6 @@ export default function LeagueDashboardScreen() {
           </View>
         </View>
       </Modal>
-              </Text>
-            </View>
-
-            {isSearchingPubs ? (
-              <View style={styles.pubLoading}>
-                <ActivityIndicator color={colors.accent} />
-                <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular' }}>
-                  Finding nearby pubs…
-                </Text>
-              </View>
-            ) : (
-              <ScrollView
-                style={styles.pubList}
-                contentContainerStyle={styles.pubListContent}
-                showsVerticalScrollIndicator={false}
-              >
-                {nearbyPubs.map((pub) => {
-                  const isSelected =
-                    selectedPub?.provider === pub.provider &&
-                    selectedPub.placeId === pub.placeId;
-                  return (
-                    <Pressable
-                      key={`${pub.provider}:${pub.placeId}`}
-                      accessibilityRole="radio"
-                      accessibilityState={{ selected: isSelected }}
-                      onPress={() => setSelectedPub(pub)}
-                      style={[
-                        styles.pubRow,
-                        {
-                          borderColor: isSelected ? colors.accent : colors.border,
-                          backgroundColor: colors.card,
-                        },
-                      ]}
-                    >
-                      <View style={{ flex: 1, gap: 4 }}>
-                        <Text style={[styles.pubName, { color: colors.foreground }]}>{pub.name}</Text>
-                        <Text style={[styles.pubAddress, { color: colors.mutedForeground }]}>
-                          {pub.address || 'Address unavailable'}
-                        </Text>
-                      </View>
-                      <Text style={[styles.pubDistance, { color: colors.accent }]}>
-                        {pub.distanceMeters < 1000
-                          ? `${Math.round(pub.distanceMeters)} m`
-                          : `${(pub.distanceMeters / 1000).toFixed(1)} km`}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-
-                {nearbyPubMessage ? (
-                  <Card>
-                    <Text style={[styles.pubEmptyText, { color: colors.mutedForeground }]}>
-                      {nearbyPubMessage}
-                    </Text>
-                  </Card>
-                ) : null}
-
-                {selectedPub ? (
-                  <Card style={styles.selectedPubCard}>
-                    <Text style={[styles.selectedLabel, { color: colors.accent }]}>SELECTED PUB</Text>
-                    <Text style={[styles.pubName, { color: colors.foreground }]}>{selectedPub.name}</Text>
-                    <Text style={[styles.pubAddress, { color: colors.mutedForeground }]}>
-                      {selectedPub.address}
-                    </Text>
-                  </Card>
-                ) : null}
-              </ScrollView>
-            )}
-
-            <View style={styles.pubActions}>
-              {selectedPub ? (
-                <Button
-                  label={`Confirm ${selectedPub.name}`}
-                  onPress={confirmSelectedPub}
-                />
-              ) : null}
-              <Button
-                label="Continue without a pub"
-                variant={selectedPub ? 'quiet' : 'secondary'}
-                disabled={isSearchingPubs}
-                onPress={continueWithoutPub}
-              />
-            </View>
-          </View>
-        </View>
-      </Modal>
     </Screen>
   );
 }
@@ -1342,6 +1256,76 @@ const styles = StyleSheet.create({
   retiredTitle: { fontFamily: 'Inter_700Bold', fontSize: 16 },
   retiredText: { fontFamily: 'Inter_400Regular', lineHeight: 21 },
   modalBackdrop: { flex: 1, justifyContent: 'flex-end' },
+  pintFlowSheet: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 22,
+    paddingTop: 28,
+    gap: 13,
+  },
+  photoIntroIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2,
+  },
+  flowKicker: { fontFamily: 'Inter_700Bold', fontSize: 11, letterSpacing: 1.4 },
+  flowTitle: { fontFamily: 'Inter_700Bold', fontSize: 27, lineHeight: 33 },
+  flowBody: { fontFamily: 'Inter_400Regular', fontSize: 15, lineHeight: 22 },
+  pintReviewSheet: {
+    maxHeight: '94%',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 18,
+    paddingTop: 20,
+    gap: 12,
+  },
+  reviewScroll: { flexShrink: 1 },
+  reviewContent: { gap: 14, paddingBottom: 6 },
+  pintPhotoPreview: { width: '100%', height: 230, borderRadius: 20 },
+  photoReviewActions: { flexDirection: 'row', gap: 10 },
+  photoReviewAction: { flex: 1 },
+  pubIdentificationCard: { gap: 12, padding: 14 },
+  pubIdentificationHeading: { flexDirection: 'row', alignItems: 'center', gap: 11 },
+  pubIdentificationIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pubIdentificationCopy: { flex: 1, gap: 3 },
+  pubSearchMessage: { gap: 5 },
+  pubResultCopy: { flex: 1, gap: 3 },
+  selectedPubCard: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 4,
+    marginTop: 3,
+    paddingTop: 12,
+  },
+  logReviewFooter: { gap: 10 },
+  submissionStatus: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
+  successBackdrop: { justifyContent: 'center', paddingHorizontal: 20 },
+  successSheet: {
+    alignItems: 'center',
+    borderRadius: 28,
+    gap: 12,
+    paddingHorizontal: 24,
+    paddingTop: 34,
+  },
+  successIcon: {
+    width: 68,
+    height: 68,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  successKicker: { fontFamily: 'Inter_700Bold', fontSize: 12, letterSpacing: 1.5 },
+  successPoints: { fontFamily: 'Inter_700Bold', fontSize: 34, lineHeight: 42 },
+  successActions: { width: '100%', gap: 10, marginTop: 12 },
   pubSheet: {
     maxHeight: '82%',
     borderTopLeftRadius: 28,
@@ -1355,8 +1339,6 @@ const styles = StyleSheet.create({
   pubSheetTitle: { fontFamily: 'Inter_700Bold', fontSize: 26 },
   pubSheetSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 14, lineHeight: 21 },
   pubLoading: { minHeight: 150, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  pubList: { flexGrow: 0 },
-  pubListContent: { gap: 10 },
   pubRow: {
     minHeight: 72,
     borderWidth: 1,
@@ -1371,7 +1353,5 @@ const styles = StyleSheet.create({
   pubAddress: { fontFamily: 'Inter_400Regular', fontSize: 13, lineHeight: 18 },
   pubDistance: { fontFamily: 'Inter_700Bold', fontSize: 12 },
   pubEmptyText: { fontFamily: 'Inter_400Regular', fontSize: 14, lineHeight: 21 },
-  selectedPubCard: { gap: 5 },
   selectedLabel: { fontFamily: 'Inter_700Bold', fontSize: 10, letterSpacing: 1.2 },
-  pubActions: { gap: 10 },
 });
