@@ -1,0 +1,180 @@
+Implement the next Pint Wars Memories task: REAL VIDEO EXPORT + SAVE + SHARE.
+
+The Memories photo-selection behaviour is now LOCKED and working.
+
+CURRENT LOCKED MEMORIES SELECTION:
+- Target roughly 16–20 photos.
+- Use all usable photos when there are 20 or fewer.
+- If more than 20 are available, select 16–20.
+- Cover the entire Pint War where possible.
+- Give extra weight to the final portion/end of the war.
+- Maintain player/pub variety where possible.
+- Avoid duplicates.
+- Randomize the selection/order.
+- Target approximately 30 seconds.
+- Existing selection tests must continue to pass.
+
+NOW ADD:
+
+1. REAL VIDEO GENERATION
+
+When the user taps:
+
+CREATE MEMORIES
+
+the app should create a REAL video file from the selected Pint War photos.
+
+Target:
+- approximately 30 seconds
+- portrait/mobile format
+- fast photo transitions
+- existing Memories opening
+- existing stat/event cards where appropriate
+- final winner/results screen
+
+IMPORTANT:
+This must be a real video file such as MP4/MOV that can be saved to the device.
+
+Do NOT:
+- fake an MP4
+- rename an image/preview file
+- use a screen recording hack
+- claim an in-app animation is a saved video
+
+Before implementing, inspect the current Expo SDK, native build configuration and installed packages.
+
+Choose the safest maintainable native approach that works with the existing Pint Wars iOS AND Android architecture.
+
+Do not introduce a third-party cloud video-generation service.
+
+Do not introduce unnecessary infrastructure.
+
+If the current Expo managed architecture requires a native package/config plugin/development build change, implement the required configuration and clearly report it.
+
+2. VIDEO PREVIEW
+
+After generation:
+- Show the actual generated video.
+- Allow Play/Pause.
+- Allow Replay.
+
+3. SAVE VIDEO
+
+Add:
+
+SAVE VIDEO
+
+This should save the generated video to the user's device photo/gallery library using the appropriate iOS/Android permissions and APIs.
+
+Handle:
+- permission denied
+- save failure
+- save success
+
+with clear user-facing messages.
+
+4. SHARE VIDEO
+
+Add:
+
+SHARE VIDEO
+
+Use the native iOS/Android share sheet.
+
+The user must be able to send the video through normal installed sharing apps where supported.
+
+5. INDIVIDUAL PHOTO SAVE
+
+Within the Memories photo experience, provide a way to save an individual available photo to the user's device.
+
+Add:
+- Save Photo
+- clear success/error handling
+- correct iOS/Android photo-library permissions
+
+6. INDIVIDUAL PHOTO SHARE
+
+Allow a league member who can already view a photo to share that individual photo using the native share sheet.
+
+7. SECURITY
+
+Preserve all current photo security.
+
+The Pint-proof Storage bucket remains PRIVATE.
+
+Only authenticated members of the relevant completed Pint War may retrieve the source photos.
+
+Do not expose Storage paths.
+
+Do not create public Storage URLs.
+
+Do not weaken the existing same-war membership checks.
+
+Do not allow a non-member to access Memories source photos.
+
+Once a league member deliberately saves/shares content to their device or external app, that is the user's action. Do not build a public Pint Wars photo URL.
+
+8. MEMORIES DATA
+
+Continue using the existing full-war selection logic.
+
+Do not revert to the old 20-activity-event limitation.
+
+Use the already implemented Memories selection algorithm.
+
+9. MUSIC
+
+Do NOT add copyrighted commercial music.
+
+Do NOT add a music streaming service.
+
+Keep the video implementation ready for a suitable licensed/royalty-free soundtrack to be added later.
+
+10. PRESERVE EVERYTHING ELSE
+
+Do not change:
+- pricing
+- RevenueCat
+- paid league durations
+- scoring
+- pint logging
+- review scoring
+- Live Activity
+- account deletion
+- league creation
+- Rematch
+- pub functionality
+
+11. IMPORTANT IMPLEMENTATION CHECK
+
+Before coding, inspect whether an actual on-device video renderer/exporter is practical with the current Expo SDK and native architecture.
+
+If the best solution requires a package that is incompatible, abandoned, unsafe, or would create unreasonable build complexity, STOP and report the exact blocker and alternatives rather than installing something blindly.
+
+Do not add a cloud rendering service just to make this work.
+
+12. TESTING
+
+After implementation run:
+- Pint Wars typecheck
+- API typecheck
+- git diff --check
+- Expo dependency check
+- all existing API/security tests
+- all Memories tests
+- any new video/export tests that can be run locally
+
+Report:
+- exact video technology/library used
+- why it was chosen
+- whether iOS and Android are both supported
+- native/configuration changes required
+- files changed
+- permissions required
+- video format/resolution
+- how Save Video works
+- how Share Video works
+- how Save Photo works
+- how Share Photo works
+- all tests/results
+- any limitations requiring real-device testing
