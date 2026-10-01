@@ -1,0 +1,142 @@
+IMPORTANT: THIS IS A CONTROLLED IMPLEMENTATION.
+
+Create a new Git branch from the current clean Pint Wars main branch:
+
+feature/memories-ffmpeg-ios
+
+DO NOT modify main.
+
+Before making changes:
+- record the current HEAD
+- confirm the working tree is clean
+- confirm the branch created from the current HEAD
+
+We are now implementing the iOS FFmpeg native integration for Pint Wars Memories.
+
+SOURCE ARTIFACT:
+The verified artifact is already available locally at:
+
+/tmp/pint-wars-ffmpeg-artifact
+
+Inside it, the verified archive is:
+
+ffmpeg-kit-next-9.0.0-5e51b2d-ios-arm64-videotoolbox.tar.gz
+
+The archive contains these eight XCFrameworks:
+
+ffmpegkit
+libavcodec
+libavdevice
+libavfilter
+libavformat
+libavutil
+libswresample
+libswscale
+
+IMPORTANT SAFETY RULES:
+
+1. Do NOT modify Android configuration, Gradle files, Android dependencies, or Android source.
+2. Do NOT remove or replace any existing dependency.
+3. Do NOT change RevenueCat configuration.
+4. Do NOT change Supabase configuration.
+5. Do NOT change scoring, league logic, authentication, logging, storage, or existing Memories selection logic.
+6. Do NOT add expo-video, expo-av, react-native-video, FFmpegKit React Native packages, or any full upstream React Native FFmpeg package.
+7. Do NOT create ios/ or android/ directories as committed project directories. Keep the project CNG.
+8. Do NOT alter app version, bundle identifier, Android package, or existing permissions.
+9. Preserve all existing Expo plugins.
+10. Keep all existing functionality working.
+
+IMPLEMENTATION:
+
+Use a LOCAL iOS-ONLY Expo native module, using Expo Modules API, inside the existing Pint Wars project.
+
+Create the module under the project's modules directory.
+
+The module must:
+
+- support iOS only
+- expose a minimal native API to JavaScript
+- use the verified FFmpegKit Next XCFrameworks
+- provide the native bridge needed to execute FFmpeg commands for Memories video creation
+- link/embed the vendored XCFrameworks correctly through CocoaPods
+- leave Android completely untouched
+
+The module should use a config/module setup compatible with Expo SDK 57 CNG and Expo autolinking.
+
+Copy the required XCFrameworks from the verified artifact into the local module's iOS framework location.
+
+Also preserve the relevant license/notice documentation with the integration.
+
+DO NOT start by blindly editing app.json.
+
+First inspect the existing Memories implementation and determine:
+
+- where Memories selection is currently implemented
+- how the selected photo paths/URIs are represented
+- where the Memories video generation currently stops
+- what JavaScript API would be the cleanest bridge point
+- whether the existing Memories code already has a placeholder service/function that should be replaced
+
+Then implement the smallest integration that fits that existing architecture.
+
+NATIVE API REQUIREMENT:
+
+Expose only what is needed for the existing Memories feature, for example an API equivalent to:
+
+createMemoriesVideo({
+  imagePaths,
+  outputPath,
+  duration,
+  transitionStyle,
+  ...
+})
+
+Do not invent a large general-purpose FFmpeg API.
+
+The native implementation must:
+- accept the existing Memories image inputs
+- build the FFmpeg command safely
+- generate a real MP4
+- use the already-built FFmpegKit framework
+- return the output file path
+- return a useful native error if encoding fails
+- avoid shell injection / unsafe command construction
+- support cancellation/error handling where practical
+
+IMPORTANT:
+Do NOT add music yet unless the existing Memories implementation already has a defined audio input. We will handle licensed/royalty-free music separately.
+
+After implementing:
+
+1. Run TypeScript/type checks.
+2. Validate Expo config.
+3. Validate the local module configuration.
+4. Run Expo prebuild ONLY against this feature branch.
+5. Confirm prebuild completes successfully.
+6. Inspect generated iOS native configuration to confirm:
+   - the local module is autolinked
+   - all eight XCFrameworks are included
+   - the frameworks are linked/embedded correctly
+   - no Android native changes were introduced
+7. Do NOT run a production build yet.
+8. Do NOT merge the branch.
+9. Do NOT push anything.
+
+Before finishing, report:
+
+A. Current branch name.
+B. Original main HEAD before changes.
+C. Exact files added/modified.
+D. Exact XCFrameworks added.
+E. Exact native module name.
+F. Exact JavaScript API exposed.
+G. Confirmation that Android files/configuration were not changed.
+H. Confirmation that RevenueCat was not changed.
+I. TypeScript/config/prebuild results.
+J. Any issue that prevents proceeding to the real-device build.
+
+If anything about the existing Memories implementation is incompatible with this approach, STOP before making a risky architectural change and report the conflict.
+
+Do not merge.
+Do not push.
+Do not touch main.
