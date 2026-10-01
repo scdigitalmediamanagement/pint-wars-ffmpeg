@@ -1,0 +1,164 @@
+name: FFmpegKit Next iOS XCFramework
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: macOS runner label (larger runners may require organization access)
+        type: choice
+        required: true
+        default: macos-26-large
+        options:
+          - macos-26-large
+          - macos-26-xlarge
+          - macos-26
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ffmpegkit-next-ios-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build device-only iOS XCFrameworks
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 360
+    steps:
+      - name: Check out isolated build tooling
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.0
+        with:
+          persist-credentials: false
+
+      - name: Prepare report directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          output_dir="$RUNNER_TEMP/ffmpegkit-next-ios-output"
+          echo "FFMPEG_OUTPUT_DIR=$output_dir" >> "$GITHUB_ENV"
+          echo "FFMPEG_RUNNER_LABEL=${{ inputs.runner }}" >> "$GITHUB_ENV"
+          mkdir -p "$output_dir"
+          cp tools/ffmpegkit-next-ios/ANDROID_POC_LICENSE_REVIEW.md \
+            "$output_dir/android-poc-license-review.md"
+
+      - name: Select and assert Xcode 26.6
+        shell: bash
+        run: |
+          set -euo pipefail
+          developer_dir="/Applications/Xcode_26.6.app/Contents/Developer"
+          if [[ ! -d "$developer_dir" ]]; then
+            echo "Expected Xcode 26.6 at $developer_dir" >&2
+            ls -la /Applications/Xcode*.app 2>/dev/null || true
+            exit 1
+          fi
+
+          sudo xcode-select --switch "$developer_dir"
+          echo "DEVELOPER_DIR=$developer_dir" >> "$GITHUB_ENV"
+
+          xcode_info="$(xcodebuild -version)"
+          printf '%s\n' "$xcode_info" | tee "$FFMPEG_OUTPUT_DIR/xcode-version.txt"
+          actual_xcode="$(printf '%s\n' "$xcode_info" | awk 'NR == 1 { print $2 }')"
+          if [[ "$actual_xcode" != "26.6" ]]; then
+            echo "Expected Xcode 26.6, got $actual_xcode" >&2
+            exit 1
+          fi
+
+          {
+            echo "Runner label: $FFMPEG_RUNNER_LABEL"
+            echo "ImageOS: ${ImageOS:-unknown}"
+            echo "ImageVersion: ${ImageVersion:-unknown}"
+            echo "Runner OS: ${RUNNER_OS:-unknown}"
+            echo "Runner architecture: ${RUNNER_ARCH:-unknown}"
+            sw_vers
+            xcrun --sdk iphoneos --show-sdk-version
+            df -h "$RUNNER_TEMP"
+          } | tee "$FFMPEG_OUTPUT_DIR/runner-environment.txt"
+
+          if [[ -z "${ImageOS:-}" || -z "${ImageVersion:-}" ]]; then
+            echo "GitHub runner image identity was not exposed in ImageOS/ImageVersion." >&2
+            exit 1
+          fi
+
+          # The job is ephemeral. Remove unused Xcode bundles to leave disk
+          # space for Nix and the native build; retain the selected Xcode.
+          for candidate in /Applications/Xcode_*.app; do
+            [[ -d "$candidate" ]] || continue
+            [[ "$candidate" == "/Applications/Xcode_26.6.app" ]] && continue
+            sudo rm -rf "$candidate"
+          done
+          df -h "$RUNNER_TEMP" | tee "$FFMPEG_OUTPUT_DIR/disk-after-xcode-cleanup.txt"
+
+      - name: Install pinned Nix with flakes enabled
+        uses: cachix/install-nix-action@7be5dee1421f63d07e71ce6e0a9f8a4b07c2a487 # v31.6.1
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.32.0/install
+          github_access_token: ${{ github.token }}
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            max-jobs = 2
+            cores = 2
+
+      - name: Build, verify, and package pinned XCFrameworks
+        shell: bash
+        run: bash tools/ffmpegkit-next-ios/build-and-package.sh
+
+      - name: Checksum all output files
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          output_dir="${FFMPEG_OUTPUT_DIR:-$RUNNER_TEMP/ffmpegkit-next-ios-output}"
+          python3 tools/ffmpegkit-next-ios/checksum_outputs.py "$output_dir"
+
+      - name: Add build and Android licensing report
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          output_dir="${FFMPEG_OUTPUT_DIR:-$RUNNER_TEMP/ffmpegkit-next-ios-output}"
+          mkdir -p "$output_dir"
+          {
+            echo "# FFmpegKit Next iOS artifact build"
+            echo
+            echo "- Job result: **${{ job.status }}**"
+            echo "- Runner label: \`${FFMPEG_RUNNER_LABEL:-unknown}\`"
+            echo "- Expected source: \`arthenica/ffmpeg-kit-next@5e51b2da4c3593c0f2f9b49f53eeb497d93e39d3\`"
+            echo "- Target: iOS device arm64 only; no simulator slice"
+            echo
+            if [[ -f "$output_dir/verification.txt" ]]; then
+              echo "## Build verification"
+              echo
+              cat "$output_dir/verification.txt"
+            else
+              echo "The build did not reach the verification stage. Download the workflow artifact for logs."
+            fi
+            echo
+            if [[ -f "$output_dir/build-warnings.txt" ]]; then
+              echo "## Warning/error scan"
+              echo
+              sed -n '1,100p' "$output_dir/build-warnings.txt"
+              if [[ "$(wc -l < "$output_dir/build-warnings.txt")" -gt 100 ]]; then
+                echo
+                echo "Showing the first 100 lines; the uploaded file contains the full scan."
+              fi
+              echo
+            fi
+            echo "## Android POC notice issue"
+            echo
+            if [[ -f "$output_dir/android-poc-license-review.md" ]]; then
+              cat "$output_dir/android-poc-license-review.md"
+            else
+              echo "The Android POC review file was not available in this run."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload XCFrameworks, logs, checksums, and notices
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: ffmpeg-kit-next-ios-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ffmpegkit-next-ios-output/
+          if-no-files-found: warn
+          retention-days: 30
+          compression-level: 0
