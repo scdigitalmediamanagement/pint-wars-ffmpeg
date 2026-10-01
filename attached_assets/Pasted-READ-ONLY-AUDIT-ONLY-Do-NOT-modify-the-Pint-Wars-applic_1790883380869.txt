@@ -1,0 +1,63 @@
+READ-ONLY AUDIT ONLY.
+
+Do NOT modify the Pint Wars application.
+Do NOT create or edit files.
+Do NOT install packages.
+Do NOT run expo prebuild.
+Do NOT run npm install.
+Do NOT change package.json, app.json, app.config.*, eas.json, or any native configuration.
+Do NOT commit or push anything.
+
+We have a verified FFmpegKit Next iOS artifact from GitHub Actions:
+
+Repository:
+scdigitalmediamanagement/pint-wars-ffmpeg
+
+Workflow run:
+36910620704
+
+Verified commit:
+77772239d7e076382c313fbaf3cf7fb07e23ea78
+
+Artifact:
+ffmpeg-kit-next-ios-36910620704-1
+
+First, download that GitHub Actions artifact to a TEMPORARY directory only, using the authenticated GitHub CLI already available in this workspace.
+
+Use:
+gh run download 36910620704 -R scdigitalmediamanagement/pint-wars-ffmpeg -n ffmpeg-kit-next-ios-36910620704-1 -D /tmp/pint-wars-ffmpeg-artifact
+
+Do not place it inside the Pint Wars project.
+
+Then inspect the artifact and report:
+1. Exact archive filename.
+2. Exact XCFrameworks included.
+3. Exact archive size.
+4. Verification result.
+5. Whether the artifact is device-only arm64.
+6. Whether simulator slices are absent.
+7. Whether h264_videotoolbox is verified present.
+8. Whether GPL/x264 are verified disabled/absent.
+
+Then perform a READ-ONLY audit of the existing Pint Wars project.
+
+Report:
+1. Expo SDK/version.
+2. React Native version.
+3. Whether this is currently a CNG/prebuild-style Expo project.
+4. Whether ios/ and android/ directories currently exist and are tracked.
+5. Current package.json dependencies relevant to native modules/video/media.
+6. Current app.json or app.config.*.
+7. Current eas.json.
+8. Existing Expo config plugins.
+9. Whether there is already any native FFmpeg/FFmpegKit integration.
+10. Whether react-native-purchases / RevenueCat is already configured and how native dependencies are handled.
+11. The safest integration mechanism for these prebuilt iOS XCFrameworks without changing the existing Android setup.
+
+Most importantly:
+Do NOT propose code changes yet.
+Do NOT make any changes.
+Do NOT run a build.
+Do NOT commit anything.
+
+We only want the audit and a recommended integration path based on the ACTUAL current Pint Wars project.
