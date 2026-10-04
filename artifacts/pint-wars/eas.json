@@ -11,7 +11,10 @@
     },
     "production": {
       "distribution": "store",
-      "environment": "production"
+      "environment": "production",
+      "ios": {
+        "image": "latest"
+      }
     }
   }
 }
