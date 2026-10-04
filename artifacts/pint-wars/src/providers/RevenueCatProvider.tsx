@@ -7,7 +7,6 @@ import React, {
   useState,
 } from 'react';
 import { Platform } from 'react-native';
-import Constants from 'expo-constants';
 import Purchases, {
   type CustomerInfo,
   type PurchasesOffering,
@@ -44,9 +43,7 @@ let activeAppUserId: string | null = null;
 function getRevenueCatApiKey() {
   const isTestEnvironment =
     __DEV__ ||
-    Platform.OS === 'web' ||
-    Constants.executionEnvironment === 'storeClient';
-
+    Platform.OS === 'web'
   if (isTestEnvironment) {
     const testKey = process.env.EXPO_PUBLIC_REVENUECAT_TEST_API_KEY;
     if (!testKey) {
