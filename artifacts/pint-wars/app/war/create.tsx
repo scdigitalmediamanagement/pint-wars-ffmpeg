@@ -353,7 +353,7 @@ export default function CreateWarScreen() {
                   {revenueCat.error ? <ErrorText>{revenueCat.error}</ErrorText> : null}
                   {revenueCat.isConfigured && !offeringHasExactlyLeagueProducts ? (
                     <ErrorText>
-                      The RevenueCat Default offering must contain exactly these four products: pint_war_6_players, pint_war_10_players, pint_war_14_players, and pint_war_16_players.
+                      The RevenueCat Default offering must contain exactly these four products: pint_war_6_players_v2, pint_war_10_players, pint_war_14_players, and pint_war_16_players.
                     </ErrorText>
                   ) : null}
                   {paidAvailabilityQuery.isError ? (
