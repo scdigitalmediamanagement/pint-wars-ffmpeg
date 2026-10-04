@@ -9,4 +9,4 @@ Do not assume a root `packageManager` pin alone fixes Replit deployment installa
 
 **Why:** Local store compatibility and deployment package-manager bootstrapping are separate problems. Matching the local store fixed local installs, but the deployment version pin introduced a different failure.
 
-**How to apply:** For local installs, check the pnpm version and linked store path and use the matching Corepack-managed version. For publishing failures, inspect the first build error and distinguish non-interactive module removal from recursive version bootstrap. Do not rely on `CI=true` set only in `deployment.postBuild` to affect the earlier dependency install.
+**How to apply:** For local installs, check the pnpm version and linked store path and use the matching Corepack-managed version. For publishing failures, inspect the first build error and distinguish non-interactive module removal from recursive version bootstrap. Do not rely on `CI=true` set only in `deployment.postBuild` to affect the earlier dependency install. Secret existence alone does not prove that the installer receives an enabled CI environment; verify the actual install logs.
