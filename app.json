@@ -2,8 +2,9 @@
   "expo": {
     "extra": {
       "eas": {
-        "projectId": "aa101193-6f27-4e8b-9a76-8264d711fcad"
+        "projectId": "a910593d-ce8c-4321-9393-91befcc2f287"
       }
-    }
+    },
+    "slug": "pint-wars"
   }
 }
