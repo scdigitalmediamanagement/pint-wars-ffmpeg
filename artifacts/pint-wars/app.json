@@ -10,9 +10,6 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.pintwars.app",
-      "entitlements": {
-        "com.apple.developer.in-app-purchases": []
-      },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
