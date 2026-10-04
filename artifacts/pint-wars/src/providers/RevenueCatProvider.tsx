@@ -14,7 +14,7 @@ import Purchases, {
 import { useAuth } from '@/src/providers/AuthProvider';
 
 export const PINT_WAR_PRODUCTS = [
-  { identifier: 'pint_war_6_players', capacity: 6 },
+  { identifier: 'pint_war_6_players_v2', capacity: 6 },
   { identifier: 'pint_war_10_players', capacity: 10 },
   { identifier: 'pint_war_14_players', capacity: 14 },
   { identifier: 'pint_war_16_players', capacity: 16 },
