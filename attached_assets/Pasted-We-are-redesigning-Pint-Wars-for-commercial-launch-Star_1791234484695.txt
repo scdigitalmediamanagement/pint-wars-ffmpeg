@@ -1,0 +1,67 @@
+We are redesigning Pint Wars for commercial launch.
+
+Start with ONLY the Home screen.
+
+File:
+artifacts/pint-wars/app/(tabs)/index.tsx
+
+Use the existing Pint Wars codebase, navigation, Supabase data and design system. Do not alter backend logic, scoring, league mechanics, RevenueCat, authentication, or routing.
+
+Redesign the Home screen to match the new commercial visual direction:
+
+1. Remove the current “WEDNESDAY NIGHT PLANS” positioning completely.
+
+2. Header:
+   - small Pint Wars brand treatment
+   - main heading: “Ready for your next war?”
+   - notification bell remains in the top-right
+
+3. If the user has an active Pint War:
+   Make the active Pint War the HERO element of the screen.
+   Show:
+   - “LIVE PINT WAR”
+   - league name
+   - Day X of Y
+   - player count
+   - user’s current position
+   - user’s current score
+   - remaining time
+   - prominent “VIEW PINT WAR” button
+   Tapping it must open the existing /war/[leagueId] screen.
+
+4. Add a “QUICK ACTIONS” section:
+   - Create a Pint War
+   - Join a Pint War
+   Use the existing routes /war/create and /war/join.
+
+5. Add a “YOUR PINT WARS” section using the existing getMyLeagues() data.
+   Show active and completed leagues as polished compact cards.
+   Do not invent new backend data.
+
+6. Add a compact Passport/discovery card:
+   “DISCOVER A NEW PUB”
+   “Find pubs you haven’t visited yet.”
+   This can navigate to the existing Passport or Map experience.
+
+7. The visual style should feel like a premium competitive social app:
+   - dark, high-contrast interface
+   - strong hierarchy
+   - large hero card
+   - polished rounded cards
+   - subtle depth
+   - bold typography
+   - restrained gold/yellow accent treatment
+   - generous spacing
+   - no generic explanatory paragraph like the current “Your Pint Wars toolkit”
+
+8. Make the screen look excellent on iPhone.
+   Respect safe areas and existing iOS navigation/tab behaviour.
+
+9. Reuse existing components from components/AppUi.tsx where appropriate. Extend the design system only when necessary.
+
+10. Keep all existing functionality working.
+
+After making the change:
+- run the project's TypeScript/lint checks
+- report exactly which files were changed
+- do not make changes to any other screen unless required for the Home screen to compile.
