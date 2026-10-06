@@ -18,10 +18,15 @@ import {
 } from '@workspace/api-client-react';
 import { Card } from '@/components/AppUi';
 import { useColors } from '@/hooks/useColors';
+import { initials } from '@/components/wars/presentation';
+import { activeWarColors, createActiveWarStyles } from '@/components/active-war/styles';
 
 type WarActivityFeedProps = {
   leagueId: string;
   currentUserId: string;
+  presentation?: 'recent' | 'full';
+  fontsLoaded?: boolean;
+  onViewAll?: () => void;
 };
 
 function activityAction(event: PintWarActivityEvent) {
@@ -197,6 +202,9 @@ function PrivateActivityPhoto({
 export function WarActivityFeed({
   leagueId,
   currentUserId,
+  presentation,
+  fontsLoaded = false,
+  onViewAll,
 }: WarActivityFeedProps) {
   const colors = useColors();
   const query = useGetPintWarActivity(leagueId, {
@@ -207,6 +215,60 @@ export function WarActivityFeed({
       refetchOnWindowFocus: true,
     },
   });
+
+  // Opt-in presentation only. The existing API, cache, polling and protected
+  // photo loader/viewer remain the same for both recent and full activity.
+  if (presentation) {
+    const s = createActiveWarStyles(fontsLoaded);
+    const c = activeWarColors;
+    const events = presentation === 'recent' ? query.data?.events.slice(0, 3) : query.data?.events;
+    return (
+      <View style={s.activity} testID={`active-war-activity-${presentation}`}>
+        <View style={s.activityHeader}>
+          <Text style={s.activityTitle}>{presentation === 'recent' ? 'RECENT ACTIVITY' : 'WAR ACTIVITY FEED'}</Text>
+          <View style={s.icons}><View style={s.dot} /><Text style={s.smallGold}>LIVE</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel="Refresh war activity" disabled={query.isFetching}
+              onPress={() => void query.refetch()} style={s.refresh}>
+              {query.isFetching ? <ActivityIndicator size="small" color={c.gold} /> : <Ionicons name="refresh-outline" size={13} color={c.gold} />}
+            </Pressable>
+          </View>
+        </View>
+        {query.isLoading ? <View style={s.panel}><ActivityIndicator color={c.gold} /><Text style={s.body}>Loading recent activity…</Text></View>
+          : query.isError && !query.data ? <View style={s.panel}><Text style={s.body}>Activity could not be loaded. Check your connection and try again.</Text>
+            <Pressable onPress={() => void query.refetch()} accessibilityRole="button" style={s.viewAll}><Text style={s.link}>Try again</Text></Pressable></View>
+          : !events?.length ? <View style={s.panel}><Text style={s.detailTitle}>No activity yet</Text><Text style={s.body}>Start the Pint War by logging your first pint.</Text></View>
+          : events.map(event => {
+            const time = new Date(event.occurredAt).getTime();
+            const minutes = Math.max(0, Math.floor((Date.now() - time) / 60_000));
+            const relativeTime = !Number.isFinite(time) ? 'Time unavailable'
+              : minutes < 1 ? 'just now' : minutes < 60 ? `${minutes}m ago`
+              : minutes < 1440 ? `${Math.floor(minutes / 60)}h ago` : `${Math.floor(minutes / 1440)}d ago`;
+            return (
+              <View key={event.id}>
+                <View style={s.activityRow}>
+                  <View style={[s.avatar, { backgroundColor: event.type === 'pint_logged' ? c.avatar[0] : c.avatar[1] }]}>
+                    <Text style={[s.avatarText, event.type === 'pint_logged' && s.yourAvatarText]}>{initials(event.playerName)}</Text></View>
+                  <View style={s.activityCopy}>
+                    <Text style={s.activityText}><Text style={s.activityName}>{event.playerName}{event.userId === currentUserId ? ' (you)' : ''}</Text> {activityAction(event)}</Text>
+                    {event.pubName ? <View style={s.icons}><Ionicons name="location-outline" size={9} color={c.secondary} /><Text numberOfLines={1} style={[s.activityVenue, { flexShrink: 1 }]}>{event.pubName}</Text></View> : null}
+                    {event.historicalScore ? <Text style={s.activityVenue}>Recorded under an earlier scoring rule</Text> : null}
+                    {presentation === 'full' && event.scoreImpact !== null ? <Text style={s.activityVenue}>{event.scoreImpact > 0 ? '+' : ''}{event.scoreImpact} {Math.abs(event.scoreImpact) === 1 ? 'pt' : 'pts'}</Text> : null}
+                  </View>
+                  {event.photoPintLogId && presentation === 'recent' && onViewAll ? (
+                    <Pressable accessibilityRole="button" accessibilityLabel={`View ${event.playerName}'s proof photo in Activity`}
+                      onPress={onViewAll} style={s.refresh}><Ionicons name="camera-outline" size={13} color={c.gold} /></Pressable>
+                  ) : null}
+                  <Text accessibilityLabel={formatActivityDate(event.occurredAt)} style={s.activityTime}>{relativeTime}</Text>
+                </View>
+                {presentation === 'full' && event.photoPintLogId ? <PrivateActivityPhoto leagueId={leagueId} event={event} /> : null}
+              </View>
+            );
+          })}
+        {query.isError && query.data ? <Text style={s.activityVenue}>Could not refresh activity. Showing previously loaded events.</Text> : null}
+        {onViewAll ? <Pressable testID="active-war-view-activity" onPress={onViewAll} style={s.viewAll} accessibilityRole="button"><Text style={s.link}>View all activity →</Text></Pressable> : null}
+      </View>
+    );
+  }
 
   return (
     <View style={styles.section}>

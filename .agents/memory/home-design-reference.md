@@ -13,4 +13,4 @@ The Active Pint War design should feel like a live, social competition, not a sp
 
 **Why:** The user approved the visual direction but explicitly requested stronger live status, action, and social activity rather than a standalone leaderboard feel.
 
-**How to apply:** Keep Activity/Details and Invite/Manage compact and secondary. The active-war mock-up is design-only until the user separately asks to integrate it; approval of its visual direction does not authorize application or backend changes.
+**How to apply:** Keep Activity/Details and Invite/Manage compact and secondary. The user separately approved implementing the active-war screen with real application data. Preserve the current camera/photo-proof Log a Pint flow and full War Activity Feed, including protected photos. Scope that integration to active-war presentation; do not change backend, scoring, authentication, RevenueCat, league mechanics, database schema, completed-war presentation, or unrelated screens.

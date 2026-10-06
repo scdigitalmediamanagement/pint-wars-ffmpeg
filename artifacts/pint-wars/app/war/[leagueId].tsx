@@ -7,13 +7,14 @@ import * as ImagePicker from 'expo-image-picker';
 import { getGetPintWarActivityQueryKey } from '@workspace/api-client-react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Card, ErrorText, Screen, Title, uiStyles } from '@/components/AppUi';
-import { WarActivityFeed } from '@/src/components/WarActivityFeed';
 import { endLeagueEarly, getLeagueDashboard, getLeagueSummary, logPint, PintPhotoUploadError, retireFromLeague } from '@/src/lib/league-service';
 import { getCurrentLocation } from '@/src/lib/location-service';
 import { findNearbyPubs, type Coordinates, type NearbyPub } from '@/src/lib/pub-service';
 import { CURRENT_LEAGUE_SCORING, type LeaguePoints } from '@/src/types/league';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { useColors } from '@/hooks/useColors';
+import { ActiveWarScreen } from '@/components/active-war/ActiveWarScreen';
+import { activeWarColors } from '@/components/active-war/styles';
 
 function leagueDurationDays(startsAt: string, endsAt: string) {
   const start = new Date(startsAt).getTime();
@@ -462,77 +463,68 @@ export default function LeagueDashboardScreen() {
   const totalPoints: LeaguePoints = members.reduce((total, member) => total + member.points, 0);
   const highestPoints = sortedMembers[0]?.points ?? 0;
   const hasScores = highestPoints > 0;
-  const leaders = hasScores
-    ? sortedMembers.filter((member) => member.points === highestPoints)
-    : [];
   const currentStanding = rankedMembers.find((entry) => entry.member.user_id === user?.id);
   const winners = hasScores
     ? sortedMembers.filter((member) => member.points === highestPoints)
     : [];
 
   return (
-    <Screen>
+    <Screen style={league.status === 'active' ? { backgroundColor: activeWarColors.background } : undefined}>
+      {league.status === 'active' ? (
+        <ActiveWarScreen
+          key={league.id}
+          dashboard={query.data}
+          userId={user?.id}
+          rankedMembers={rankedMembers}
+          currentStanding={currentStanding}
+          hasScores={hasScores}
+          day={day}
+          durationDays={durationDays}
+          remainingLabel={remainingLabel}
+          endLabel={leagueEndLabel}
+          retired={isCurrentUserRetired}
+          preparing={isPreparingPint || logMutation.isPending}
+          error={!photoIntroVisible && !photoReviewVisible ? cameraError || logError : undefined}
+          refreshError={query.isError}
+          refreshing={query.isFetching}
+          onRefresh={() => {
+            void query.refetch();
+            void queryClient.invalidateQueries({ queryKey: getGetPintWarActivityQueryKey(league.id) });
+          }}
+          onLogPint={() => {
+            setCameraError('');
+            setCameraBlocked(false);
+            setPhotoIntroVisible(true);
+          }}
+          onInvite={isCurrentUserHost ? () => router.push({ pathname: '/war/invite', params: { leagueId: league.id } }) : undefined}
+          retiring={retireMutation.isPending}
+          ending={endLeagueMutation.isPending}
+          onRetire={canRetire ? () => {
+            Alert.alert(
+              'Retire from this Pint War',
+              "Are you sure you want to retire from this Pint War?\n\nYou won't be able to log any more pints or earn points in this league. Your existing points will remain.\n\nYour Pint Wars account and other leagues will not be affected.",
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Retire', style: 'destructive', onPress: () => retireMutation.mutate() },
+              ],
+            );
+          } : undefined}
+          onEnd={canEndLeagueEarly ? () => {
+            Alert.alert(
+              'End this Pint War?',
+              'Are you sure you want to end this Pint War early? The current leaderboard will become final and no more points can be earned.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'End Pint War', style: 'destructive', onPress: () => endLeagueMutation.mutate() },
+              ],
+            );
+          } : undefined}
+        />
+      ) : (
       <ScrollView
         contentContainerStyle={[uiStyles.content, styles.pageContent]}
         showsVerticalScrollIndicator={false}
       >
-        {league.status === 'active' ? (
-          <Card style={styles.activeWarCard}>
-            <View style={styles.activeHeaderRow}>
-              <View style={styles.activeHeaderCopy}>
-                <Text style={[styles.kicker, { color: colors.accent }]}>
-                  DAY {day} OF {durationDays}
-                </Text>
-                <Text style={[styles.activeWarTitle, { color: colors.foreground }]}>
-                  {league.name}
-                </Text>
-              </View>
-              <View style={[styles.liveBadge, { backgroundColor: colors.muted }]}>
-                <View style={[styles.liveDot, { backgroundColor: colors.accent }]} />
-                <Text style={[styles.liveLabel, { color: colors.accent }]}>LIVE</Text>
-              </View>
-            </View>
-
-            <View style={[styles.timePanel, { backgroundColor: colors.muted }]}>
-              <Ionicons name="time-outline" size={23} color={colors.accent} />
-              <View style={styles.timeCopy}>
-                <Text style={[styles.remainingTime, { color: colors.foreground }]}>
-                  {remainingLabel}
-                </Text>
-                <Text style={[styles.endTime, { color: colors.mutedForeground }]}>
-                  {leagueEndLabel ?? 'End date unavailable'}
-                </Text>
-              </View>
-            </View>
-
-            <View style={[styles.standingPanel, { borderTopColor: colors.border }]}>
-              <View style={styles.standingMetric}>
-                <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>YOUR PLACE</Text>
-                <Text style={[styles.standingValue, { color: colors.foreground }]}>
-                  {!hasScores
-                    ? '—'
-                    : currentStanding
-                      ? `${currentStanding.isTied ? 'Tied ' : ''}${rankOrdinal(currentStanding.rank)}`
-                      : '—'}
-                </Text>
-              </View>
-              <View style={styles.standingMetric}>
-                <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>YOUR SCORE</Text>
-                <Text style={[styles.standingValue, { color: colors.foreground }]}>
-                  {currentMembership
-                    ? `${currentMembership.points} ${currentMembership.points === 1 ? 'pt' : 'pts'}`
-                    : '—'}
-                </Text>
-              </View>
-              <View style={styles.standingMetric}>
-                <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>PLAYERS</Text>
-                <Text style={[styles.standingValue, { color: colors.foreground }]}>
-                  {members.length}/{league.capacity}
-                </Text>
-              </View>
-            </View>
-          </Card>
-        ) : (
           <>
             <View style={styles.heading}>
               <Text style={[styles.kicker, { color: colors.accent }]}>WAR OVER</Text>
@@ -555,65 +547,6 @@ export default function LeagueDashboardScreen() {
               </View>
             </Card>
           </>
-        )}
-
-        {league.status === 'active' && !isCurrentUserRetired ? (
-          <View style={styles.primaryAction}>
-            <Button
-              label={cameraError ? 'Try camera again' : 'Log a Pint'}
-              loading={isPreparingPint || logMutation.isPending}
-              onPress={() => {
-                setCameraError('');
-                setCameraBlocked(false);
-                setPhotoIntroVisible(true);
-              }}
-              testID="log-a-pint"
-            />
-            <Text style={[styles.primaryHint, { color: colors.mutedForeground }]}>
-              A fresh photo is required. Location and pub selection are optional.
-            </Text>
-            {!photoIntroVisible && !photoReviewVisible && cameraError ? (
-              <ErrorText>{cameraError}</ErrorText>
-            ) : null}
-            {!photoIntroVisible && !photoReviewVisible && logError ? (
-              <ErrorText>{logError}</ErrorText>
-            ) : null}
-          </View>
-        ) : null}
-
-        {league.status === 'active' && isCurrentUserRetired ? (
-          <Card style={styles.retiredCard}>
-            <Text style={[styles.retiredTitle, { color: colors.foreground }]}>Retired from this Pint War</Text>
-            <Text style={[styles.retiredText, { color: colors.mutedForeground }]}>
-              Your existing points remain visible, but you cannot log more pints or earn more points in this league.
-            </Text>
-          </Card>
-        ) : null}
-
-        {league.status === 'active' ? (
-          <Card style={styles.scoringRules}>
-            <Text style={[styles.selectedLabel, { color: colors.accent }]}>HOW POINTS WORK</Text>
-            <View style={styles.scoringRows}>
-              <View style={styles.scoringRow}>
-                <Ionicons name="add-circle-outline" size={19} color={colors.accent} />
-                <Text style={[styles.scoringLabel, { color: colors.foreground }]}>Pint</Text>
-                <Text style={[styles.scoringValue, { color: colors.foreground }]}>
-                  +{CURRENT_LEAGUE_SCORING.pointsPerValidPint} point
-                </Text>
-              </View>
-              <View style={styles.scoringRow}>
-                <Ionicons name="chatbubble-ellipses-outline" size={19} color={colors.accent} />
-                <Text style={[styles.scoringLabel, { color: colors.foreground }]}>Qualifying pub review</Text>
-                <Text style={[styles.scoringValue, { color: colors.foreground }]}>
-                  +{CURRENT_LEAGUE_SCORING.reviewBonusPoints} bonus
-                </Text>
-              </View>
-            </View>
-            <Text style={[styles.resultText, { color: colors.mutedForeground }]}>
-              A review bonus is earned once per player per pub. Editing a review adds no points; older score events keep their original values.
-            </Text>
-          </Card>
-        ) : null}
 
         {league.status === 'completed' ? (
           <>
@@ -721,41 +654,6 @@ export default function LeagueDashboardScreen() {
           </>
         ) : null}
 
-        {league.status === 'active' ? (
-          hasScores ? (
-            <Card style={styles.leaderCard}>
-              <View style={[styles.leaderIcon, { backgroundColor: colors.muted }]}>
-                <Ionicons name="trophy-outline" size={22} color={colors.accent} />
-              </View>
-              <View style={styles.leaderCopy}>
-                <Text style={[styles.selectedLabel, { color: colors.accent }]}>
-                  {leaders.length > 1 ? 'JOINT LEAD' : 'CURRENT LEADER'}
-                </Text>
-                <Text style={[styles.leaderNames, { color: colors.foreground }]}>
-                  {leaders.map((leader) =>
-                    `${leader.display_name}${leader.user_id === user?.id ? ' (you)' : ''}`,
-                  ).join(' · ')}
-                </Text>
-                <Text style={[styles.resultText, { color: colors.mutedForeground }]}>
-                  {highestPoints} {highestPoints === 1 ? 'point' : 'points'}
-                </Text>
-              </View>
-            </Card>
-          ) : (
-            <Card style={styles.emptyScoreCard}>
-              <Ionicons name="trophy-outline" size={23} color={colors.accent} />
-              <View style={styles.emptyScoreCopy}>
-                <Text style={[styles.emptyScoreTitle, { color: colors.foreground }]}>
-                  The race starts with the first pint
-                </Text>
-                <Text style={[styles.resultText, { color: colors.mutedForeground }]}>
-                  No points on the board yet. The leaderboard will update as points are earned.
-                </Text>
-              </View>
-            </Card>
-          )
-        ) : null}
-
         <View style={styles.leaderboardSection}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
             {league.status === 'completed' ? 'Final leaderboard' : 'Leaderboard'}
@@ -826,12 +724,6 @@ export default function LeagueDashboardScreen() {
             })}
           </Card>
         </View>
-        {league.status === 'active' && user ? (
-          <WarActivityFeed
-            leagueId={league.id}
-            currentUserId={user.id}
-          />
-        ) : null}
         {league.status === 'completed' ? (
           <Button label="Start Another Pint War" onPress={() => router.push('/war/create')} />
         ) : null}
@@ -875,6 +767,7 @@ export default function LeagueDashboardScreen() {
           </Pressable>
         ) : null}
       </ScrollView>
+      )}
 
       <Modal
         visible={photoIntroVisible}
