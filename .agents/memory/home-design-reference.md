@@ -14,3 +14,9 @@ The Active Pint War design should feel like a live, social competition, not a sp
 **Why:** The user approved the visual direction but explicitly requested stronger live status, action, and social activity rather than a standalone leaderboard feel.
 
 **How to apply:** Keep Activity/Details and Invite/Manage compact and secondary. The user separately approved implementing the active-war screen with real application data. Preserve the current camera/photo-proof Log a Pint flow and full War Activity Feed, including protected photos. Scope that integration to active-war presentation; do not change backend, scoring, authentication, RevenueCat, league mechanics, database schema, completed-war presentation, or unrelated screens.
+
+The approved Pub Passport integration is presentation-only with live personal data and existing Map and pub-detail/review flows. Do not add standalone pint logging unless separately requested. Do not attach mock pub photos to real pub identities as though they are authentic: when actual photo data is unavailable, label decorative photography as illustrative.
+
+**Why:** The user required real Passport data and preservation of existing functionality while excluding backend/schema, scoring, authentication, RevenueCat, and unrelated-screen changes. Illustrative imagery preserves the photographic layout without fabricating pub-specific information.
+
+**How to apply:** Keep Passport visual changes screen-scoped. Personal review totals and filters should represent the player's reviews, distinct from a pub's community review total/rating.
