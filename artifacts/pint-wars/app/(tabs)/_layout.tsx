@@ -7,6 +7,7 @@ import { isLiquidGlassAvailable } from 'expo-glass-effect';
 import { Tabs } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { SymbolView } from 'expo-symbols';
+import homeColors from '@/constants/homeColors';
 
 // IMPORTANT: iOS 26 uses NativeTabs for native tabs with liquid glass support.
 // NativeTabs intentionally does NOT use custom design tokens — liquid glass
@@ -83,6 +84,18 @@ function ClassicTabLayout() {
         name="index"
         options={{
           title: 'Home',
+          headerShown: false,
+          tabBarActiveTintColor: homeColors.gold,
+          tabBarInactiveTintColor: homeColors.muted,
+          tabBarStyle: {
+            position: 'absolute',
+            backgroundColor: homeColors.background,
+            borderTopWidth: 1,
+            borderTopColor: homeColors.line,
+            elevation: 0,
+            ...(isWeb ? { height: 84 } : {}),
+          },
+          tabBarBackground: () => <View style={[StyleSheet.absoluteFill, { backgroundColor: homeColors.background }]} />,
           tabBarIcon: ({ color }) =>
             isIOS ? (
               <SymbolView name="house" tintColor={color} size={24} />

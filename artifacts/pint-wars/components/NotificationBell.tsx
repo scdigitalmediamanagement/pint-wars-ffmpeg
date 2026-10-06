@@ -7,8 +7,11 @@ import { useColors } from '@/hooks/useColors';
 import { getUnreadNotificationCount } from '@/src/lib/league-service';
 import { useAuth } from '@/src/providers/AuthProvider';
 
-export function NotificationBell() {
-  const colors = useColors();
+type BellAppearance = Pick<ReturnType<typeof useColors>, 'foreground' | 'border' | 'accent' | 'accentForeground'>;
+
+export function NotificationBell({ appearance, compact = false }: { appearance?: BellAppearance; compact?: boolean } = {}) {
+  const deviceColors = useColors();
+  const colors = appearance ?? deviceColors;
   const { user } = useAuth();
   const query = useQuery({
     queryKey: ['notifications-unread-count'],
@@ -23,7 +26,7 @@ export function NotificationBell() {
       accessibilityLabel={unreadCount ? `${unreadCount} unread notifications` : 'Notifications'}
       accessibilityRole="button"
       onPress={() => router.push('/notifications')}
-      style={({ pressed }) => [styles.button, { borderColor: colors.border, opacity: pressed ? 0.72 : 1 }]}
+      style={({ pressed }) => [styles.button, compact && styles.compactButton, { borderColor: colors.border, opacity: pressed ? 0.72 : 1 }]}
     >
       <Feather name="bell" size={21} color={colors.foreground} />
       {unreadCount > 0 ? (
@@ -38,6 +41,7 @@ export function NotificationBell() {
 }
 
 const styles = StyleSheet.create({
+  compactButton: { width: 38, height: 38, borderRadius: 19 },
   button: {
     width: 46,
     height: 46,

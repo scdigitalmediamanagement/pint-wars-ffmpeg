@@ -7,4 +7,4 @@ For reference-based Home design work, the supplied mobile mock-up is the primary
 
 **Why:** The user explicitly requested that the result look like the same Pint Wars app shown in the image, and asked for active-war and no-active-war visual states with realistic sample content.
 
-**How to apply:** Use the supplied image when evaluating fidelity. Treat these Home states as isolated visual mock-ups; their creation does not authorize application or backend integration. A later explicit integration request can change that scope.
+**How to apply:** Use the approved canvas states when evaluating fidelity. The user approved integrating both Home states into the app, with real league data and existing five-tab navigation. Keep changes limited to Home presentation: preserve authentication, scoring, RevenueCat, backend behavior, and league mechanics. Do not restyle other screens without a request.

@@ -10,3 +10,4 @@
 - [Memories photo selection](memories-photo-selection.md) — test actual late-window share alongside temporal coverage and player/pub diversity; nominal weights can be diluted.
 - [FFmpegKit Next evaluation](ffmpeg-kit-next-evaluation.md) — active upstream continuation, but React Native integration requires local native builds and has no verified Expo/EAS recipe.
 - [Home design reference](home-design-reference.md) — Home launch mock-ups must faithfully match the supplied photographic navy/gold reference, not reinterpret the existing app palette.
+- [Expo runtime compatibility](expo-runtime-compatibility.md) — Metro CI mode can disable reloads; use the style helpers supported by the current React Native runtime.

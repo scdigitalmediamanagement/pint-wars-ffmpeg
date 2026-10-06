@@ -3,24 +3,14 @@ import { ActivityIndicator, AppState, Image, Platform, Pressable, RefreshControl
 import { Feather } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Circle, Path } from 'react-native-svg';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card, Screen } from '@/components/AppUi';
 import { NotificationBell } from '@/components/NotificationBell';
 import { getLeagueDashboard, getMyLeagues } from '@/src/lib/league-service';
 import type { LeagueDashboard, MyLeague } from '@/src/types/league';
-import palette from '@/constants/colors';
-
-const c = palette.dark;
-const home = {
-  background: '#05080d',
-  panel: '#0c1119',
-  panelSoft: '#101720',
-  line: '#29303b',
-  gold: '#ffd12e',
-  text: '#f4f2ec',
-  muted: '#a3a9b2',
-};
+import home from '@/constants/homeColors';
 
 function durationDays(startsAt: string, endsAt: string) {
   const s = new Date(startsAt).getTime();
@@ -86,7 +76,7 @@ function Hero({ item, now }: { item: MyLeague; now: number }) {
     <View style={styles.hero} testID="active-pint-war">
       <Image
         source={require('@/assets/images/home/pw-home-pints.jpg')}
-        style={StyleSheet.absoluteFillObject}
+        style={[StyleSheet.absoluteFill, styles.heroPhoto, styles.activePhoto]}
         resizeMode="cover"
         accessible={false}
       />
@@ -132,15 +122,14 @@ function Hero({ item, now }: { item: MyLeague; now: number }) {
               <Text style={styles.retryText}>Retry</Text>
             </Pressable>
           </View>
+        ) : dash.data ? (
+          <Text style={styles.unavailText}>Your standing is unavailable for this war.</Text>
         ) : (
           <View style={styles.standings}>
             <View style={styles.stat}><View style={styles.skeleton} /></View>
             <View style={styles.stat}><View style={styles.skeleton} /></View>
           </View>
         )}
-        {dash.data && !st ? (
-          <Text style={styles.unavailText}>Your standing is unavailable for this war.</Text>
-        ) : null}
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
         </View>
@@ -258,7 +247,7 @@ export default function HomeScreen() {
           <View pointerEvents="none" style={styles.webStatusBar}>
             <Text style={styles.webStatusTime}>9:41</Text>
             <View style={styles.webStatusIcons}>
-              <Feather name="signal" size={13} color={home.text} />
+              <Feather name="bar-chart" size={13} color={home.text} />
               <Feather name="wifi" size={13} color={home.text} />
               <Feather name="battery" size={16} color={home.text} />
             </View>
@@ -280,7 +269,10 @@ export default function HomeScreen() {
             />
           </View>
           <View style={styles.bellWrap}>
-            <NotificationBell />
+            <NotificationBell
+              compact
+              appearance={{ foreground: home.text, border: home.line, accent: home.gold, accentForeground: home.actionInk }}
+            />
           </View>
         </View>
         <Text style={styles.title}>Ready for your next war?</Text>
@@ -305,7 +297,7 @@ export default function HomeScreen() {
           <View style={styles.emptyHero} testID="no-active-pint-war">
             <Image
               source={require('@/assets/images/home/pw-home-pints.jpg')}
-              style={StyleSheet.absoluteFillObject}
+              style={[StyleSheet.absoluteFill, styles.heroPhoto]}
               resizeMode="cover"
               accessible={false}
             />
@@ -338,15 +330,39 @@ export default function HomeScreen() {
           </View>
         )}
 
-        <View style={{ gap: 12 }}>
+        <View style={styles.quickSection}>
           <Text style={styles.section}>QUICK ACTIONS</Text>
           <View style={styles.actions}>
-            <Action primary icon="plus-circle" label="Create a Pint War" sub="Start with friends" href="/war/create" />
-            <Action icon="log-in" label="Join a Pint War" sub="Use an invite code" href="/war/join" />
+            <Action primary icon="flag" label="Create a Pint War" sub="Start with friends" href="/war/create" />
+            <Action icon="users" label="Join a Pint War" sub="Use an invite code" href="/war/join" />
           </View>
         </View>
 
-        <View style={{ gap: 12 }}>
+        <Pressable
+          testID="discover-pubs"
+          accessibilityRole="button"
+          accessibilityLabel="Discover a new pub"
+          onPress={() => router.push('/passport')}
+          style={({ pressed }) => [styles.discover, { opacity: pressed ? 0.82 : 1 }]}
+        >
+          <View style={styles.discoverCopy}>
+            <Text style={styles.discoverTitle}>DISCOVER A NEW PUB</Text>
+            <Text style={styles.discoverBody}>Find great pubs near you that{'\n'}you haven’t visited yet.</Text>
+          </View>
+          <View style={styles.mapGraphic} accessible={false}>
+            <Svg width="100%" height="100%" viewBox="0 0 105 100" fill="none">
+              <Path fill="#19252c" d="M34 0h71v100H0z" />
+              <Path stroke="#3c7040" strokeWidth={5} d="m65-8-6 38 45 16M83 4l-6 14 17 10M4 80l28-8 19 26m48-25-24 17" />
+              <Path stroke="#6d757b" strokeWidth={1.5} d="m34 10 16 18-5 10-14-3-9 19 17 22 42 18m-2-84-10 30 32 16-9 20-37-9-16 9" />
+              <Path fill={home.gold} d="M69 22c-8 0-14 6-14 14 0 11 14 26 14 26s14-15 14-26c0-8-6-14-14-14Z" />
+              <Circle cx={69} cy={36} r={5} fill="#19252c" />
+              <Path fill="#4bb13b" d="M30 56c-6 0-11 5-11 11 0 8 11 20 11 20s11-12 11-20c0-6-5-11-11-11Z" />
+              <Circle cx={30} cy={66} r={4} fill="#19252c" />
+            </Svg>
+          </View>
+        </Pressable>
+
+        <View style={styles.warsSection}>
           <Text style={styles.section}>YOUR PINT WARS</Text>
           {leagues.length === 0 && !query.isLoading ? (
             <Card style={styles.card}>
@@ -367,65 +383,84 @@ export default function HomeScreen() {
                     <Text style={styles.cardTitle} numberOfLines={1}>{item.league.name}</Text>
                     <Text style={styles.body}>{item.role === 'host' ? 'Host' : 'Player'}</Text>
                   </View>
-                  <Text style={[styles.badge, statusLabel(item) === 'LIVE' && { color: c.accent }]}>{statusLabel(item)}</Text>
-                  {item.membershipStatus !== 'removed' ? <Feather name="chevron-right" size={18} color={c.mutedForeground} /> : null}
+                  <Text style={[styles.badge, statusLabel(item) === 'LIVE' && { color: home.gold }]}>{statusLabel(item)}</Text>
+                  {item.membershipStatus !== 'removed' ? <Feather name="chevron-right" size={18} color={home.muted} /> : null}
                 </Card>
               </Pressable>
             ))
           )}
         </View>
 
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => router.push('/passport')}
-          style={({ pressed }) => [styles.discover, { opacity: pressed ? 0.8 : 1 }]}
-        >
-          <Feather name="compass" size={22} color={c.accent} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.section}>DISCOVER A NEW PUB</Text>
-            <Text style={styles.body}>Find pubs you haven’t visited yet.</Text>
-          </View>
-          <Feather name="chevron-right" size={18} color={c.mutedForeground} />
-        </Pressable>
       </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
-  greeting: { flex: 1, gap: 12 },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  brand: { color: c.accent, fontFamily: 'Inter_700Bold', fontSize: 11, letterSpacing: 2.2 },
-  title: { color: c.foreground, fontFamily: 'Inter_700Bold', fontSize: 32, lineHeight: 37 },
-  bellWrap: { borderRadius: 16 },
-  hero: { backgroundColor: c.card, borderColor: c.accent, borderWidth: 1, borderRadius: 28, padding: 22, gap: 14, shadowColor: c.background, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 18, elevation: 4 },
-  liveRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  liveDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: c.accent },
-  live: { color: c.accent, fontFamily: 'Inter_700Bold', fontSize: 12, letterSpacing: 1.6 },
-  heroName: { color: c.foreground, fontFamily: 'Inter_700Bold', fontSize: 30, lineHeight: 35 },
-  heroMeta: { color: c.mutedForeground, fontFamily: 'Inter_500Medium', fontSize: 14 },
-  statRow: { flexDirection: 'row', gap: 10 },
-  stat: { flex: 1, backgroundColor: c.background, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 12, gap: 2 },
-  statValue: { color: c.accent, fontFamily: 'Inter_700Bold', fontSize: 26 },
-  statLabel: { color: c.mutedForeground, fontFamily: 'Inter_700Bold', fontSize: 10, letterSpacing: 1.2 },
-  skeleton: { flex: 1, height: 66, borderRadius: 16, backgroundColor: c.muted },
-  unavail: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  unavailText: { color: c.mutedForeground, fontFamily: 'Inter_400Regular', fontSize: 14 },
-  retry: { borderColor: c.accent, borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 9, alignSelf: 'flex-start' },
-  retryText: { color: c.accent, fontFamily: 'Inter_600SemiBold', fontSize: 14 },
-  heroBtn: { minHeight: 54, borderRadius: 16, backgroundColor: c.accent, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
-  heroBtnText: { color: c.accentForeground, fontFamily: 'Inter_700Bold', fontSize: 15, letterSpacing: 1 },
-  card: { backgroundColor: c.card, borderColor: c.border, gap: 12 },
-  cardTitle: { color: c.foreground, fontFamily: 'Inter_700Bold', fontSize: 18 },
-  body: { color: c.mutedForeground, fontFamily: 'Inter_400Regular', fontSize: 14, lineHeight: 20 },
-  section: { color: c.foreground, fontFamily: 'Inter_700Bold', fontSize: 13, letterSpacing: 1.5 },
+  scrollView: { width: '100%' },
+  content: { width: '100%', maxWidth: 430, alignSelf: 'center', paddingHorizontal: 19 },
+  webStatusBar: { position: 'absolute', top: 11, left: 25, right: 24, height: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  webStatusTime: { color: home.text, fontFamily: 'Inter_600SemiBold', fontSize: 12 },
+  webStatusIcons: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  headerRow: { height: 45, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 7, height: 43 },
+  crest: { width: 36, height: 40 },
+  wordmark: { width: 123, height: 42 },
+  bellWrap: { alignItems: 'center', justifyContent: 'center', borderRadius: 23, backgroundColor: home.panel },
+  title: { marginTop: 7, marginBottom: 15, color: home.text, fontFamily: 'Inter_700Bold', fontSize: 25, lineHeight: 31, letterSpacing: -0.45 },
+  hero: { minHeight: 308, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,209,46,0.58)', borderRadius: 16, backgroundColor: home.panel },
+  heroPhoto: { width: '100%', height: '100%' },
+  activePhoto: { transform: [{ scale: 1.22 }, { translateY: -12 }], transformOrigin: '70% 100%' },
+  heroContent: { flex: 1, paddingTop: 15, paddingHorizontal: 15, paddingBottom: 13 },
+  livePill: { alignSelf: 'flex-start', minHeight: 23, paddingHorizontal: 7, flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 4, borderWidth: 1, borderColor: 'rgba(255,209,46,0.35)', backgroundColor: 'rgba(5,8,13,0.74)' },
+  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: home.gold },
+  live: { color: '#fff0b1', fontFamily: 'Inter_700Bold', fontSize: 10, letterSpacing: 0.8 },
+  heroName: { marginTop: 7, color: home.text, fontFamily: 'Inter_700Bold', fontSize: 26, lineHeight: 31, letterSpacing: -0.5 },
+  heroMeta: { marginTop: 5, color: '#e3dfd7', fontFamily: 'Inter_500Medium', fontSize: 12, lineHeight: 17 },
+  metaDivider: { color: home.gold },
+  heroSpacer: { flex: 1, minHeight: 34 },
+  standings: { paddingTop: 7, paddingBottom: 8, flexDirection: 'row', alignItems: 'flex-end', gap: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(255,255,255,0.28)' },
+  stat: { flex: 1 },
+  statLabel: { color: '#dedbd3', fontFamily: 'Inter_600SemiBold', fontSize: 10, letterSpacing: 0.6 },
+  statValue: { marginTop: 2, color: home.text, fontFamily: 'Inter_700Bold', fontSize: 26, lineHeight: 30 },
+  statEmphasis: { color: home.gold },
+  skeleton: { height: 29, marginTop: 2, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.15)' },
+  unavail: { minHeight: 39, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  unavailText: { color: home.text, fontFamily: 'Inter_500Medium', fontSize: 12 },
+  retry: { paddingHorizontal: 11, paddingVertical: 6, borderRadius: 7, borderWidth: 1, borderColor: home.gold },
+  retryText: { color: home.gold, fontFamily: 'Inter_600SemiBold', fontSize: 12 },
+  progressTrack: { height: 6, marginTop: 7, overflow: 'hidden', borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.2)' },
+  progressFill: { height: 6, borderRadius: 3, backgroundColor: home.gold },
+  remaining: { marginTop: 5, color: '#dedbd3', fontFamily: 'Inter_400Regular', fontSize: 10, textAlign: 'right' },
+  heroBtn: { minHeight: 49, marginTop: 11, paddingHorizontal: 12, borderRadius: 11, backgroundColor: home.gold, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  heroBtnText: { color: '#17140a', fontFamily: 'Inter_700Bold', fontSize: 16 },
+  quickSection: { marginTop: 18 },
+  section: { marginBottom: 10, color: home.text, fontFamily: 'Inter_700Bold', fontSize: 12, letterSpacing: 0.9 },
   actions: { flexDirection: 'row', gap: 12 },
-  action: { flex: 1, minHeight: 124, borderRadius: 22, padding: 16, gap: 6, justifyContent: 'flex-end', backgroundColor: c.card, borderWidth: 1, borderColor: c.border },
-  actionPrimary: { backgroundColor: c.secondary, borderColor: c.border },
-  actionLabel: { color: c.foreground, fontFamily: 'Inter_700Bold', fontSize: 16 },
-  actionSub: { color: c.mutedForeground, fontFamily: 'Inter_400Regular', fontSize: 12 },
-  listCard: { backgroundColor: c.card, borderColor: c.border, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 16 },
-  badge: { color: c.mutedForeground, fontFamily: 'Inter_700Bold', fontSize: 11, letterSpacing: 1.1 },
-  discover: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 20, borderWidth: 1, borderColor: c.border, backgroundColor: c.muted },
+  action: { flex: 1, minHeight: 100, paddingHorizontal: 5, paddingVertical: 12, borderWidth: 1, borderColor: home.line, borderRadius: 13, backgroundColor: home.panelSoft, alignItems: 'center', justifyContent: 'center', gap: 10 },
+  actionPrimary: { borderColor: home.line },
+  actionIcon: { width: 33, height: 33, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.035)', alignItems: 'center', justifyContent: 'center' },
+  actionCopy: { alignItems: 'center' },
+  actionLabel: { color: home.text, fontFamily: 'Inter_600SemiBold', fontSize: 13, textAlign: 'center' },
+  actionSub: { display: 'none' },
+  discover: { minHeight: 100, marginTop: 16, overflow: 'hidden', paddingHorizontal: 16, paddingVertical: 15, borderWidth: 1, borderColor: home.line, borderRadius: 13, backgroundColor: home.panel, justifyContent: 'center' },
+  discoverCopy: { zIndex: 1, paddingRight: 64 },
+  discoverTitle: { color: home.text, fontFamily: 'Inter_700Bold', fontSize: 12, letterSpacing: 0.2 },
+  discoverBody: { marginTop: 8, color: '#c4c4c5', fontFamily: 'Inter_400Regular', fontSize: 12, lineHeight: 18 },
+  mapGraphic: { position: 'absolute', right: 0, top: 0, bottom: 0, width: 102, overflow: 'hidden' },
+  emptyHero: { minHeight: 308, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,209,46,0.58)', borderRadius: 16, backgroundColor: home.panel },
+  emptyContent: { flex: 1, minHeight: 306, paddingHorizontal: 14, paddingTop: 14, paddingBottom: 13 },
+  emptyStampRow: { alignSelf: 'flex-start', minHeight: 23, paddingHorizontal: 6, flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderColor: 'rgba(255,209,46,0.38)', borderRadius: 4, backgroundColor: 'rgba(5,8,13,0.74)' },
+  emptyStamp: { color: '#ffe89a', fontFamily: 'Inter_700Bold', fontSize: 10, letterSpacing: 0.5 },
+  emptyTitle: { color: home.text, fontFamily: 'Inter_700Bold', fontSize: 25, lineHeight: 30, letterSpacing: -0.3 },
+  emptyBody: { marginTop: 6, color: '#e1ded6', fontFamily: 'Inter_400Regular', fontSize: 14, lineHeight: 20 },
+  emptyCta: { marginTop: 11 },
+  loadingHero: { alignItems: 'center', justifyContent: 'center' },
+  errorHero: { justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 6 },
+  card: { backgroundColor: home.panel, borderColor: home.line, gap: 12 },
+  cardTitle: { color: home.text, fontFamily: 'Inter_700Bold', fontSize: 17 },
+  body: { color: home.muted, fontFamily: 'Inter_400Regular', fontSize: 13, lineHeight: 19 },
+  warsSection: { marginTop: 24, gap: 9 },
+  listCard: { paddingVertical: 13, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10, borderColor: home.line, backgroundColor: home.panel },
+  badge: { color: home.muted, fontFamily: 'Inter_700Bold', fontSize: 9, letterSpacing: 0.8 },
 });
