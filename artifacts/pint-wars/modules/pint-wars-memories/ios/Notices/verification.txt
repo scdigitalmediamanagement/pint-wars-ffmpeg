@@ -1,0 +1,17 @@
+RESULT: PASS
+FFmpegKit Next: 9.0.0 (5e51b2da4c3593c0f2f9b49f53eeb497d93e39d3)
+flake.lock SHA-256: 47f0e36e3b890210dc527fd959a62164deec3bafe99776ea37e92b062875c198
+flake.lock revisions: nixpkgs=ac62194c3917d5f474c1a844b6fd6da2db95077d; nixpkgsWeb=fd1462031fdee08f65fd0b4c6b64e22239a77870
+Xcode: Xcode 26.6; Build version 17F113
+macOS: 26.6.2
+Runner image: macos26 20260907.0351.1
+Runner label: macos-26
+Target: iOS device arm64 only (no simulator)
+Flags: ./nix-ios.sh -p xcode26 -x --arch=arm64 --jobs=2 --enable-lib-ios-videotoolbox
+h264_videotoolbox: registration string present in libavcodec
+GPL: disabled by upstream default; no enabled GPL config or GPL license text found
+x264: no enabled x264 config or x264 binary reference found
+Runtime encode test: not performed; device-only iOS binary was not executed
+XCFramework total size: 26438861 bytes
+XCFrameworks: ffmpegkit, libavcodec, libavdevice, libavfilter, libavformat, libavutil, libswresample, libswscale
+Warning/error scan: build-warnings.txt

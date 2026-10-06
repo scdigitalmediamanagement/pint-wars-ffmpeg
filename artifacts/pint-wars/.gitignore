@@ -9,9 +9,9 @@ dist/
 web-build/
 expo-env.d.ts
 
-# Native
-ios/
-android/
+# Generated native projects only; modules/*/ios is maintained module source.
+/ios/
+/android/
 *.orig.*
 *.jks
 *.p8

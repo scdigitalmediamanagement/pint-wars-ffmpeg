@@ -8,7 +8,8 @@
     "build": "node scripts/build.js",
     "serve": "node server/serve.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test:memories": "node --experimental-strip-types --test scripts/memories-selection.test.mjs"
+    "test:memories": "node --experimental-strip-types --test scripts/memories-selection.test.mjs scripts/memories-video.test.mjs",
+    "verify:memories-native": "python3 scripts/verify-memories-native.py"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

@@ -1,0 +1,211 @@
+{
+  "schema_version": 1,
+  "source": {
+    "repository": "https://github.com/arthenica/ffmpeg-kit-next",
+    "version": "9.0.0",
+    "commit": "5e51b2da4c3593c0f2f9b49f53eeb497d93e39d3",
+    "flake_lock_sha256": "47f0e36e3b890210dc527fd959a62164deec3bafe99776ea37e92b062875c198",
+    "source_license_file": "notices/FFmpegKitNext-LICENSE",
+    "source_license_sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768",
+    "upstream_source_manifest": "notices/upstream-SOURCE",
+    "upstream_source_manifest_sha256": "e29e94b74711a0e2200d54942714e6902de72a708a207154b79999176749ec80",
+    "flake_lock_inputs": {
+      "nixpkgs": {
+        "lastModified": 1767313136,
+        "narHash": "sha256-16KkgfdYqjaeRGBaYsNrhPRRENs0qzkQVUooNHtoy2w=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "ac62194c3917d5f474c1a844b6fd6da2db95077d",
+        "type": "github"
+      },
+      "nixpkgsWeb": {
+        "lastModified": 1784432872,
+        "narHash": "sha256-n3gKTBIV4ZA5VQpUakffBe3KGu4+mhPoA34rrqS0GkA=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "fd1462031fdee08f65fd0b4c6b64e22239a77870",
+        "type": "github"
+      }
+    }
+  },
+  "build": {
+    "command": "./nix-ios.sh -p xcode26 -x --arch=arm64 --jobs=2 --enable-lib-ios-videotoolbox",
+    "platform": "ios-device",
+    "architectures": [
+      "arm64"
+    ],
+    "simulator_slice_included": false,
+    "apple_videotoolbox_enabled": true,
+    "gpl_enabled": false,
+    "upstream_gpl_default_verified": true,
+    "x264_enabled": false,
+    "videotoolbox_config_values": [
+      "1",
+      "1",
+      "yes"
+    ],
+    "gpl_config_values": [
+      "0",
+      "0"
+    ],
+    "x264_config_values": [
+      "0",
+      "0"
+    ]
+  },
+  "environment": {
+    "runner_label": "macos-26",
+    "runner_os": "macOS",
+    "runner_architecture": "ARM64",
+    "runner_image_os": "macos26",
+    "runner_image_version": "20260907.0351.1",
+    "macos_version": "26.6.2",
+    "xcode": "Xcode 26.6\nBuild version 17F113",
+    "nix": "nix (Nix) 2.32.0"
+  },
+  "outputs": {
+    "xcframework_bundle_directory": "bundle-apple-xcframework-ios-12.1",
+    "archive": "ffmpeg-kit-next-9.0.0-5e51b2d-ios-arm64-videotoolbox.tar.gz",
+    "framework_total_size_bytes": 26438861,
+    "frameworks": [
+      {
+        "name": "ffmpegkit.xcframework",
+        "supported_platform": "ios",
+        "supported_architectures": [
+          "arm64"
+        ],
+        "library_identifier": "ios-arm64",
+        "binary_relative_path": "ios-arm64/ffmpegkit.framework/ffmpegkit",
+        "binary_sha256": "6f9b61934d931ad9d8922a36183eb8783eb6b4e992fb27048ef0012dcf0d3803",
+        "xcframework_size_bytes": 925090
+      },
+      {
+        "name": "libavcodec.xcframework",
+        "supported_platform": "ios",
+        "supported_architectures": [
+          "arm64"
+        ],
+        "library_identifier": "ios-arm64",
+        "binary_relative_path": "ios-arm64/libavcodec.framework/libavcodec",
+        "binary_sha256": "7b913b59fbafc48a26467350dc9ffb082da0e62d67ace20c5886d7c1bb9577b0",
+        "xcframework_size_bytes": 16475265
+      },
+      {
+        "name": "libavdevice.xcframework",
+        "supported_platform": "ios",
+        "supported_architectures": [
+          "arm64"
+        ],
+        "library_identifier": "ios-arm64",
+        "binary_relative_path": "ios-arm64/libavdevice.framework/libavdevice",
+        "binary_sha256": "3707cefe939a9774dd86f683c3f13c5de3f93cb8cd108a6ab892088452676150",
+        "xcframework_size_bytes": 145558
+      },
+      {
+        "name": "libavfilter.xcframework",
+        "supported_platform": "ios",
+        "supported_architectures": [
+          "arm64"
+        ],
+        "library_identifier": "ios-arm64",
+        "binary_relative_path": "ios-arm64/libavfilter.framework/libavfilter",
+        "binary_sha256": "af613cf3610093af31b2448cc72c4026c602af592abc62d550ae102c5eb3c64b",
+        "xcframework_size_bytes": 2938490
+      },
+      {
+        "name": "libavformat.xcframework",
+        "supported_platform": "ios",
+        "supported_architectures": [
+          "arm64"
+        ],
+        "library_identifier": "ios-arm64",
+        "binary_relative_path": "ios-arm64/libavformat.framework/libavformat",
+        "binary_sha256": "72cf5b9b91775bd93950f718ed3b995d31eb7bc15a6ad59725398b02cc52db99",
+        "xcframework_size_bytes": 2789383
+      },
+      {
+        "name": "libavutil.xcframework",
+        "supported_platform": "ios",
+        "supported_architectures": [
+          "arm64"
+        ],
+        "library_identifier": "ios-arm64",
+        "binary_relative_path": "ios-arm64/libavutil.framework/libavutil",
+        "binary_sha256": "93d7eb4b22c7e5d7e7c5153cc8afd08decc5392028888426258290f041081bde",
+        "xcframework_size_bytes": 1950648
+      },
+      {
+        "name": "libswresample.xcframework",
+        "supported_platform": "ios",
+        "supported_architectures": [
+          "arm64"
+        ],
+        "library_identifier": "ios-arm64",
+        "binary_relative_path": "ios-arm64/libswresample.framework/libswresample",
+        "binary_sha256": "164de1ff1ee873b4e9fee814dd46cec30d7bbc5f1c24f5ff163fc4468e228469",
+        "xcframework_size_bytes": 172375
+      },
+      {
+        "name": "libswscale.xcframework",
+        "supported_platform": "ios",
+        "supported_architectures": [
+          "arm64"
+        ],
+        "library_identifier": "ios-arm64",
+        "binary_relative_path": "ios-arm64/libswscale.framework/libswscale",
+        "binary_sha256": "6790db87530938db12027e4e87d5107d1848cda80f6f8fe90ed3eb3933c4a6c7",
+        "xcframework_size_bytes": 1042052
+      }
+    ]
+  },
+  "build_diagnostics": {
+    "warning_error_scan": "build-warnings.txt",
+    "warning_error_scan_sha256": "5e956bd76388b40fc897891dbbf87cd85689441ce927643341977c97ce9628a7"
+  },
+  "embedded_notice_files": [
+    {
+      "path": "notices/embedded/ffmpegkit.xcframework/ios-arm64/ffmpegkit.framework/LICENSE",
+      "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768"
+    },
+    {
+      "path": "notices/embedded/ffmpegkit.xcframework/ios-arm64/ffmpegkit.framework/SOURCE",
+      "sha256": "e29e94b74711a0e2200d54942714e6902de72a708a207154b79999176749ec80"
+    },
+    {
+      "path": "notices/embedded/libavcodec.xcframework/ios-arm64/libavcodec.framework/LICENSE",
+      "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768"
+    },
+    {
+      "path": "notices/embedded/libavdevice.xcframework/ios-arm64/libavdevice.framework/LICENSE",
+      "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768"
+    },
+    {
+      "path": "notices/embedded/libavfilter.xcframework/ios-arm64/libavfilter.framework/LICENSE",
+      "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768"
+    },
+    {
+      "path": "notices/embedded/libavformat.xcframework/ios-arm64/libavformat.framework/LICENSE",
+      "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768"
+    },
+    {
+      "path": "notices/embedded/libavutil.xcframework/ios-arm64/libavutil.framework/LICENSE",
+      "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768"
+    },
+    {
+      "path": "notices/embedded/libswresample.xcframework/ios-arm64/libswresample.framework/LICENSE",
+      "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768"
+    },
+    {
+      "path": "notices/embedded/libswscale.xcframework/ios-arm64/libswscale.framework/LICENSE",
+      "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768"
+    }
+  ],
+  "android_poc_license_review": "android-poc-license-review.md",
+  "verification": {
+    "device_arm64_only": true,
+    "h264_videotoolbox_registration_string_found": true,
+    "x264_reference_found": false,
+    "gpl_license_text_found": false,
+    "runtime_encode_test_performed": false
+  }
+}

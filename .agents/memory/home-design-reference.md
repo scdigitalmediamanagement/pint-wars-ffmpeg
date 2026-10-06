@@ -44,3 +44,9 @@ The Map / Nearby Pubs canvas reference is approved for the real app. Its illustr
 **Why:** The user explicitly approved the visual structure while requiring real application data and prohibiting backend, scoring, authentication, RevenueCat, database-schema, and unrelated-screen changes.
 
 **How to apply:** Reproduce the navy/gold composition with the actual native map, rather than substituting fictional streets or sample pub records. Use existing community-review data and Passport visit records for filters. Apply the same truthful-image rule as Passport: decorative photography must be labelled illustrative when venue photos are unavailable.
+
+Pint War Memories is approved as a real iOS product feature, not a design-only mockup. Keep the existing FFmpeg implementation unless it is proven unusable.
+
+**Why:** The user explicitly superseded the earlier design-only scope and requested local MP4 generation, playback, Photos saving and actual-file native sharing.
+
+**How to apply:** Preserve the existing selection algorithm, final-hours weighting, player/pub variety, duplicate avoidance and protected private-photo access. Use real completed-war data and final results, keep Expo/CNG and the local Apple-only module approach, and do not change scoring, league mechanics, authentication, RevenueCat/payments, schema, Map, Passport or unrelated screens.

@@ -28,3 +28,17 @@ mtime_ms = 1791315346946
 storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:42494b53-7437-4b27-84d0-d65610c110e9/6e42e003-5089-47f2-a89b-0c7ca6df4a8f/3376aa77-7fc4-4131-945a-65700a0e855f"
 storage_version_token = "1791315460730742"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "XVY2EdTDn-PsLQRiwxhyt"
+uri = "file://reports/pint-war-memories-implementation.html"
+type = "html"
+title = "Memories implementation & verification report"
+description = "Complete exact file inventory, verification results, and outstanding real-iPhone checks."
+logical_id = "64ccede8-cefb-4d57-a2e7-ed3aede7ccae"
+content_hash = "sha256:e0464c1db64053671ef0ecf7e4b05f36b3481052ae4bdb919e6e830913ffd74c"
+size = 235559
+mtime_ms = 1791323724733
+storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:42494b53-7437-4b27-84d0-d65610c110e9/64ccede8-cefb-4d57-a2e7-ed3aede7ccae/77e31f91-6dd5-4c0c-a14d-d15384f66b30"
+storage_version_token = "1791323732742221"
+content_type = "text/html"

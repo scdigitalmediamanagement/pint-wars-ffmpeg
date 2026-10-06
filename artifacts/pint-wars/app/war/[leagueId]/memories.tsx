@@ -12,6 +12,18 @@ import { useAuth } from '@/src/providers/AuthProvider';
 import { getLeagueDashboard, getLeagueSummary } from '@/src/lib/league-service';
 import type { LeagueSummary } from '@/src/types/league';
 import { PintWarMemoriesPresentation } from '@/src/components/PintWarMemoriesPresentation';
+import memoriesColors from '@/constants/memoriesColors';
+
+const memoriesHeaderOptions = {
+  headerShown: true,
+  title: 'Pint War Memories',
+  headerBackTitle: 'Back',
+  headerTitleAlign: 'center',
+  headerShadowVisible: false,
+  headerStyle: { backgroundColor: memoriesColors.background },
+  headerTintColor: memoriesColors.text,
+  headerTitleStyle: { fontFamily: 'DMSans_700Bold', fontSize: 17 },
+} as const;
 
 function MemoriesState({
   title,
@@ -84,7 +96,7 @@ export default function PintWarMemoriesScreen() {
   if (!leagueId) {
     return (
       <Screen>
-        <Stack.Screen options={{ title: 'Pint War Memories', headerBackTitle: 'Back' }} />
+        <Stack.Screen options={memoriesHeaderOptions} />
         <View style={uiStyles.content}>
           <ErrorText>This Pint War could not be identified.</ErrorText>
         </View>
@@ -95,7 +107,7 @@ export default function PintWarMemoriesScreen() {
   if (!user) {
     return (
       <Screen>
-        <Stack.Screen options={{ title: 'Pint War Memories', headerBackTitle: 'Back' }} />
+        <Stack.Screen options={memoriesHeaderOptions} />
         <View style={uiStyles.content}>
           <MemoriesState
             title="Sign in to create Memories"
@@ -110,7 +122,7 @@ export default function PintWarMemoriesScreen() {
   if (dashboardQuery.isLoading) {
     return (
       <Screen>
-        <Stack.Screen options={{ title: 'Pint War Memories', headerBackTitle: 'Back' }} />
+        <Stack.Screen options={memoriesHeaderOptions} />
         <LoadingState label="Checking completed-war access…" />
       </Screen>
     );
@@ -119,7 +131,7 @@ export default function PintWarMemoriesScreen() {
   if (dashboardQuery.isError || !dashboardQuery.data) {
     return (
       <Screen>
-        <Stack.Screen options={{ title: 'Pint War Memories', headerBackTitle: 'Back' }} />
+        <Stack.Screen options={memoriesHeaderOptions} />
         <View style={uiStyles.content}>
           <MemoriesState
             title="Could not load this Pint War"
@@ -138,7 +150,7 @@ export default function PintWarMemoriesScreen() {
   if (league.status !== 'completed') {
     return (
       <Screen>
-        <Stack.Screen options={{ title: 'Pint War Memories', headerBackTitle: 'Back' }} />
+        <Stack.Screen options={memoriesHeaderOptions} />
         <View style={uiStyles.content}>
           <MemoriesState
             title="Memories unlock when the war is complete"
@@ -154,7 +166,7 @@ export default function PintWarMemoriesScreen() {
     const failedQuery = summaryQuery.isError ? summaryQuery : memoriesQuery;
     return (
       <Screen>
-        <Stack.Screen options={{ title: 'Pint War Memories', headerBackTitle: 'Back' }} />
+        <Stack.Screen options={memoriesHeaderOptions} />
         <ScrollView contentContainerStyle={[uiStyles.content, styles.page]}>
           <MemoriesState
             title={summaryQuery.isError ? 'The final summary is unavailable' : 'War photos and events could not be loaded'}
@@ -171,7 +183,7 @@ export default function PintWarMemoriesScreen() {
   if (!summaryQuery.data || !memoriesQuery.data) {
     return (
       <Screen>
-        <Stack.Screen options={{ title: 'Pint War Memories', headerBackTitle: 'Back' }} />
+        <Stack.Screen options={memoriesHeaderOptions} />
         <LoadingState
           label={summaryQuery.isLoading ? 'Gathering final results…' : 'Finding moments from the entire Pint War…'}
         />
@@ -180,9 +192,10 @@ export default function PintWarMemoriesScreen() {
   }
 
   return (
-    <Screen>
-      <Stack.Screen options={{ title: 'Pint War Memories', headerBackTitle: 'Back' }} />
+    <Screen style={{ backgroundColor: memoriesColors.background }}>
+      <Stack.Screen options={memoriesHeaderOptions} />
       <PintWarMemoriesPresentation
+        key={`${user.id}:${league.id}`}
         userId={user.id}
         league={{
           id: league.id,

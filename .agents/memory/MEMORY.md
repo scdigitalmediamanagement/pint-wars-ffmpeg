@@ -11,3 +11,4 @@
 - [FFmpegKit Next evaluation](ffmpeg-kit-next-evaluation.md) — active upstream continuation, but React Native integration requires local native builds and has no verified Expo/EAS recipe.
 - [Pint Wars design reference](home-design-reference.md) — approved navy/gold screens use live leagues; scope presentation changes to requested screens, preserving backend and purchase mechanics.
 - [Expo runtime compatibility](expo-runtime-compatibility.md) — Metro CI mode can disable reloads; use the style helpers supported by the current React Native runtime.
+- [CNG ignore boundaries](cng-ignore-boundaries.md) — generated app native folders and maintained local-module native source require different ignore treatment.

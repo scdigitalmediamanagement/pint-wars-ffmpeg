@@ -11,7 +11,8 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.pintwars.app",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSPhotoLibraryAddUsageDescription": "Allow Pint Wars to save your completed Pint War Memories video to Photos."
       }
     },
     "android": {
