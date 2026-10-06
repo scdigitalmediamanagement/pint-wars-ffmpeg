@@ -40,9 +40,9 @@ function StatusBar() {
   );
 }
 
-function MapArtwork({ selectedId, onSelect }: { selectedId: string | null; onSelect: (id: string) => void }) {
+function MapArtwork({ pubs, selectedId, onSelect }: { pubs: Pub[]; selectedId: string | null; onSelect: (id: string) => void }) {
   return (
-    <div className="pwn-map" role="img" aria-label="Illustrated blue-hour street map of Totnes with nearby pub markers">
+    <div className="pwn-map" role="group" aria-label="Illustrated blue-hour street map of Totnes with nearby pub markers">
       <svg className="pwn-map-lines" viewBox="0 0 390 330" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <defs>
           <pattern id="pwn-blocks" width="94" height="82" patternUnits="userSpaceOnUse">
@@ -72,7 +72,7 @@ function MapArtwork({ selectedId, onSelect }: { selectedId: string | null; onSel
         <text x="220" y="234" fill="#89918a" fontSize="6" letterSpacing="1.1" fontFamily="DM Sans" transform="rotate(4 220 234)">BRIDGETOWN</text>
       </svg>
       <div className="pwn-map-vignette" />
-      {PUBS.map((pub, i) => (
+      {pubs.map((pub, i) => (
         <button
           key={pub.id}
           type="button"
@@ -86,10 +86,10 @@ function MapArtwork({ selectedId, onSelect }: { selectedId: string | null; onSel
           {selectedId === pub.id && <span>{pub.name}</span>}
         </button>
       ))}
-      <button type="button" className="pwn-user-dot" aria-label="Your sample location">
+      <span className="pwn-user-dot" role="img" aria-label="Your sample location">
         <span className="pwn-user-pulse" /><span className="pwn-user-core" />
-      </button>
-      <div className="pwn-map-caption"><span className="pwn-live-dot" /> TOTNES TOWN CENTRE <i /> 5 LOCALS</div>
+      </span>
+      <div className="pwn-map-caption"><span className="pwn-live-dot" /> TOTNES TOWN CENTRE <i /> {pubs.length} LOCALS</div>
     </div>
   );
 }
@@ -119,7 +119,7 @@ function PubCard({ pub, index, selected, onSelect, onView }: { pub: Pub; index: 
         <span className="pwn-pub-area">{pub.area} <i /> {pub.distance.toFixed(1)} MI</span>
         <span className="pwn-rating"><Star size={11} fill="currentColor" strokeWidth={1.5} /><strong>{pub.rating}</strong><span>({pub.reviews} reviews)</span></span>
       </div>
-      <button type="button" className="pwn-view-button" onClick={(event) => { event.stopPropagation(); onView(); }}>View</button>
+      <button type="button" className="pwn-view-button" aria-label={`View ${pub.name}, design preview`} onClick={(event) => { event.stopPropagation(); onView(); }}>View</button>
     </article>
   );
 }
@@ -178,7 +178,7 @@ export function NearbyPubs() {
           ))}
         </div>
 
-        <MapArtwork selectedId={selectedId} onSelect={(id) => { setSelectedId(id); notify(`${PUBS.find((pub) => pub.id === id)?.name} · sample map pin`); }} />
+        <MapArtwork pubs={shownPubs} selectedId={selectedId} onSelect={(id) => { setSelectedId(id); notify(`${PUBS.find((pub) => pub.id === id)?.name} · sample map pin`); }} />
 
         <button type="button" className="pwn-recenter" aria-label="Recenter sample map" onClick={() => { setSelectedId(null); notify("Map centred on Totnes · sample preview"); }}>
           <Navigation size={17} strokeWidth={2.1} />

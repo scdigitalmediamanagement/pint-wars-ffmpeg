@@ -22,7 +22,7 @@
   font-feature-settings: "kern";
   -webkit-font-smoothing: antialiased;
 }
-.pwn button, .pwn input { color: inherit; font: inherit; -webkit-tap-highlight-color: transparent; }
+.pwn :where(button, input) { color: inherit; font: inherit; -webkit-tap-highlight-color: transparent; }
 .pwn button { cursor: pointer; }
 .pwn button:focus-visible, .pwn input:focus-visible { outline: 2px solid rgba(255, 209, 46, .9); outline-offset: 2px; }
 .pwn-screen { position: relative; width: min(100%, 430px); height: 100%; min-height: 700px; margin: 0 auto; overflow: hidden; }
