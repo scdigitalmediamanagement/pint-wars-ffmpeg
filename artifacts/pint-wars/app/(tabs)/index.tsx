@@ -1,17 +1,26 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, Image, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Card, Screen, uiStyles } from '@/components/AppUi';
+import { Card, Screen } from '@/components/AppUi';
 import { NotificationBell } from '@/components/NotificationBell';
 import { getLeagueDashboard, getMyLeagues } from '@/src/lib/league-service';
 import type { LeagueDashboard, MyLeague } from '@/src/types/league';
 import palette from '@/constants/colors';
-import { useColors } from '@/hooks/useColors';
 
 const c = palette.dark;
+const home = {
+  background: '#05080d',
+  panel: '#0c1119',
+  panelSoft: '#101720',
+  line: '#29303b',
+  gold: '#ffd12e',
+  text: '#f4f2ec',
+  muted: '#a3a9b2',
+};
 
 function durationDays(startsAt: string, endsAt: string) {
   const s = new Date(startsAt).getTime();
@@ -35,9 +44,9 @@ function remaining(endsAt: string, now: number) {
   const d = Math.floor(total / 1440);
   const h = Math.floor((total % 1440) / 60);
   const m = total % 60;
-  if (d > 0) return `${d}d ${h}h remaining`;
-  if (h > 0) return `${h}h ${m}m remaining`;
-  return `${Math.max(1, m)}m remaining`;
+  if (d > 0) return `${d} ${d === 1 ? 'day' : 'days'} remaining`;
+  if (h > 0) return `${h} ${h === 1 ? 'hour' : 'hours'} remaining`;
+  return `${Math.max(1, m)} min remaining`;
 }
 
 function standing(dashboard: LeagueDashboard, membershipId: string) {
@@ -45,6 +54,14 @@ function standing(dashboard: LeagueDashboard, membershipId: string) {
   const me = members.find((m) => m.id === membershipId);
   if (!me) return null;
   return { rank: 1 + members.filter((m) => m.points > me.points).length, points: me.points, players: members.length };
+}
+
+function ordinalRank(rank: number) {
+  const lastTwo = rank % 100;
+  const suffix = lastTwo >= 11 && lastTwo <= 13
+    ? 'th'
+    : rank % 10 === 1 ? 'st' : rank % 10 === 2 ? 'nd' : rank % 10 === 3 ? 'rd' : 'th';
+  return `${rank}${suffix}`;
 }
 
 function Hero({ item, now }: { item: MyLeague; now: number }) {
@@ -58,55 +75,96 @@ function Hero({ item, now }: { item: MyLeague; now: number }) {
   const st = dash.data ? standing(dash.data, item.membershipId) : null;
   const l = item.league;
   const total = durationDays(l.starts_at, l.ends_at);
+  const memberCount = dash.data?.members.filter((member) => member.status !== 'removed').length;
+  const startsAt = new Date(l.starts_at).getTime();
+  const endsAt = new Date(l.ends_at).getTime();
+  const progress = Number.isFinite(startsAt) && endsAt > startsAt
+    ? Math.max(0, Math.min(1, (now - startsAt) / (endsAt - startsAt)))
+    : 0;
 
   return (
-    <View style={styles.hero}>
-      <View style={styles.liveRow}>
-        <View style={styles.liveDot} />
-        <Text style={styles.live}>LIVE PINT WAR</Text>
-      </View>
-      <Text style={styles.heroName} numberOfLines={2}>{l.name}</Text>
-      <Text style={styles.heroMeta}>
-        Day {dayNumber(l.starts_at, l.ends_at, now)} of {total}  ·  {remaining(l.ends_at, now)}
-      </Text>
-      {st ? (
-        <View style={styles.statRow}>
-          <Stat label="RANK" value={`#${st.rank}`} />
-          <Stat label="SCORE" value={String(st.points)} />
-          <Stat label="PLAYERS" value={String(st.players)} />
+    <View style={styles.hero} testID="active-pint-war">
+      <Image
+        source={require('@/assets/images/home/pw-home-pints.jpg')}
+        style={StyleSheet.absoluteFillObject}
+        resizeMode="cover"
+        accessible={false}
+      />
+      <LinearGradient
+        pointerEvents="none"
+        colors={['rgba(5,8,13,0.11)', 'rgba(5,8,13,0.22)', 'rgba(5,8,13,0.68)', 'rgba(5,8,13,0.98)']}
+        locations={[0, 0.32, 0.62, 1]}
+        style={StyleSheet.absoluteFill}
+      />
+      <LinearGradient
+        pointerEvents="none"
+        colors={['rgba(5,8,13,0.72)', 'rgba(5,8,13,0.25)', 'transparent']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={StyleSheet.absoluteFill}
+      />
+      <View style={styles.heroContent}>
+        <View style={styles.livePill}>
+          <View style={styles.liveDot} />
+          <Text style={styles.live}>LIVE PINT WAR</Text>
         </View>
-      ) : dash.isError ? (
-        <View style={styles.unavail}>
-          <Text style={styles.unavailText}>Standings unavailable right now.</Text>
-          <Pressable accessibilityRole="button" onPress={() => dash.refetch()} style={styles.retry}>
-            <Text style={styles.retryText}>Retry</Text>
-          </Pressable>
+        <Text style={styles.heroName} numberOfLines={1}>{l.name}</Text>
+        <Text style={styles.heroMeta}>
+          Day {dayNumber(l.starts_at, l.ends_at, now)} of {total}
+          <Text style={styles.metaDivider}>  ·  </Text>
+          {memberCount == null ? '—' : memberCount} {memberCount === 1 ? 'player' : 'players'}
+        </Text>
+        <View style={styles.heroSpacer} />
+        {st ? (
+          <View style={styles.standings}>
+            <Stat label="YOUR POSITION" value={ordinalRank(st.rank)} />
+            <Stat label="YOUR SCORE" value={String(st.points)} emphasis />
+          </View>
+        ) : dash.isError ? (
+          <View style={styles.unavail}>
+            <Text style={styles.unavailText}>Standings unavailable right now.</Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Retry loading standings"
+              onPress={() => dash.refetch()}
+              style={styles.retry}
+            >
+              <Text style={styles.retryText}>Retry</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.standings}>
+            <View style={styles.stat}><View style={styles.skeleton} /></View>
+            <View style={styles.stat}><View style={styles.skeleton} /></View>
+          </View>
+        )}
+        {dash.data && !st ? (
+          <Text style={styles.unavailText}>Your standing is unavailable for this war.</Text>
+        ) : null}
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
         </View>
-      ) : dash.data ? (
-        <Text style={styles.unavailText}>Your standing is unavailable for this war.</Text>
-      ) : (
-        <View style={styles.statRow}>
-          {[0, 1, 2].map((i) => <View key={i} style={styles.skeleton} />)}
-        </View>
-      )}
+        <Text style={styles.remaining}>{remaining(l.ends_at, now)}</Text>
       <Pressable
         testID="view-pint-war"
         accessibilityRole="button"
+        accessibilityLabel={`View ${l.name} Pint War`}
         onPress={() => router.push(`/war/${id}`)}
         style={({ pressed }) => [styles.heroBtn, { opacity: pressed ? 0.8 : 1 }]}
       >
-        <Text style={styles.heroBtnText}>VIEW PINT WAR</Text>
-        <Feather name="arrow-right" size={18} color={c.accentForeground} />
+          <Text style={styles.heroBtnText}>View Pint War</Text>
+          <Feather name="arrow-right" size={19} color="#17140a" />
       </Pressable>
+      </View>
     </View>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, emphasis = false }: { label: string; value: string; emphasis?: boolean }) {
   return (
     <View style={styles.stat}>
-      <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
+      <Text style={[styles.statValue, emphasis && styles.statEmphasis]}>{value}</Text>
     </View>
   );
 }
@@ -116,11 +174,15 @@ function Action({ icon, label, sub, href, primary }: { icon: keyof typeof Feathe
     <Pressable
       accessibilityRole="button"
       onPress={() => router.push(href)}
-      style={({ pressed }) => [styles.action, primary && styles.actionPrimary, { opacity: pressed ? 0.8 : 1 }]}
+      style={({ pressed }) => [styles.action, primary && styles.actionPrimary, { opacity: pressed ? 0.78 : 1 }]}
     >
-      <Feather name={icon} size={22} color={c.accent} />
-      <Text style={styles.actionLabel}>{label}</Text>
-      <Text style={styles.actionSub}>{sub}</Text>
+      <View style={styles.actionIcon}>
+        <Feather name={icon} size={23} color={home.text} />
+      </View>
+      <View style={styles.actionCopy}>
+        <Text style={styles.actionLabel}>{label}</Text>
+        <Text style={styles.actionSub}>{sub}</Text>
+      </View>
     </Pressable>
   );
 }
@@ -133,7 +195,6 @@ function statusLabel(item: MyLeague) {
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const deviceColors = useColors();
   const queryClient = useQueryClient();
   const [now, setNow] = useState(() => Date.now());
   const [refreshing, setRefreshing] = useState(false);
@@ -181,44 +242,100 @@ export default function HomeScreen() {
     }, []),
   );
 
+  const webTopInset = Platform.OS === 'web' ? 67 : 0;
   return (
-    <Screen style={{ backgroundColor: c.background }}>
+    <Screen style={{ backgroundColor: home.background }}>
       <ScrollView
-        contentContainerStyle={[uiStyles.content, { paddingTop: Math.max(22, insets.top + 8), paddingBottom: Math.max(104, insets.bottom + 88), gap: 24 }]}
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: Math.max(webTopInset, insets.top + 8), paddingBottom: Math.max(124, insets.bottom + 100) },
+        ]}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={c.accent} colors={[c.accent]} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={home.gold} colors={[home.gold]} />}
       >
-        <View style={styles.headerRow}>
-          <View style={styles.greeting}>
-            <View style={styles.brandRow}>
-              <Feather name="flag" size={13} color={c.accent} />
-              <Text style={styles.brand}>PINT WARS</Text>
+        {Platform.OS === 'web' ? (
+          <View pointerEvents="none" style={styles.webStatusBar}>
+            <Text style={styles.webStatusTime}>9:41</Text>
+            <View style={styles.webStatusIcons}>
+              <Feather name="signal" size={13} color={home.text} />
+              <Feather name="wifi" size={13} color={home.text} />
+              <Feather name="battery" size={16} color={home.text} />
             </View>
-            <Text style={styles.title}>Ready for your next war?</Text>
           </View>
-          <View style={[styles.bellWrap, { backgroundColor: deviceColors.card }]}>
+        ) : null}
+        <View style={styles.headerRow}>
+          <View style={styles.brandRow} accessible accessibilityLabel="Pint Wars">
+            <Image
+              source={require('@/assets/images/home/pw-reference-crest.png')}
+              style={styles.crest}
+              resizeMode="contain"
+              accessible={false}
+            />
+            <Image
+              source={require('@/assets/images/home/pw-reference-wordmark.png')}
+              style={styles.wordmark}
+              resizeMode="contain"
+              accessible={false}
+            />
+          </View>
+          <View style={styles.bellWrap}>
             <NotificationBell />
           </View>
         </View>
+        <Text style={styles.title}>Ready for your next war?</Text>
 
         {query.isLoading ? (
-          <View style={[styles.hero, { alignItems: 'center', minHeight: 200, justifyContent: 'center' }]}>
-            <ActivityIndicator color={c.accent} />
+          <View style={[styles.emptyHero, styles.loadingHero]}>
+            <ActivityIndicator color={home.gold} />
           </View>
         ) : query.isError ? (
-          <Card style={styles.card}>
-            <Text style={styles.cardTitle}>Could not load your wars</Text>
-            <Pressable accessibilityRole="button" onPress={refresh} style={styles.retry}>
-              <Text style={styles.retryText}>Retry</Text>
+          <View style={[styles.emptyHero, styles.errorHero]} testID="home-load-error">
+            <Text style={styles.emptyStamp}>WARS UNAVAILABLE</Text>
+            <Text style={styles.emptyTitle}>We couldn’t load your wars.</Text>
+            <Text style={styles.emptyBody}>Check your connection and try again.</Text>
+            <Pressable accessibilityRole="button" onPress={refresh} style={styles.heroBtn}>
+              <Text style={styles.heroBtnText}>Try Again</Text>
+              <Feather name="refresh-cw" size={17} color="#17140a" />
             </Pressable>
-          </Card>
+          </View>
         ) : activeLeague ? (
           <Hero item={activeLeague} now={now} />
         ) : (
-          <Card style={styles.card}>
-            <Text style={styles.cardTitle}>No live war right now</Text>
-            <Text style={styles.body}>Start one with your friends or join with an invite code.</Text>
-          </Card>
+          <View style={styles.emptyHero} testID="no-active-pint-war">
+            <Image
+              source={require('@/assets/images/home/pw-home-pints.jpg')}
+              style={StyleSheet.absoluteFillObject}
+              resizeMode="cover"
+              accessible={false}
+            />
+            <LinearGradient
+              pointerEvents="none"
+              colors={['rgba(5,8,13,0.06)', 'rgba(5,8,13,0.2)', 'rgba(5,8,13,0.76)', '#05080d']}
+              locations={[0, 0.32, 0.65, 1]}
+              style={StyleSheet.absoluteFill}
+            />
+            <View style={styles.emptyContent}>
+              <View style={styles.emptyStampRow}>
+                <Feather name="shield" size={13} color={home.gold} />
+                <Text style={styles.emptyStamp}>NO ACTIVE PINT WAR</Text>
+              </View>
+              <View style={styles.heroSpacer} />
+              <Text style={styles.emptyTitle}>The pub is calling.</Text>
+              <Text style={styles.emptyBody}>
+                Bring your mates together, visit local pubs and see who comes out on top.
+              </Text>
+              <Pressable
+                testID="start-pint-war"
+                accessibilityRole="button"
+                onPress={() => router.push('/war/create')}
+                style={({ pressed }) => [styles.heroBtn, styles.emptyCta, { opacity: pressed ? 0.8 : 1 }]}
+              >
+                <Text style={styles.heroBtnText}>Start a Pint War</Text>
+                <Feather name="arrow-right" size={19} color="#17140a" />
+              </Pressable>
+            </View>
+          </View>
         )}
 
         <View style={{ gap: 12 }}>
