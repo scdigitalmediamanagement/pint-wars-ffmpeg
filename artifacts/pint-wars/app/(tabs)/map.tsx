@@ -142,6 +142,7 @@ export default function MapScreen() {
       return findNearbyPubs(coordinates);
     },
     enabled: Boolean(coordinates),
+    gcTime: 0,
     retry: false,
   });
 

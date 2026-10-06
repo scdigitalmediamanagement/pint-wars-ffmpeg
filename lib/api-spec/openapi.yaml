@@ -81,6 +81,60 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /pubs/nearby/photo-uri:
+    get:
+      operationId: getNearbyPubPhotoUri
+      tags: [pubs]
+      summary: Get a nearby pub photo URI
+      description: Returns a non-cacheable Google photo URI for a photo resource from an authenticated nearby-pub search.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: photoName
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 4096
+            pattern: "^places/[A-Za-z0-9_-]+/photos/[A-Za-z0-9_-]+$"
+      responses:
+        "200":
+          description: Non-cacheable Google photo URI
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NearbyPubPhotoUriResponse"
+        "400":
+          description: Invalid Google photo resource name
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Missing or invalid Supabase session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: Too many photo requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Google Places photo request failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "503":
+          description: Places provider is not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
   /account/delete:
     post:
       operationId: deleteMyAccount
@@ -526,6 +580,14 @@ components:
           minimum: 0
         coordinates:
           $ref: "#/components/schemas/Coordinates"
+        googleMapsUri:
+          type: string
+          format: uri
+        photos:
+          type: array
+          maxItems: 1
+          items:
+            $ref: "#/components/schemas/NearbyPubPhoto"
       required:
         - provider
         - placeId
@@ -533,6 +595,41 @@ components:
         - address
         - distanceMeters
         - coordinates
+    NearbyPubPhoto:
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          minLength: 1
+        authorAttributions:
+          type: array
+          items:
+            $ref: "#/components/schemas/NearbyPubPhotoAttribution"
+      required:
+        - name
+        - authorAttributions
+    NearbyPubPhotoAttribution:
+      type: object
+      additionalProperties: false
+      properties:
+        displayName:
+          type: string
+        uri:
+          type: string
+          format: uri
+        photoUri:
+          type: string
+          format: uri
+    NearbyPubPhotoUriResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        photoUri:
+          type: string
+          format: uri
+      required:
+        - photoUri
     NearbyPubSearch:
       type: object
       additionalProperties: false

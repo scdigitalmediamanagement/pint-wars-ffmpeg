@@ -38,6 +38,8 @@ export const FindNearbyPubsBody = zod.object({
 
 export const findNearbyPubsResponsePubsItemDistanceMetersMin = 0;
 
+export const findNearbyPubsResponsePubsItemPhotosMax = 1;
+
 export const FindNearbyPubsResponse = zod.object({
   pubs: zod.array(
     zod.object({
@@ -52,9 +54,47 @@ export const FindNearbyPubsResponse = zod.object({
         latitude: zod.number(),
         longitude: zod.number(),
       }),
+      googleMapsUri: zod.string().url().optional(),
+      photos: zod
+        .array(
+          zod.object({
+            name: zod.string().min(1),
+            authorAttributions: zod.array(
+              zod.object({
+                displayName: zod.string().optional(),
+                uri: zod.string().url().optional(),
+                photoUri: zod.string().url().optional(),
+              }),
+            ),
+          }),
+        )
+        .max(findNearbyPubsResponsePubsItemPhotosMax)
+        .optional(),
     }),
   ),
   providerConfigured: zod.boolean(),
+});
+
+/**
+ * Returns a non-cacheable Google photo URI for a photo resource from an authenticated nearby-pub search.
+ * @summary Get a nearby pub photo URI
+ */
+export const getNearbyPubPhotoUriQueryPhotoNameMax = 4096;
+
+export const getNearbyPubPhotoUriQueryPhotoNameRegExp = new RegExp(
+  "^places/[A-Za-z0-9_-]+/photos/[A-Za-z0-9_-]+$",
+);
+
+export const GetNearbyPubPhotoUriQueryParams = zod.object({
+  photoName: zod.coerce
+    .string()
+    .min(1)
+    .max(getNearbyPubPhotoUriQueryPhotoNameMax)
+    .regex(getNearbyPubPhotoUriQueryPhotoNameRegExp),
+});
+
+export const GetNearbyPubPhotoUriResponse = zod.object({
+  photoUri: zod.string().url(),
 });
 
 /**

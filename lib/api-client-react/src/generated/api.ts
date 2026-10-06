@@ -19,7 +19,9 @@ import type {
 import type {
   AccountDeletionResponse,
   ApiError,
+  GetNearbyPubPhotoUriParams,
   HealthStatus,
+  NearbyPubPhotoUriResponse,
   NearbyPubSearch,
   NearbyPubsRequest,
   PintWarActivityFeed,
@@ -244,6 +246,110 @@ export const useFindNearbyPubs = <
 > => {
   return useMutation(getFindNearbyPubsMutationOptions(options));
 };
+
+export const getGetNearbyPubPhotoUriUrl = (
+  params: GetNearbyPubPhotoUriParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/pubs/nearby/photo-uri?${stringifiedParams}`
+    : `/api/pubs/nearby/photo-uri`;
+};
+
+/**
+ * Returns a non-cacheable Google photo URI for a photo resource from an authenticated nearby-pub search.
+ * @summary Get a nearby pub photo URI
+ */
+export const getNearbyPubPhotoUri = async (
+  params: GetNearbyPubPhotoUriParams,
+  options?: Parameters<typeof customFetch>[1],
+): Promise<NearbyPubPhotoUriResponse> => {
+  return customFetch<NearbyPubPhotoUriResponse>(
+    getGetNearbyPubPhotoUriUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetNearbyPubPhotoUriQueryKey = (
+  params?: GetNearbyPubPhotoUriParams,
+) => {
+  return [`/api/pubs/nearby/photo-uri`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetNearbyPubPhotoUriQueryOptions = <
+  TData = Awaited<ReturnType<typeof getNearbyPubPhotoUri>>,
+  TError = ErrorType<ApiError>,
+>(
+  params: GetNearbyPubPhotoUriParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getNearbyPubPhotoUri>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetNearbyPubPhotoUriQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getNearbyPubPhotoUri>>
+  > = ({ signal }) =>
+    getNearbyPubPhotoUri(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getNearbyPubPhotoUri>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetNearbyPubPhotoUriQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getNearbyPubPhotoUri>>
+>;
+export type GetNearbyPubPhotoUriQueryError = ErrorType<ApiError>;
+
+/**
+ * @summary Get a nearby pub photo URI
+ */
+
+export function useGetNearbyPubPhotoUri<
+  TData = Awaited<ReturnType<typeof getNearbyPubPhotoUri>>,
+  TError = ErrorType<ApiError>,
+>(
+  params: GetNearbyPubPhotoUriParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getNearbyPubPhotoUri>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetNearbyPubPhotoUriQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 export const getDeleteMyAccountUrl = () => {
   return `/api/account/delete`;

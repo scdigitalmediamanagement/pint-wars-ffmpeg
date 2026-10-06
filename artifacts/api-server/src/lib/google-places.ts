@@ -3,11 +3,16 @@ import type { NearbyPubSearch, NearbyPubsRequest } from "@workspace/api-zod";
 const GOOGLE_NEARBY_SEARCH_URL =
   "https://places.googleapis.com/v1/places:searchNearby";
 const GOOGLE_FIELD_MASK =
-  "places.id,places.displayName,places.formattedAddress,places.location";
+  "places.id,places.displayName,places.formattedAddress,places.location,places.googleMapsUri,places.photos.name,places.photos.authorAttributions";
+const GOOGLE_PHOTO_MEDIA_BASE_URL = "https://places.googleapis.com/v1/";
 const SEARCH_RADIUS_METERS = 3_000;
 const MAX_RESULTS = 10;
 const EARTH_RADIUS_METERS = 6_371_000;
 const REQUEST_TIMEOUT_MILLISECONDS = 5_000;
+const PHOTO_MAX_WIDTH_PIXELS = 512;
+const GOOGLE_PHOTO_NAME_PATTERN =
+  /^places\/[A-Za-z0-9_-]+\/photos\/[A-Za-z0-9_-]+$/;
+const GOOGLE_PHOTO_HOST_PATTERN = /(^|\.)googleusercontent\.com$/i;
 
 type GooglePlace = {
   id?: unknown;
@@ -19,10 +24,27 @@ type GooglePlace = {
     latitude?: unknown;
     longitude?: unknown;
   };
+  googleMapsUri?: unknown;
+  photos?: unknown;
+};
+
+type GooglePhotoAttribution = {
+  displayName?: unknown;
+  uri?: unknown;
+  photoUri?: unknown;
+};
+
+type GooglePhoto = {
+  name?: unknown;
+  authorAttributions?: unknown;
 };
 
 type GoogleNearbyResponse = {
   places?: unknown;
+};
+
+type GooglePhotoMediaResponse = {
+  photoUri?: unknown;
 };
 
 export class PlacesServiceError extends Error {
@@ -62,6 +84,68 @@ function distanceMeters(
   );
 }
 
+function normalizeHttpsUri(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) return undefined;
+  try {
+    const uri = new URL(
+      value.startsWith("//") ? `https:${value}` : value,
+    );
+    return uri.protocol === "https:" ? uri.toString() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function normalizePhotoAttribution(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  const attribution = value as GooglePhotoAttribution;
+  const displayName =
+    typeof attribution.displayName === "string"
+      ? attribution.displayName.trim()
+      : "";
+  const uri = normalizeHttpsUri(attribution.uri);
+  const photoUri = normalizeHttpsUri(attribution.photoUri);
+
+  if (!displayName && !uri && !photoUri) return null;
+
+  return {
+    ...(displayName ? { displayName } : {}),
+    ...(uri ? { uri } : {}),
+    ...(photoUri ? { photoUri } : {}),
+  };
+}
+
+function normalizePhotos(value: unknown) {
+  if (!Array.isArray(value)) return undefined;
+  const firstPhoto = value[0] as GooglePhoto | undefined;
+  const name =
+    firstPhoto && typeof firstPhoto.name === "string"
+      ? firstPhoto.name.trim()
+      : "";
+
+  if (
+    !firstPhoto ||
+    !name ||
+    !GOOGLE_PHOTO_NAME_PATTERN.test(name)
+  ) {
+    return undefined;
+  }
+
+  const authorAttributions = Array.isArray(firstPhoto.authorAttributions)
+    ? firstPhoto.authorAttributions
+        .map(normalizePhotoAttribution)
+        .filter(
+          (attribution): attribution is NonNullable<typeof attribution> =>
+            attribution !== null,
+        )
+    : [];
+
+  return [{ name, authorAttributions }];
+}
+
 function normalizePlace(place: GooglePlace, origin: NearbyPubsRequest) {
   const placeId = typeof place.id === "string" ? place.id.trim() : "";
   const name =
@@ -91,6 +175,9 @@ function normalizePlace(place: GooglePlace, origin: NearbyPubsRequest) {
   }
 
   const coordinates = { latitude, longitude };
+  const googleMapsUri = normalizeHttpsUri(place.googleMapsUri);
+  const photos = normalizePhotos(place.photos);
+
   return {
     provider: "google_places" as const,
     placeId,
@@ -98,6 +185,8 @@ function normalizePlace(place: GooglePlace, origin: NearbyPubsRequest) {
     address,
     distanceMeters: distanceMeters(origin, coordinates),
     coordinates,
+    ...(googleMapsUri ? { googleMapsUri } : {}),
+    ...(photos ? { photos } : {}),
   };
 }
 
@@ -177,4 +266,90 @@ export async function searchNearbyGooglePubs(
     pubs,
     providerConfigured: true,
   };
+}
+
+export async function getGooglePlacePhotoUri(
+  photoName: string,
+): Promise<string> {
+  if (
+    photoName.length > 4096 ||
+    !GOOGLE_PHOTO_NAME_PATTERN.test(photoName)
+  ) {
+    throw new PlacesServiceError(502, "This pub photo is unavailable.");
+  }
+
+  const apiKey = process.env["GOOGLE_PLACES_API_KEY"];
+  if (!apiKey) {
+    throw new PlacesServiceError(
+      503,
+      "Nearby pub search is not configured.",
+    );
+  }
+
+  const photoPath = photoName
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
+  const photoUrl = new URL(
+    `${photoPath}/media`,
+    GOOGLE_PHOTO_MEDIA_BASE_URL,
+  );
+  photoUrl.searchParams.set("maxWidthPx", String(PHOTO_MAX_WIDTH_PIXELS));
+  photoUrl.searchParams.set("skipHttpRedirect", "true");
+
+  let response: Response;
+  const controller = new AbortController();
+  const timeout = setTimeout(
+    () => controller.abort(),
+    REQUEST_TIMEOUT_MILLISECONDS,
+  );
+  try {
+    response = await fetch(photoUrl, {
+      headers: { "X-Goog-Api-Key": apiKey },
+      signal: controller.signal,
+      cache: "no-store",
+    });
+  } catch {
+    throw new PlacesServiceError(
+      502,
+      "This pub photo could not be loaded from Google Places.",
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (!response.ok) {
+    throw new PlacesServiceError(
+      502,
+      "This pub photo could not be loaded from Google Places.",
+    );
+  }
+
+  let payload: GooglePhotoMediaResponse;
+  try {
+    payload = (await response.json()) as GooglePhotoMediaResponse;
+  } catch {
+    throw new PlacesServiceError(
+      502,
+      "Google Places returned an invalid photo response.",
+    );
+  }
+
+  const photoUri = normalizeHttpsUri(payload.photoUri);
+  if (!photoUri) {
+    throw new PlacesServiceError(
+      502,
+      "Google Places returned an invalid photo URI.",
+    );
+  }
+
+  const parsedPhotoUri = new URL(photoUri);
+  if (!GOOGLE_PHOTO_HOST_PATTERN.test(parsedPhotoUri.hostname)) {
+    throw new PlacesServiceError(
+      502,
+      "Google Places returned an invalid photo URI.",
+    );
+  }
+
+  return photoUri;
 }

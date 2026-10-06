@@ -74,6 +74,18 @@ export const NearbyPubProvider = {
   google_places: "google_places",
 } as const;
 
+export interface NearbyPubPhotoAttribution {
+  displayName?: string;
+  uri?: string;
+  photoUri?: string;
+}
+
+export interface NearbyPubPhoto {
+  /** @minLength 1 */
+  name: string;
+  authorAttributions: NearbyPubPhotoAttribution[];
+}
+
 export interface NearbyPub {
   provider: NearbyPubProvider;
   /** @minLength 1 */
@@ -84,6 +96,13 @@ export interface NearbyPub {
   /** @minimum 0 */
   distanceMeters: number;
   coordinates: Coordinates;
+  googleMapsUri?: string;
+  /** @maxItems 1 */
+  photos?: NearbyPubPhoto[];
+}
+
+export interface NearbyPubPhotoUriResponse {
+  photoUri: string;
 }
 
 export interface NearbyPubSearch {
@@ -94,3 +113,12 @@ export interface NearbyPubSearch {
 export interface ApiError {
   message: string;
 }
+
+export type GetNearbyPubPhotoUriParams = {
+  /**
+   * @minLength 1
+   * @maxLength 4096
+   * @pattern ^places/[A-Za-z0-9_-]+/photos/[A-Za-z0-9_-]+$
+   */
+  photoName: string;
+};

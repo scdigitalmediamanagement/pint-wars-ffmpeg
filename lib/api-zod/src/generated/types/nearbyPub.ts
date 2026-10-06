@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Coordinates } from './coordinates';
+import type { NearbyPubPhoto } from './nearbyPubPhoto';
 import type { NearbyPubProvider } from './nearbyPubProvider';
 
 export interface NearbyPub {
@@ -18,4 +19,7 @@ export interface NearbyPub {
   /** @minimum 0 */
   distanceMeters: number;
   coordinates: Coordinates;
+  googleMapsUri?: string;
+  /** @maxItems 1 */
+  photos?: NearbyPubPhoto[];
 }

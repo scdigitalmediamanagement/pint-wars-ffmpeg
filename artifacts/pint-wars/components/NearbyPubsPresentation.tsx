@@ -1,8 +1,9 @@
 import React from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, Linking, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 import { Feather, FontAwesome } from '@expo/vector-icons';
 import { PubMap } from '@/components/PubMap';
-import type { Coordinates, NearbyPub } from '@/src/lib/pub-service';
+import { getNearbyPubPhotoUri, type Coordinates, type NearbyPub } from '@/src/lib/pub-service';
 import type { ReviewSummary } from '@/src/lib/review-service';
 import { createNearbyStyles, mapColors as c, type NearbyStyles } from './NearbyPubStyles';
 
@@ -25,6 +26,154 @@ export function formatDistance(meters: number) {
   return meters < 1000 ? `${Math.round(meters)} m` : `${(meters / 1000).toFixed(1)} km`;
 }
 
+function openExternalLink(uri: string) {
+  void Linking.openURL(uri).catch(() => undefined);
+}
+
+function NearbyPubPhoto({ pub, s }: { pub: NearbyPub; s: NearbyStyles }) {
+  const photo = pub.photos?.[0];
+  const [photoUri, setPhotoUri] = React.useState<string | null>(null);
+  const [loading, setLoading] = React.useState(Boolean(photo));
+  const [failed, setFailed] = React.useState(false);
+  const [viewerOpen, setViewerOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    let active = true;
+    setPhotoUri(null);
+    setFailed(false);
+    setLoading(Boolean(photo));
+    if (!photo) return () => { active = false; };
+
+    void getNearbyPubPhotoUri(photo.name).then(({ photoUri: uri }) => {
+      if (!active) return;
+      setPhotoUri(uri);
+      setLoading(false);
+    }).catch(() => {
+      if (!active) return;
+      setFailed(true);
+      setLoading(false);
+    });
+
+    return () => { active = false; };
+  }, [photo?.name]);
+
+  const fallbackLabel = photo && loading ? 'Loading photo' : 'No venue photo';
+
+  return (
+    <>
+      <Pressable
+        onPress={(event) => { event.stopPropagation(); setViewerOpen(true); }}
+        disabled={!photoUri || failed}
+        accessibilityRole="button"
+        accessibilityLabel={photoUri ? `View the photo and credits for ${pub.name}` : `${fallbackLabel} for ${pub.name}`}
+        style={s.photo}
+      >
+        {photoUri && !failed ? (
+          <ExpoImage
+            source={{ uri: photoUri }}
+            cachePolicy="none"
+            contentFit="cover"
+            onError={() => setFailed(true)}
+            accessibilityLabel={`Google Places photo of ${pub.name}`}
+            style={s.photoImage}
+          />
+        ) : loading ? (
+          <ActivityIndicator size="small" color={c.gold} />
+        ) : (
+          <View style={s.photoEmpty}>
+            <Feather name="image" size={16} color={c.muted} />
+            <Text style={s.photoEmptyText}>No venue photo</Text>
+          </View>
+        )}
+        {photoUri && !failed ? <Text style={s.photoLabel}>PHOTO & CREDITS</Text> : null}
+      </Pressable>
+
+      {photoUri && photo ? (
+        <Modal
+          visible={viewerOpen}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setViewerOpen(false)}
+          statusBarTranslucent
+        >
+          <View style={s.photoModalBackdrop}>
+            <View style={s.photoModal}>
+              <View style={s.photoModalHeader}>
+                <Text style={s.photoModalTitle} numberOfLines={2}>{pub.name}</Text>
+                <Pressable
+                  onPress={() => setViewerOpen(false)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close photo"
+                  style={s.photoModalClose}
+                >
+                  <Feather name="x" size={21} color={c.text} />
+                </Pressable>
+              </View>
+              <ExpoImage
+                source={{ uri: photoUri }}
+                cachePolicy="none"
+                contentFit="contain"
+                accessibilityLabel={`Google Places photo of ${pub.name}`}
+                style={s.photoViewerImage}
+              />
+              <Text style={s.photoAttributionHeading}>PHOTO CREDIT</Text>
+              {photo.authorAttributions.length > 0 ? (
+                <ScrollView style={s.photoAttributionList}>
+                  {photo.authorAttributions.map((author, index) => {
+                    const label = author.displayName || 'Google Maps contributor';
+                    return (
+                      <View
+                        key={`${author.uri ?? label}-${index}`}
+                        style={s.photoAttributionRow}
+                      >
+                        {author.photoUri ? (
+                          <ExpoImage
+                            source={{ uri: author.photoUri }}
+                            cachePolicy="none"
+                            contentFit="cover"
+                            accessibilityLabel={`${label} profile photo`}
+                            style={s.photoAuthorAvatar}
+                          />
+                        ) : (
+                          <View style={s.photoAuthorFallback}>
+                            <Feather name="user" size={14} color={c.muted} />
+                          </View>
+                        )}
+                        {author.uri ? (
+                          <Pressable
+                            onPress={() => openExternalLink(author.uri!)}
+                            accessibilityRole="link"
+                          >
+                            <Text style={s.photoAuthorLink}>{label}</Text>
+                          </Pressable>
+                        ) : (
+                          <Text style={s.photoAuthorLink}>{label}</Text>
+                        )}
+                      </View>
+                    );
+                  })}
+                </ScrollView>
+              ) : (
+                <Text style={s.stateText}>No contributor attribution was supplied.</Text>
+              )}
+              {pub.googleMapsUri ? (
+                <Pressable
+                  onPress={() => openExternalLink(pub.googleMapsUri!)}
+                  accessibilityRole="link"
+                  style={s.photoSourceLink}
+                >
+                  <Feather name="map" size={15} color={c.gold} />
+                  <Text style={s.photoSourceText}>View this pub on Google Maps</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
+        </Modal>
+      ) : null}
+    </>
+  );
+}
+
 export function NearbyPubCard({ pub, summary, visited, ratingLoading, ratingFailed, onOpen, s }: {
   pub: NearbyPub; summary: ReviewSummary | null | undefined; visited: boolean;
   ratingLoading: boolean; ratingFailed: boolean; onOpen: () => void; s: NearbyStyles;
@@ -32,12 +181,7 @@ export function NearbyPubCard({ pub, summary, visited, ratingLoading, ratingFail
   const rating = pubRating(summary);
   return (
     <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={`View ${pub.name}, ${formatDistance(pub.distanceMeters)} away`} style={({ pressed }) => [s.pubRow, pressed && { opacity: 0.8 }]}>
-      {/* The discovery contract does not return venue photos. Never pass stock
-          photography off as an actual photo of this live Google Places result. */}
-      <View style={s.photo} accessible accessibilityLabel="Illustrative pint photo, not a photo of this venue">
-        <Image source={require('@/assets/images/home/pw-home-pints.jpg')} style={s.photoImage} resizeMode="cover" />
-        <Text style={s.photoLabel}>ILLUSTRATIVE</Text>
-      </View>
+      <NearbyPubPhoto key={pub.photos?.[0]?.name ?? `${pub.placeId}:no-photo`} pub={pub} s={s} />
       <View style={s.pubCopy}>
         <Text style={s.pubName} numberOfLines={2}>{pub.name}</Text>
         <Text style={s.pubAddress} numberOfLines={1}>{pub.address || 'Address unavailable'}</Text>
