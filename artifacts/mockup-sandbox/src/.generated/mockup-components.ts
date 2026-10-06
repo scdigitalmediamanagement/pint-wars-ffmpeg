@@ -2,6 +2,7 @@
 type ModuleMap = Record<string, () => Promise<Record<string, unknown>>>;
 export const modules: ModuleMap = {
   "./components/mockups/pint-wars/WarRoom.tsx": () => import("../components/mockups/pint-wars/WarRoom.tsx"),
+  "./components/mockups/pint-wars-reference/ActiveWar.tsx": () => import("../components/mockups/pint-wars-reference/ActiveWar.tsx"),
   "./components/mockups/pint-wars-reference/Current.tsx": () => import("../components/mockups/pint-wars-reference/Current.tsx"),
   "./components/mockups/pint-wars-reference/HomeActive.tsx": () => import("../components/mockups/pint-wars-reference/HomeActive.tsx"),
   "./components/mockups/pint-wars-reference/HomeNoActive.tsx": () => import("../components/mockups/pint-wars-reference/HomeNoActive.tsx"),
