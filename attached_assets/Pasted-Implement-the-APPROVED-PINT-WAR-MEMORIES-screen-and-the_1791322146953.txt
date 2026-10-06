@@ -1,0 +1,148 @@
+Implement the APPROVED PINT WAR MEMORIES screen and the real Memories video workflow in the existing Pint Wars app.
+
+The attached Design frame is the PRIMARY visual specification.
+
+IMPORTANT:
+This is now a real product feature, not a mock-up.
+
+CORE RESULT
+
+When a Pint War is completed, the app must be able to:
+
+1. Select the completed war's photos using the existing Memories selection logic.
+2. Obtain the selected private proof photos as local filesystem files suitable for FFmpeg.
+3. Generate a real approximately 30-second MP4 on iOS.
+4. Play the generated MP4 inside the Memories screen.
+5. Save the generated MP4 to the device/photo library using the appropriate iOS permission flow.
+6. Share the generated MP4 using the native iOS share sheet.
+7. Show proper generating, success and failure/retry states.
+
+USE EXISTING WORK
+
+Preserve and reuse:
+- existing Memories photo-selection algorithm
+- final-hours weighting
+- player/pub variety logic
+- duplicate avoidance
+- completed-war summary
+- existing private Supabase pint-proof storage
+- existing protected photo access
+- existing FFmpegKit Next iOS XCFramework work
+- existing Expo/CNG architecture
+- existing local iOS Expo module approach where already prepared
+
+Do not replace the FFmpeg implementation with another video library unless the existing FFmpeg integration is proven unusable.
+
+VIDEO DESIGN
+
+Implement the approved visual structure:
+- Pint War Memories header
+- completed-war name
+- Memory Film hero/player
+- 30-second highlight video
+- timeline/progress
+- Save Video
+- Share Video
+- memory thumbnail strip
+- final-whistle/winner section
+
+REAL DATA
+
+Use:
+- real completed league data
+- real selected player/pint photos
+- real winner and final scores
+- real pub information where already available
+
+Do not fabricate production data.
+
+LOCAL FILE PIPELINE
+
+The current selection logic may return photo references/Blobs/URLs.
+
+Build the necessary safe bridge so FFmpeg receives actual local filesystem paths.
+
+Use temporary files in an appropriate iOS temporary directory.
+Clean up temporary files after generation/failure where safe.
+
+Do not expose private Supabase proof-photo URLs publicly.
+
+VIDEO GENERATION
+
+Create an approximately 30-second MP4 using the selected images.
+
+The video should:
+- use the selected Memories photos
+- have smooth timed transitions
+- maintain portrait/iPhone-friendly output
+- use an appropriate H.264/AAC MP4 format for iOS sharing
+- end with the winner/final-war moment
+- preserve the approved visual feel
+
+Do not alter the existing photo-selection algorithm unless necessary to make it compatible with the filesystem pipeline.
+
+SAVE
+
+The Save Video button must save the generated MP4 to the iOS Photos library using the proper permission flow.
+
+Handle:
+- permission granted
+- permission denied
+- save success
+- save failure
+
+SHARE
+
+The Share Video button must open the native iOS share sheet with the generated MP4 as the shareable file.
+
+Do not share a URL when the product requirement is to share the actual MP4 file.
+
+IMPORTANT NATIVE ARCHITECTURE
+
+Keep the app CNG-based.
+
+Use the existing local Apple-only Expo module under:
+artifacts/pint-wars/modules/
+
+Use Expo plugins/configuration only where required for the generated iOS project.
+
+Do not introduce unnecessary external services.
+
+DO NOT CHANGE
+
+- Supabase scoring
+- league mechanics
+- authentication
+- RevenueCat
+- payments
+- database schema
+- Pint War scoring
+- Map/API functionality
+- Passport functionality
+- unrelated screens
+
+Before implementing, inspect the existing Memories implementation and the existing FFmpegKit Next iOS integration and determine exactly what is already present versus missing.
+
+Then implement only the missing pieces required for a real Memories MP4 workflow.
+
+VERIFICATION
+
+After implementation:
+- run the full workspace TypeScript check
+- run all relevant existing tests
+- run git diff --check
+- verify native module/configuration consistency
+- verify the generated MP4 path and cleanup logic
+- verify Save and Share error handling
+
+Where native iOS hardware is required and cannot be verified in the browser, explicitly report that limitation.
+
+Do not publish.
+Do not make unrelated changes.
+
+Report:
+1. exactly which files changed
+2. what part of the video pipeline was already present
+3. what was added
+4. all verification results
+5. any remaining native-only verification requirement
