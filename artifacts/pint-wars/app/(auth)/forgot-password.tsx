@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -46,7 +46,7 @@ export default function ForgotPasswordScreen() {
         <View style={styles.recoveryMark} accessible={false}>
           <View style={styles.orbit} />
           <View style={styles.coin}>
-            <Ionicons name="mail-outline" size={25} color="#17140a" />
+            <Ionicons name="mail-outline" size={25} color={authColors.actionInk} />
           </View>
           <View style={styles.sparkOne} />
           <View style={styles.sparkTwo} />
@@ -94,23 +94,17 @@ export default function ForgotPasswordScreen() {
               loading={loading}
               disabled={!isConfigured}
               layout="centerInline"
-              icon={<Ionicons name="arrow-forward" size={17} color="#17140a" />}
+              icon={<Ionicons name="arrow-forward" size={17} color={authColors.actionInk} />}
             />
           </View>
         )}
 
-        <Link href="/(auth)/sign-in" asChild>
-          <Pressable
-            accessibilityRole="link"
-            style={({ pressed }) => [
-              styles.returnLink,
-              pressed && styles.linkPressed,
-            ]}
-          >
-            <Ionicons name="arrow-back" size={15} color={authColors.gold} />
-            <Text style={styles.returnLinkText}>Return to sign in</Text>
-          </Pressable>
-        </Link>
+        <View style={styles.returnLink}>
+          <Ionicons name="arrow-back" size={15} color={authColors.gold} />
+          <Link href="/(auth)/sign-in" style={styles.returnLinkText}>
+            Return to sign in
+          </Link>
+        </View>
       </View>
     </AuthScreen>
   );
@@ -234,8 +228,5 @@ const styles = StyleSheet.create({
     color: authColors.gold,
     fontFamily: 'DMSans_700Bold',
     fontSize: 12,
-  },
-  linkPressed: {
-    opacity: 0.7,
   },
 });

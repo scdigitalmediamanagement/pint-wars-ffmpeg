@@ -29,6 +29,7 @@ export const authColors = {
   gold: palette.gold,
   muted: palette.muted,
   error: palette.error,
+  actionInk: palette.actionInk,
 };
 
 function withOpacity(hexColor: string, opacity: number) {
@@ -53,10 +54,9 @@ export function AuthScreen({ children, contentStyle }: AuthScreenProps) {
         colors={[palette.panel, palette.background, palette.background]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
-        pointerEvents="none"
-        style={StyleSheet.absoluteFill}
+        style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}
       />
-      <View pointerEvents="none" style={styles.ambientOrbit}>
+      <View style={[styles.ambientOrbit, { pointerEvents: 'none' }]}>
         <View style={styles.ambientOrbitOuter} />
         <View style={styles.ambientOrbitMiddle} />
         <View style={styles.ambientOrbitInner} />

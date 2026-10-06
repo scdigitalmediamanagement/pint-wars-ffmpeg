@@ -115,7 +115,7 @@ export default function CreateAccountScreen() {
               disabled={!isConfigured}
               layout="spread"
               iconBox
-              icon={<Ionicons name="arrow-forward" size={17} color="#17140a" />}
+              icon={<Ionicons name="arrow-forward" size={17} color={authColors.actionInk} />}
             />
           </View>
 
