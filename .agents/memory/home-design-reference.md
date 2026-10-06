@@ -26,3 +26,9 @@ Do not show a Passport footer explaining Google place identity, legacy location-
 **Why:** The user said this is implementation detail and should not be visible in the consumer-facing UI.
 
 **How to apply:** Omit that explanatory footer; preserve the actual Passport data, location cards, navigation, and remaining consumer-facing content.
+
+The approved Profile integration must use real personal data, never the mockup's identity or figures. Partial statistics must be labelled with their actual scope, not presented as lifetime totals.
+
+**Why:** The user explicitly prohibited fabricated statistics and new backend/statistics infrastructure solely to reproduce the design.
+
+**How to apply:** Keep Profile changes presentation-only and preserve editing, history, privacy, support, account deletion and sign-out. Use available existing data or omit unsupported metrics. Achievements stays “Coming Soon.” Do not change scoring, authentication, RevenueCat, schema or unrelated screens.

@@ -156,6 +156,18 @@ function ClassicTabLayout() {
         name="profile"
         options={{
           title: 'Profile',
+          headerShown: false,
+          tabBarActiveTintColor: homeColors.gold,
+          tabBarInactiveTintColor: homeColors.muted,
+          tabBarStyle: {
+            position: 'absolute',
+            backgroundColor: homeColors.background,
+            borderTopWidth: 1,
+            borderTopColor: homeColors.line,
+            elevation: 0,
+            ...(isWeb ? { height: 84 } : {}),
+          },
+          tabBarBackground: () => <View style={[StyleSheet.absoluteFill, { backgroundColor: homeColors.background }]} />,
           tabBarIcon: ({ color }) =>
             isIOS ? <SymbolView name="person" tintColor={color} size={24} /> : <Feather name="user" size={22} color={color} />,
         }}

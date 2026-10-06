@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, AppState, Image, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
@@ -15,12 +15,20 @@ import { createWarsStyles } from '@/components/wars/styles';
 import { currentLeague } from '@/components/wars/presentation';
 
 export default function WarsScreen() {
+  const { view } = useLocalSearchParams<{ view?: string }>();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<LeagueStatus>('active');
   const [now, setNow] = useState(Date.now);
   const [refreshing, setRefreshing] = useState(false);
+  // Consume the Profile history entry point without changing normal tab visits.
+  useEffect(() => {
+    if (view === 'history') {
+      setTab('completed');
+      router.setParams({ view: undefined });
+    }
+  }, [view]);
   // Screen-scoped fonts: no changes to Home or other screens' typography/loading.
   const [fontsLoaded, fontError] = useFonts({
     WarsDM_500: require('@/assets/fonts/wars/DMSans_500Medium.ttf'),
