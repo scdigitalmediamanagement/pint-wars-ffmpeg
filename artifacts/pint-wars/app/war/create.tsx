@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { ActivityIndicator, Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Purchases, { PURCHASES_ERROR_CODE } from 'react-native-purchases';
-import { Button, Card, ErrorText, Field, Screen, Title, uiStyles } from '@/components/AppUi';
+import { useFonts } from 'expo-font';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Card, ErrorText, Screen, uiStyles } from '@/components/AppUi';
+import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
+import home from '@/constants/homeColors';
 import {
   checkPaidLeaguePurchaseAvailability,
   createFreeLeague,
@@ -60,6 +65,13 @@ const leaguePlans: LeaguePlan[] = [
 
 export default function CreateWarScreen() {
   const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const [fontsLoaded] = useFonts({
+    WarsDM_500: require('@/assets/fonts/wars/DMSans_500Medium.ttf'),
+    WarsDM_700: require('@/assets/fonts/wars/DMSans_700Bold.ttf'),
+    WarsSpace_600: require('@/assets/fonts/wars/SpaceGrotesk_600SemiBold.ttf'),
+  });
+  const styles = useMemo(() => createCreateWarStyles(fontsLoaded), [fontsLoaded]);
   const { user } = useAuth();
   const revenueCat = useRevenueCat();
   const client = useQueryClient();
@@ -78,7 +90,7 @@ export default function CreateWarScreen() {
   const [name, setName] = useState('');
   const [paidDurationInput, setPaidDurationInput] = useState('7');
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [isSetupStep, setIsSetupStep] = useState(false);
+  const [isConfirmStep, setIsConfirmStep] = useState(false);
   const [error, setError] = useState('');
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [pendingPurchase, setPendingPurchase] =
