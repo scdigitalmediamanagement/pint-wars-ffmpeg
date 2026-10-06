@@ -180,22 +180,29 @@ export function NearbyPubCard({ pub, summary, visited, ratingLoading, ratingFail
 }) {
   const rating = pubRating(summary);
   return (
-    <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={`View ${pub.name}, ${formatDistance(pub.distanceMeters)} away`} style={({ pressed }) => [s.pubRow, pressed && { opacity: 0.8 }]}>
+    <View style={s.pubRow}>
       <NearbyPubPhoto key={pub.photos?.[0]?.name ?? `${pub.placeId}:no-photo`} pub={pub} s={s} />
-      <View style={s.pubCopy}>
-        <Text style={s.pubName} numberOfLines={2}>{pub.name}</Text>
-        <Text style={s.pubAddress} numberOfLines={1}>{pub.address || 'Address unavailable'}</Text>
-        <View style={s.detailRow}>
-          <Text style={s.pubDistance}>{formatDistance(pub.distanceMeters)}</Text>
-          {visited ? <Text style={s.visited}>✓ VISITED</Text> : null}
+      <Pressable
+        onPress={onOpen}
+        accessibilityRole="button"
+        accessibilityLabel={`View ${pub.name}, ${formatDistance(pub.distanceMeters)} away`}
+        style={({ pressed }) => [s.pubCardAction, pressed && { opacity: 0.8 }]}
+      >
+        <View style={s.pubCopy}>
+          <Text style={s.pubName} numberOfLines={2}>{pub.name}</Text>
+          <Text style={s.pubAddress} numberOfLines={1}>{pub.address || 'Address unavailable'}</Text>
+          <View style={s.detailRow}>
+            <Text style={s.pubDistance}>{formatDistance(pub.distanceMeters)}</Text>
+            {visited ? <Text style={s.visited}>✓ VISITED</Text> : null}
+          </View>
+          <View style={s.detailRow}>
+            {rating !== null ? <><FontAwesome name="star" size={11} color={c.gold} /><Text style={s.rating}>{rating.toFixed(1)}</Text><Text style={s.reviewCount}>({summary?.review_count} {summary?.review_count === 1 ? 'review' : 'reviews'})</Text></> :
+              <Text style={s.reviewCount}>{ratingLoading ? 'Loading ratings…' : ratingFailed ? 'Ratings unavailable' : summary?.review_count ? `${summary.review_count} reviews · rating unavailable` : 'No community reviews yet'}</Text>}
+          </View>
         </View>
-        <View style={s.detailRow}>
-          {rating !== null ? <><FontAwesome name="star" size={11} color={c.gold} /><Text style={s.rating}>{rating.toFixed(1)}</Text><Text style={s.reviewCount}>({summary?.review_count} {summary?.review_count === 1 ? 'review' : 'reviews'})</Text></> :
-            <Text style={s.reviewCount}>{ratingLoading ? 'Loading ratings…' : ratingFailed ? 'Ratings unavailable' : summary?.review_count ? `${summary.review_count} reviews · rating unavailable` : 'No community reviews yet'}</Text>}
-        </View>
-      </View>
-      <View style={s.view}><Text style={s.viewText}>View</Text></View>
-    </Pressable>
+        <View style={s.view}><Text style={s.viewText}>View</Text></View>
+      </Pressable>
+    </View>
   );
 }
 

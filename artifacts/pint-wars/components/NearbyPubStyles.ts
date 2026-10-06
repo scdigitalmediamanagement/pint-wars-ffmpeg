@@ -53,6 +53,7 @@ export function createNearbyStyles(fontsLoaded: boolean) {
     refresh: { padding: 10 },
     list: { gap: 7, paddingTop: 3, paddingBottom: 18 },
     pubRow: { minHeight: 82, padding: 6, gap: 9, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: mapColors.line, borderRadius: 10, backgroundColor: mapColors.background },
+    pubCardAction: { flex: 1, minWidth: 0, gap: 9, flexDirection: 'row', alignItems: 'center' },
     photo: { width: 68, height: 66, borderRadius: 7, overflow: 'hidden', backgroundColor: mapColors.map, alignItems: 'center', justifyContent: 'center' },
     photoImage: { width: '100%', height: '100%' },
     photoLabel: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: mapColors.background, paddingVertical: 3, color: mapColors.muted, textAlign: 'center', fontFamily: bold, fontSize: 6, letterSpacing: 0.5 },
