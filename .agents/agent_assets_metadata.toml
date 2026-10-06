@@ -1,0 +1,30 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "x-1pmyvNSHJs9tdkz3pxj"
+uri = "file://screenshots/nearby-pubs-photo-verification.jpg"
+type = "image"
+title = "Nearby Pubs — 390×844"
+description = "Synthetic fixture screenshot. The displayed venue image is an Unsplash browser fixture, not a verified Google Places photo response."
+logical_id = "cee8ef4c-3fee-4dfd-a8b2-6327175f867e"
+content_hash = "sha256:1583060f99953e0a9c4b1417fd740b6fb2f9ceea0a6fb00cb079c61e6e1381f0"
+size = 39157
+mtime_ms = 1791315345054
+storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:42494b53-7437-4b27-84d0-d65610c110e9/cee8ef4c-3fee-4dfd-a8b2-6327175f867e/afe50342-0c10-4707-aa62-a22b872e5679"
+storage_version_token = "1791315459928012"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "E6oGTphmz7xTcF3gsvpm7"
+uri = "file://screenshots/nearby-pubs-photo-credits.jpg"
+type = "image"
+title = "Nearby Pubs photo credits — 390×844"
+description = "Synthetic fixture screenshot showing the photo, contributor attribution, and Google Maps link. The photo is an Unsplash browser fixture, not a verified Google Places photo response."
+logical_id = "6e42e003-5089-47f2-a89b-0c7ca6df4a8f"
+content_hash = "sha256:8d7ee6462ba36c401e3e849b97aa592ae3b337078bfa9d29dd135ad52244f34a"
+size = 33869
+mtime_ms = 1791315346946
+storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:42494b53-7437-4b27-84d0-d65610c110e9/6e42e003-5089-47f2-a89b-0c7ca6df4a8f/3376aa77-7fc4-4131-945a-65700a0e855f"
+storage_version_token = "1791315460730742"
+content_type = "image/jpeg"
