@@ -125,7 +125,6 @@ export default function PassportScreen() {
               <Text style={s.photoNote}>Card imagery is illustrative, not a photo of each pub.</Text>
               <Text style={s.endNote}>End of the good ones—for now</Text>
             </> : null}
-            {entries.length ? <Text style={s.groupingNote}>Selected pubs are grouped by their Google place identity. Older location-only pint logs remain grouped by recorded coordinates.</Text> : null}
           </View>
         </View>
       </ScrollView>
