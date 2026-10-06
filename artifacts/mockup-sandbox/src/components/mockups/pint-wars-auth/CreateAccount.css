@@ -1,0 +1,208 @@
+.pw-create {
+  padding: 20px 25px 22px;
+  background:
+    radial-gradient(ellipse at 50% 4%, rgba(223, 170, 48, 0.075), transparent 37%),
+    transparent;
+}
+
+.pw-create__inner {
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+  animation: pw-create-rise 560ms cubic-bezier(.2,.75,.25,1) both;
+}
+
+.pw-create__ornament {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  margin: 10px auto 18px;
+}
+
+.pw-create__ornament-line {
+  width: 48px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 204, 48, .58));
+}
+
+.pw-create__ornament-line:last-child {
+  transform: scaleX(-1);
+}
+
+.pw-create__ornament-mark {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 204, 48, .38);
+  border-radius: 9px;
+  color: #ffcf38;
+  background: rgba(255, 204, 48, .07);
+  transform: rotate(45deg);
+}
+
+.pw-create__ornament-mark svg {
+  transform: rotate(-45deg);
+}
+
+.pw-create__heading {
+  margin-bottom: 27px;
+  text-align: center;
+}
+
+.pw-create__eyebrow {
+  margin: 0 0 9px;
+  color: #f6c735;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .19em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.pw-create__heading h1 {
+  margin: 0;
+  color: #f7f4e9;
+  font-family: "Space Grotesk", "DM Sans", sans-serif;
+  font-size: clamp(31px, 8vw, 36px);
+  font-weight: 700;
+  letter-spacing: -.055em;
+  line-height: 1.02;
+}
+
+.pw-create__heading h1 span {
+  color: #ffcf38;
+}
+
+.pw-create__form {
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+}
+
+.pw-create__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #efede5;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .015em;
+}
+
+.pw-create__field input {
+  width: 100%;
+  height: 54px;
+  padding: 0 16px;
+  border: 1px solid rgba(226, 225, 213, .15);
+  border-radius: 13px;
+  outline: none;
+  background: linear-gradient(110deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, .025));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035);
+  color: #fbf8ee;
+  font: 500 14px/1 "DM Sans", sans-serif;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.pw-create__field input::placeholder {
+  color: #777b7e;
+  opacity: 1;
+  font-weight: 400;
+}
+
+.pw-create__field input:focus {
+  border-color: rgba(255, 204, 48, .75);
+  background-color: rgba(255, 204, 48, .035);
+}
+
+.pw-create__field-rule {
+  display: none;
+}
+
+.pw-create__submit {
+  width: 100%;
+  min-height: 56px;
+  margin-top: 6px;
+  padding: 0 17px 0 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid rgba(255, 228, 142, .76);
+  border-radius: 15px;
+  background: linear-gradient(180deg, #ffdc61 0%, #f4bd25 100%);
+  box-shadow: 0 8px 22px rgba(200, 143, 20, .16), inset 0 1px 0 rgba(255, 255, 255, .55);
+  color: #15150f;
+  font: 800 15px/1 "DM Sans", sans-serif;
+  letter-spacing: -.015em;
+}
+
+.pw-create__submit-icon {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(47, 39, 15, .18);
+  border-radius: 10px;
+  background: rgba(255, 248, 215, .34);
+}
+
+.pw-create__signin {
+  margin-top: 23px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: #a6a8a7;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.pw-create__signin-link {
+  color: #ffcf38;
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 207, 56, .42);
+  text-underline-offset: 3px;
+}
+
+.pw-create__submit:focus-visible,
+.pw-create__signin-link:focus-visible {
+  outline: 2px solid #fff0b0;
+  outline-offset: 3px;
+}
+
+@keyframes pw-create-rise {
+  from { opacity: 0; transform: translateY(9px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 390px) {
+  .pw-create {
+    padding: 17px 22px 20px;
+  }
+
+  .pw-create__ornament {
+    margin-top: 7px;
+    margin-bottom: 15px;
+  }
+
+  .pw-create__heading {
+    margin-bottom: 24px;
+  }
+
+  .pw-create__form {
+    gap: 15px;
+  }
+}
+
+@media (max-height: 760px) {
+  .pw-create__ornament { margin-top: 2px; margin-bottom: 10px; }
+  .pw-create__heading { margin-bottom: 18px; }
+  .pw-create__form { gap: 12px; }
+  .pw-create__field input { height: 50px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pw-create__inner { animation: none; }
+}
