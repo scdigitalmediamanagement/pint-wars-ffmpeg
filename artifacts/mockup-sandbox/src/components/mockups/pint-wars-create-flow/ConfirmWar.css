@@ -1,0 +1,267 @@
+.pwconfirm-content {
+  padding-top: 3px;
+  padding-bottom: 18px;
+}
+
+.pwconfirm-intro {
+  margin: 0 1px 14px;
+  color: #b9bdc0;
+  font-size: 12px;
+  line-height: 1.48;
+}
+
+.pwconfirm-card {
+  position: relative;
+  overflow: hidden;
+  padding: 17px 16px 15px;
+  border: 1px solid rgba(255, 207, 54, 0.42);
+  border-radius: 19px;
+  background:
+    radial-gradient(ellipse at 92% 0%, rgba(255, 204, 50, 0.1), transparent 36%),
+    linear-gradient(145deg, #151a20 0%, #101419 54%, #0d1115 100%);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  animation: pwconfirm-rise 480ms cubic-bezier(.2,.75,.25,1) both;
+}
+
+.pwconfirm-card::before {
+  position: absolute;
+  top: 0;
+  right: 18px;
+  width: 1px;
+  height: 37px;
+  content: "";
+  background: linear-gradient(180deg, rgba(255, 207, 54, 0.6), transparent);
+}
+
+.pwconfirm-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pwconfirm-kicker {
+  color: #eacb72;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  line-height: 1.2;
+}
+
+.pwconfirm-ready {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 7px;
+  border: 1px solid rgba(255, 209, 46, 0.2);
+  border-radius: 99px;
+  background: rgba(255, 209, 46, 0.07);
+  color: #f3d66e;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  white-space: nowrap;
+}
+
+.pwconfirm-ready-mark {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ffd12e;
+}
+
+.pwconfirm-name {
+  margin: 13px 0 0;
+  color: #fbf8ef;
+  font-family: "Space Grotesk", "DM Sans", sans-serif;
+  font-size: 25px;
+  font-weight: 650;
+  letter-spacing: -0.045em;
+  line-height: 1.05;
+}
+
+.pwconfirm-subline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
+  color: #aeb2b4;
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.pwconfirm-subline svg {
+  color: #e1bd45;
+}
+
+.pwconfirm-rule {
+  height: 1px;
+  margin: 16px 0 13px;
+  background: linear-gradient(90deg, rgba(255, 209, 46, 0.3), rgba(255, 255, 255, 0.09) 42%, transparent);
+}
+
+.pwconfirm-facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+.pwconfirm-fact {
+  min-height: 65px;
+  padding: 2px 11px 11px 0;
+}
+
+.pwconfirm-fact:nth-child(2n) {
+  padding-left: 14px;
+  border-left: 1px solid rgba(255, 255, 255, 0.085);
+}
+
+.pwconfirm-fact:nth-child(n + 3) {
+  padding-top: 11px;
+  border-top: 1px solid rgba(255, 255, 255, 0.085);
+}
+
+.pwconfirm-fact-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #92999f;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.pwconfirm-fact-label svg {
+  color: #c9a93e;
+}
+
+.pwconfirm-fact-value {
+  display: block;
+  margin-top: 7px;
+  color: #f7f5ed;
+  font-family: "Space Grotesk", "DM Sans", sans-serif;
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+  line-height: 1;
+}
+
+.pwconfirm-fact-value em {
+  color: #c1c2bd;
+  font-family: "DM Sans", sans-serif;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.pwconfirm-purchase {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 5px;
+  padding: 11px 12px;
+  border: 1px solid rgba(255, 209, 46, 0.2);
+  border-radius: 12px;
+  background: rgba(255, 205, 47, 0.055);
+}
+
+.pwconfirm-purchase-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pwconfirm-purchase-label {
+  color: #f2d568;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+}
+
+.pwconfirm-purchase-note {
+  color: #9fa3a5;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.pwconfirm-price {
+  color: #ffda55;
+  font-family: "Space Grotesk", "DM Sans", sans-serif;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  white-space: nowrap;
+}
+
+.pwconfirm-assurance {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 13px 3px 0;
+  color: #a5aaac;
+  font-size: 11px;
+  line-height: 1.45;
+  animation: pwconfirm-rise 520ms 90ms cubic-bezier(.2,.75,.25,1) both;
+}
+
+.pwconfirm-assurance svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: #d5b647;
+}
+
+.pwconfirm-assurance strong {
+  color: #ddd8c9;
+  font-weight: 650;
+}
+
+.pwconfirm-footer-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0 0 9px;
+  color: #9ea2a4;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.035em;
+}
+
+.pwconfirm-footer-note svg {
+  color: #cfb349;
+}
+
+.pwconfirm-cta {
+  min-height: 54px;
+  padding: 0 12px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.pwconfirm-cta svg {
+  flex: 0 0 auto;
+}
+
+@keyframes pwconfirm-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-height: 760px) {
+  .pwconfirm-card { padding-top: 14px; }
+  .pwconfirm-name { margin-top: 10px; }
+  .pwconfirm-rule { margin: 12px 0 10px; }
+  .pwconfirm-fact { min-height: 58px; }
+  .pwconfirm-fact:nth-child(n + 3) { padding-top: 9px; }
+  .pwconfirm-assurance { margin-top: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pwconfirm-card,
+  .pwconfirm-assurance { animation: none; }
+}
