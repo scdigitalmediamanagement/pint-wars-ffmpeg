@@ -53,7 +53,7 @@ export function ConfirmWar() {
         </>
       }
     >
-      <div className="pwcf-content pwconfirm-content">
+      <div className="pwconfirm-content">
         <p className="pwconfirm-intro">
           The details are set. Here’s the Pint War you’re bringing to the table.
         </p>
