@@ -1006,3 +1006,677 @@
     transition-duration: .01ms !important;
   }
 }
+
+/* The selected live-war screen: a compact standings board with the action above the feed. */
+.pww-live-detail {
+  padding-bottom: 18px;
+}
+
+.pww-live-detail > .pww-back {
+  min-height: 22px;
+  margin: 0 0 7px;
+  color: #b9bdc2 !important;
+  font-size: 9px !important;
+  font-weight: 700;
+  letter-spacing: 1.1px;
+}
+
+.pww-live-hero {
+  height: 127px;
+  border-color: rgba(255, 209, 46, .25);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .24);
+}
+
+.pww-live-hero .pww-detail-photo {
+  opacity: .66;
+  object-position: center 46%;
+}
+
+.pww-live-hero .pww-detail-shade {
+  background:
+    linear-gradient(90deg, rgba(5, 8, 13, .84), rgba(5, 8, 13, .2) 88%),
+    linear-gradient(0deg, rgba(5, 8, 13, .95), rgba(5, 8, 13, .24) 83%);
+}
+
+.pww-live-hero-content {
+  inset: 12px 13px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.pww-live-topline,
+.pww-live-hero-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pww-live-topline .pww-war-topline {
+  display: inline-flex;
+  min-height: 23px;
+  align-items: center;
+  padding: 0 8px;
+  border: 1px solid rgba(255, 209, 46, .28);
+  border-radius: 12px;
+  background: rgba(8, 11, 14, .48);
+  font-size: 8px;
+  letter-spacing: .95px;
+}
+
+.pww-live-countdown,
+.pww-live-place {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #f5df96;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .65px;
+}
+
+.pww-live-hero-content .pww-war-title {
+  margin: auto 0 7px;
+  color: #fffaf0;
+  font-size: 27px;
+  letter-spacing: -.85px;
+  line-height: 1.04;
+  text-shadow: 0 2px 13px rgba(0, 0, 0, .44);
+}
+
+.pww-live-hero-meta {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  column-gap: 7px;
+  color: #e5e2d9;
+  font-size: 8px;
+  font-weight: 750;
+  letter-spacing: .64px;
+}
+
+.pww-live-hero-meta > i {
+  width: 3px;
+  height: 3px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--pww-gold);
+}
+
+.pww-live-hero-meta > span:nth-of-type(2) {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pww-live-place {
+  min-height: 19px;
+  margin-left: auto;
+  padding: 0 6px;
+  border: 1px solid rgba(255, 209, 46, .3);
+  border-radius: 6px;
+  background: rgba(255, 209, 46, .12);
+  color: #ffe890;
+  font-size: 7px;
+  letter-spacing: .38px;
+}
+
+.pww-live-tabs {
+  display: grid;
+  min-height: 35px;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 3px;
+  margin-top: 9px;
+  padding: 3px;
+  border: 1px solid var(--pww-rule);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .035);
+}
+
+.pww-live-tab {
+  min-width: 0;
+  padding: 0 5px;
+  color: #969da6 !important;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  font-size: 9px !important;
+  font-weight: 650 !important;
+  cursor: pointer;
+  transition: color .15s ease, background .15s ease;
+}
+
+.pww-live-tab.is-active {
+  color: #fff5d0 !important;
+  border-color: rgba(255, 209, 46, .16);
+  background: rgba(255, 209, 46, .11);
+}
+
+.pww-live-section {
+  margin-top: 8px;
+}
+
+.pww-live-section-heading {
+  display: flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.pww-live-section-heading > span:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.pww-live-section-heading strong {
+  color: var(--pww-paper);
+  font-family: "Space Grotesk", "DM Sans", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -.28px;
+  line-height: 1.05;
+}
+
+.pww-live-eyebrow {
+  color: var(--pww-gold);
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 1.15px;
+  line-height: 1;
+}
+
+.pww-live-now,
+.pww-live-activity-heading > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #d6c274;
+  font-size: 7px;
+  font-weight: 750;
+  letter-spacing: 1px;
+}
+
+.pww-live-now .pww-live-dot,
+.pww-live-activity-heading .pww-live-dot {
+  width: 5px;
+  height: 5px;
+}
+
+.pww-live-board {
+  overflow: hidden;
+  border: 1px solid rgba(235, 231, 216, .11);
+  border-radius: 12px;
+  background: linear-gradient(155deg, rgba(18, 24, 31, .97), rgba(10, 14, 20, .99));
+  box-shadow: 0 5px 15px rgba(0, 0, 0, .12);
+}
+
+.pww-live-board-head,
+.pww-live-row {
+  display: grid;
+  grid-template-columns: 25px 27px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 8px;
+}
+
+.pww-live-board-head {
+  min-height: 22px;
+  padding: 0 10px;
+  border-bottom: 1px solid rgba(235, 231, 216, .08);
+  color: #777f89;
+  font-size: 6px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.pww-live-board-head > span:nth-child(2) {
+  grid-column: 2 / span 2;
+}
+
+.pww-live-board-head > span:last-child {
+  grid-column: 4;
+}
+
+.pww-live-row {
+  position: relative;
+  min-height: 33px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding: 0 10px;
+  border-bottom: 1px solid rgba(241, 238, 225, .065);
+  color: #c2c3c1;
+}
+
+.pww-live-row:last-child {
+  border-bottom: 0;
+}
+
+.pww-live-row--you {
+  border-bottom-color: rgba(255, 209, 46, .15);
+  background:
+    linear-gradient(90deg, rgba(255, 209, 46, .1), rgba(255, 209, 46, .035) 54%, rgba(255, 209, 46, .012));
+  box-shadow: inset 0 0 0 1px rgba(255, 209, 46, .39);
+}
+
+.pww-live-row--you::before {
+  position: absolute;
+  inset: 4px auto 4px 0;
+  width: 2px;
+  border-radius: 0 3px 3px 0;
+  background: var(--pww-gold);
+  content: "";
+}
+
+.pww-live-rank {
+  color: #9299a1;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 9px;
+  font-weight: 650;
+}
+
+.pww-live-rank--you {
+  color: var(--pww-gold);
+  font-weight: 800;
+}
+
+.pww-live-player-avatar,
+.pww-activity-avatar {
+  position: relative;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border: 1px solid rgba(255, 249, 229, .13);
+  border-radius: 50%;
+  color: #eee5d6;
+  background: linear-gradient(145deg, #53605d, #313b3e);
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: -.2px;
+}
+
+.pww-live-player-avatar--tm,
+.pww-activity-avatar--pint {
+  color: #201a0c;
+  background: linear-gradient(145deg, #ffe085, #dcae35);
+}
+
+.pww-live-player-avatar--jk,
+.pww-activity-avatar--position {
+  color: #f4ece2;
+  background: linear-gradient(145deg, #65717b, #35414a);
+}
+
+.pww-live-player-avatar--you {
+  border-color: rgba(255, 209, 46, .68);
+  color: #231c09;
+  background: linear-gradient(145deg, #ffe882, #f5be32);
+  box-shadow: 0 0 0 2px rgba(255, 209, 46, .10);
+}
+
+.pww-live-player-avatar--ry { background: linear-gradient(145deg, #84788d, #483b52); }
+.pww-live-player-avatar--mk { background: linear-gradient(145deg, #946c5b, #564039); }
+.pww-live-player-avatar--sm { background: linear-gradient(145deg, #55777e, #34494f); }
+
+.pww-live-player-name {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  color: #eeece6;
+  font-size: 10px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pww-live-row--you .pww-live-player-name {
+  color: #fff3cf;
+  font-weight: 800;
+}
+
+.pww-you-tag {
+  padding: 2px 4px;
+  border-radius: 3px;
+  background: rgba(255, 209, 46, .92);
+  color: #241c08;
+  font-size: 6px;
+  font-weight: 900;
+  letter-spacing: .7px;
+}
+
+.pww-live-player-score {
+  color: var(--pww-gold);
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 11px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.pww-live-player-score span {
+  color: #b0a880;
+  font-family: "DM Sans", sans-serif;
+  font-size: 8px;
+  font-weight: 500;
+}
+
+.pww-log-button {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 0 12px;
+  color: #211a07 !important;
+  border: 1px solid rgba(255, 244, 187, .72);
+  border-radius: 11px;
+  background: linear-gradient(110deg, #ffe067, #ffd12e 60%, #f4c02c);
+  box-shadow: 0 6px 17px rgba(0, 0, 0, .19);
+  text-align: left;
+  cursor: pointer;
+  transition: filter .15s ease, transform .15s ease;
+}
+
+.pww-log-button:hover {
+  filter: brightness(1.045);
+}
+
+.pww-log-button:active {
+  transform: scale(.986);
+}
+
+.pww-log-icon {
+  display: grid;
+  width: 29px;
+  height: 29px;
+  place-items: center;
+  border: 1px solid rgba(39, 30, 7, .17);
+  border-radius: 8px;
+  background: rgba(255, 251, 221, .36);
+}
+
+.pww-log-copy {
+  display: grid;
+  flex: 1;
+  gap: 1px;
+}
+
+.pww-log-copy strong {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .8px;
+}
+
+.pww-log-copy small {
+  color: rgba(35, 28, 11, .74);
+  font-size: 8px;
+  font-weight: 550;
+}
+
+.pww-log-arrow {
+  margin-left: auto;
+}
+
+.pww-live-activity {
+  margin-top: 8px;
+}
+
+.pww-live-activity-heading {
+  display: flex;
+  min-height: 17px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 1px 2px;
+}
+
+.pww-live-activity-heading h3 {
+  margin: 0;
+  color: #dcdad3;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.pww-activity-list {
+  overflow: hidden;
+  border: 1px solid rgba(235, 231, 216, .095);
+  border-radius: 11px;
+  background: rgba(14, 19, 25, .76);
+}
+
+.pww-activity-list--compact {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.pww-activity-row {
+  display: flex;
+  min-height: 39px;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 7px;
+  border-bottom: 1px solid rgba(235, 231, 216, .065);
+}
+
+.pww-activity-list--compact .pww-activity-row {
+  min-height: 34px;
+  padding: 4px 0;
+  border-bottom-color: rgba(235, 231, 216, .07);
+}
+
+.pww-activity-row:last-child {
+  border-bottom: 0;
+}
+
+.pww-activity-avatar {
+  width: 27px;
+  height: 27px;
+  font-size: 7px;
+}
+
+.pww-activity-avatar--pint {
+  background: linear-gradient(145deg, #ffe085, #dcae35);
+}
+
+.pww-activity-avatar--position {
+  background: linear-gradient(145deg, #667682, #35414a);
+}
+
+.pww-activity-avatar-mark {
+  position: absolute;
+  right: -2px;
+  bottom: -1px;
+  display: grid;
+  width: 12px;
+  height: 12px;
+  place-items: center;
+  border: 1px solid #0d1219;
+  border-radius: 50%;
+  background: #171f27;
+  color: var(--pww-gold);
+}
+
+.pww-activity-copy {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 2px;
+}
+
+.pww-activity-line {
+  overflow: hidden;
+  color: #b9bdc2;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pww-activity-line strong {
+  color: #f0eee8;
+  font-weight: 700;
+}
+
+.pww-activity-venue {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: #9299a2;
+  font-size: 7px;
+}
+
+.pww-activity-time {
+  align-self: center;
+  color: #7f8791;
+  font-size: 7px;
+  white-space: nowrap;
+}
+
+.pww-live-panel {
+  margin-top: 11px;
+  padding: 11px;
+  border: 1px solid var(--pww-rule);
+  border-radius: 12px;
+  background: linear-gradient(150deg, rgba(18, 24, 31, .95), rgba(10, 14, 20, .98));
+}
+
+.pww-live-panel .pww-live-section-heading {
+  margin: 0 0 9px;
+}
+
+.pww-live-details {
+  padding: 13px;
+}
+
+.pww-live-facts {
+  display: grid;
+  gap: 0;
+}
+
+.pww-live-fact {
+  display: flex;
+  min-height: 49px;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid rgba(241, 238, 225, .07);
+  color: var(--pww-gold);
+}
+
+.pww-live-fact > span {
+  display: grid;
+  gap: 3px;
+}
+
+.pww-live-fact strong {
+  color: #e9e6dd;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.pww-live-fact small {
+  color: #a3aab1;
+  font-size: 8px;
+}
+
+.pww-live-progress-copy {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 13px;
+  color: #afb4bc;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.pww-live-progress {
+  height: 4px;
+  overflow: hidden;
+  margin-top: 7px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, .10);
+}
+
+.pww-live-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #e8b820, #ffdf61);
+}
+
+.pww-live-rule {
+  margin: 12px 0;
+  color: #abb1b8;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.pww-invite-control {
+  display: flex;
+  width: 100%;
+  min-height: 38px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  color: #f0d772 !important;
+  border: 1px solid rgba(255, 209, 46, .19);
+  border-radius: 9px;
+  background: rgba(255, 209, 46, .07);
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  cursor: pointer;
+}
+
+.pww-invite-control span {
+  flex: 1;
+  text-align: left;
+}
+
+.pww-log-button--inline {
+  min-height: 41px;
+  margin-top: 10px;
+  padding: 0 11px;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  letter-spacing: .7px;
+}
+
+@media (max-width: 380px) {
+  .pww-live-hero {
+    height: 122px;
+  }
+
+  .pww-live-hero-content {
+    right: 10px;
+    left: 10px;
+  }
+
+  .pww-live-hero-content .pww-war-title {
+    font-size: 25px;
+  }
+
+  .pww-live-row {
+    min-height: 31px;
+    column-gap: 6px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .pww-live-tabs {
+    margin-top: 7px;
+  }
+
+  .pww-live-board-head {
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .pww-live-player-name {
+    font-size: 9px;
+  }
+}
