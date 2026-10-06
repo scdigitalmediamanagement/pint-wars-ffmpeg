@@ -1,0 +1,1008 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;450;500;550;600;650;700;750;800&family=Space+Grotesk:wght@500;600;700&display=swap");
+
+.pww,
+.pww * {
+  box-sizing: border-box;
+}
+
+.pww {
+  --pww-ink: #05080d;
+  --pww-panel: #0d1219;
+  --pww-panel-raised: #111821;
+  --pww-rule: rgba(235, 231, 216, 0.105);
+  --pww-gold: #ffd12e;
+  --pww-gold-wash: #ffe895;
+  --pww-paper: #f4f2ec;
+  --pww-secondary: #afb4bc;
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  min-height: 700px;
+  overflow: hidden;
+  color: var(--pww-paper);
+  background:
+    radial-gradient(ellipse at 53% 14%, rgba(45, 59, 75, 0.28), transparent 43%),
+    var(--pww-ink);
+  font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "kern";
+}
+
+.pww button,
+.pww input,
+.pww select {
+  font: inherit;
+}
+
+.pww button {
+  color: inherit;
+}
+
+.pww button:focus-visible,
+.pww input:focus-visible,
+.pww select:focus-visible {
+  outline: 2px solid rgba(255, 209, 46, .84);
+  outline-offset: 3px;
+}
+
+.pww-screen {
+  position: relative;
+  width: min(100%, 430px);
+  height: 100%;
+  min-height: 700px;
+  margin: 0 auto;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 10% 48%, rgba(37, 42, 46, .11), transparent 41%),
+    transparent;
+}
+
+.pww-status {
+  display: flex;
+  height: 31px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 23px 0;
+  color: #f5f4ef;
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: -.25px;
+}
+
+.pww-status-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pww-header {
+  display: flex;
+  height: 55px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+}
+
+.pww-brand {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+}
+
+.pww-crest {
+  width: 31px;
+  height: 37px;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.pww-wordmark {
+  display: block;
+  width: 122px;
+  height: 41px;
+  object-fit: contain;
+}
+
+.pww-create {
+  display: inline-flex;
+  width: auto;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  padding: 0 11px;
+  color: var(--pww-gold) !important;
+  border: 1px solid rgba(255, 209, 46, .38);
+  border-radius: 10px;
+  background: linear-gradient(150deg, rgba(255, 209, 46, .105), rgba(255, 209, 46, .025));
+  font-size: 10px !important;
+  font-weight: 750 !important;
+  letter-spacing: .16px;
+  cursor: pointer;
+  transition: transform .16s ease, border-color .16s ease;
+}
+
+.pww-empty-cta {
+  height: 37px;
+  margin-top: 12px;
+  padding: 0 13px;
+}
+
+.pww-create:hover {
+  border-color: var(--pww-gold);
+  transform: translateY(-1px);
+}
+
+.pww-content {
+  position: absolute;
+  inset: 86px 0 84px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 5px 19px 23px;
+  scrollbar-width: none;
+  overscroll-behavior-y: contain;
+}
+
+.pww-content::-webkit-scrollbar {
+  display: none;
+}
+
+.pww-title-row {
+  display: flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pww-eyebrow {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--pww-gold);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.58px;
+  line-height: 1;
+}
+
+.pww-page-title {
+  margin: 0;
+  color: #f6f4ed;
+  font-family: "Space Grotesk", "DM Sans", sans-serif;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -.65px;
+  line-height: 1.13;
+}
+
+.pww-subtitle {
+  margin: 5px 0 0;
+  color: var(--pww-secondary);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.pww-tabs {
+  display: grid;
+  height: 38px;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  margin-top: 13px;
+  padding: 3px;
+  border: 1px solid rgba(234, 230, 220, .08);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, .035);
+}
+
+.pww-tab {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: #a5a9ae !important;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  letter-spacing: .82px;
+  cursor: pointer;
+  transition: background .18s ease, color .18s ease, transform .18s ease;
+}
+
+.pww-tab.is-active {
+  color: #f4f0e6 !important;
+  border: 1px solid rgba(255, 209, 46, .15);
+  background: linear-gradient(100deg, rgba(255, 209, 46, .16), rgba(255, 209, 46, .065));
+}
+
+.pww-count {
+  display: grid;
+  min-width: 17px;
+  height: 17px;
+  place-items: center;
+  padding: 0 4px;
+  color: #201a09;
+  border-radius: 5px;
+  background: var(--pww-gold);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.pww-tab:not(.is-active) .pww-count {
+  color: #bbb7aa;
+  background: rgba(255, 255, 255, .09);
+}
+
+.pww-list {
+  margin-top: 17px;
+}
+
+.pww-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 1px 9px;
+  color: #ededea;
+  font-family: "Space Grotesk", "DM Sans", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .82px;
+  line-height: 1.1;
+}
+
+.pww-section-title-side {
+  color: #818994;
+  font-family: "DM Sans", sans-serif;
+  font-size: 10px;
+  font-weight: 550;
+  letter-spacing: 0;
+}
+
+.pww-war-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.pww-war-card {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 158px;
+  overflow: hidden;
+  padding: 14px 13px 11px;
+  color: var(--pww-paper) !important;
+  text-align: left;
+  border: 1px solid rgba(223, 222, 211, .10);
+  border-radius: 13px;
+  background: linear-gradient(150deg, #151c23, #090d12);
+  cursor: pointer;
+  box-shadow: 0 8px 21px rgba(0, 0, 0, .19);
+  transition: transform .18s ease, border-color .18s ease;
+}
+
+.pww-war-card:hover {
+  border-color: rgba(255, 209, 46, .48);
+  transform: translateY(-2px);
+}
+
+.pww-war-photo {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 49%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  opacity: .88;
+  transition: transform .35s ease, opacity .35s ease;
+}
+
+.pww-war-card:hover .pww-war-photo {
+  opacity: 1;
+  transform: scale(1.035);
+}
+
+.pww-war-shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, #0e131a 0%, #0e131a 35%, rgba(14, 19, 26, .93) 47%, rgba(14, 19, 26, .37) 70%, rgba(10, 14, 18, .14) 100%),
+    linear-gradient(0deg, rgba(4, 7, 11, .42), transparent 44%);
+}
+
+.pww-war-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 73%;
+  height: 100%;
+  flex-direction: column;
+}
+
+.pww-war-topline {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #f3dc89;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .9px;
+  line-height: 1;
+}
+
+.pww-live-dot {
+  width: 5px;
+  height: 5px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--pww-gold);
+  box-shadow: 0 0 7px rgba(255, 209, 46, .54);
+}
+
+.pww-war-title {
+  margin: 8px 0 0;
+  color: #faf8f1;
+  font-family: "Space Grotesk", "DM Sans", sans-serif;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -.62px;
+  line-height: 1;
+}
+
+.pww-war-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
+  color: #c5c6c7;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.pww-meta-divider {
+  width: 3px;
+  height: 3px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: rgba(255, 209, 46, .83);
+}
+
+.pww-roster {
+  display: flex;
+  align-items: center;
+  margin-top: auto;
+  padding: 7px 0 6px;
+}
+
+.pww-avatar-group {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding-left: 1px;
+}
+
+.pww-avatar {
+  display: grid;
+  width: 21px;
+  height: 21px;
+  flex: 0 0 auto;
+  place-items: center;
+  margin-left: -4px;
+  color: #f4edda;
+  border: 1.5px solid #11151a;
+  border-radius: 50%;
+  background: linear-gradient(150deg, #53605d, #333e40);
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: -.3px;
+}
+
+.pww-avatar:first-child {
+  margin-left: 0;
+  color: #241d0b;
+  background: linear-gradient(145deg, #ffdf74, #e5ac24);
+}
+
+.pww-avatar:nth-child(3n) {
+  background: linear-gradient(145deg, #626779, #353c49);
+}
+
+.pww-avatar-more {
+  color: #e9e4d4;
+  background: #293039;
+}
+
+.pww-roster-label {
+  overflow: hidden;
+  margin-left: 7px;
+  color: #d1d1cb;
+  font-size: 8px;
+  font-weight: 550;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pww-war-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(246, 242, 225, .13);
+}
+
+.pww-war-rank {
+  min-width: 0;
+  color: #aeb1b3;
+  font-size: 9px;
+  line-height: 1;
+}
+
+.pww-war-rank strong {
+  color: #f5ebc4;
+  font-weight: 700;
+}
+
+.pww-war-score {
+  flex: 0 0 auto;
+  color: var(--pww-gold);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.pww-chevron {
+  position: absolute;
+  z-index: 1;
+  top: 11px;
+  right: 11px;
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  color: #fff7dc;
+  border: 1px solid rgba(255, 255, 255, .19);
+  border-radius: 50%;
+  background: rgba(8, 11, 15, .45);
+}
+
+.pww-war-card--compact {
+  height: 130px;
+  padding-top: 12px;
+}
+
+.pww-war-card--compact .pww-war-photo {
+  width: 47%;
+}
+
+.pww-war-card--compact .pww-war-content {
+  width: 75%;
+}
+
+.pww-war-card--compact .pww-war-title {
+  margin-top: 7px;
+  font-size: 18px;
+}
+
+.pww-war-card--compact .pww-war-meta {
+  margin-top: 5px;
+  font-size: 9px;
+}
+
+.pww-war-card--compact .pww-roster {
+  padding: 6px 0 5px;
+}
+
+.pww-war-card--compact .pww-war-footer {
+  padding-top: 5px;
+}
+
+.pww-list--completed {
+  margin-top: 18px;
+}
+
+.pww-list--completed .pww-war-stack {
+  gap: 9px;
+}
+
+.pww-war-card--completed {
+  height: 91px;
+  padding: 0;
+  border-color: rgba(226, 218, 196, .09);
+  background: #0e1319;
+}
+
+.pww-war-card--completed .pww-war-photo {
+  width: 32%;
+  opacity: .7;
+  filter: saturate(.77);
+}
+
+.pww-war-card--completed .pww-war-shade {
+  background:
+    linear-gradient(90deg, #10151b 0%, #10151b 52%, rgba(16, 21, 27, .81) 67%, rgba(16, 21, 27, .1) 100%),
+    linear-gradient(0deg, rgba(4, 7, 11, .23), transparent 65%);
+}
+
+.pww-war-card--completed .pww-war-content {
+  width: 82%;
+  padding: 11px 12px 9px;
+}
+
+.pww-war-card--completed .pww-war-topline {
+  gap: 0;
+  color: #b5b8b9;
+  font-size: 8px;
+}
+
+.pww-war-card--completed .pww-war-title {
+  margin-top: 6px;
+  font-size: 17px;
+}
+
+.pww-war-card--completed .pww-war-meta {
+  margin-top: 6px;
+  font-size: 9px;
+}
+
+.pww-war-card--completed .pww-chevron {
+  top: 8px;
+  right: 8px;
+  width: 23px;
+  height: 23px;
+}
+
+.pww-completed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #e1ce83;
+}
+
+.pww-empty {
+  display: grid;
+  min-height: 142px;
+  place-items: center;
+  padding: 17px;
+  color: #d8d6cd;
+  text-align: center;
+  border: 1px dashed rgba(231, 227, 211, .16);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .018);
+}
+
+.pww-empty-icon {
+  display: grid;
+  width: 33px;
+  height: 33px;
+  place-items: center;
+  margin: 0 auto 8px;
+  color: var(--pww-gold);
+  border: 1px solid rgba(255, 209, 46, .17);
+  border-radius: 50%;
+  background: rgba(255, 209, 46, .075);
+}
+
+.pww-empty strong {
+  display: block;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.pww-empty p {
+  margin: 5px 0 0;
+  color: #a8adb4;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.pww-nav {
+  position: absolute;
+  z-index: 3;
+  inset: auto 0 0;
+  display: grid;
+  height: 84px;
+  grid-template-columns: repeat(5, 1fr);
+  padding: 10px 13px 24px;
+  border-top: 1px solid rgba(238, 238, 228, .10);
+  background: rgba(4, 7, 11, .97);
+}
+
+.pww-nav-item {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: 1px 0 0;
+  color: #777e87 !important;
+  border: 0;
+  background: transparent;
+  font-family: "DM Sans", sans-serif !important;
+  font-size: 9px !important;
+  font-weight: 550 !important;
+  cursor: pointer;
+  transition: color .15s ease, transform .15s ease;
+}
+
+.pww-nav-item:active {
+  transform: scale(.94);
+}
+
+.pww-nav-item.is-current {
+  color: var(--pww-gold) !important;
+}
+
+.pww-home-indicator {
+  position: absolute;
+  z-index: 4;
+  bottom: 5px;
+  left: 50%;
+  width: 105px;
+  height: 4px;
+  transform: translateX(-50%);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, .91);
+}
+
+.pww-toast {
+  position: absolute;
+  z-index: 10;
+  bottom: 92px;
+  left: 50%;
+  max-width: calc(100% - 34px);
+  padding: 10px 13px;
+  transform: translateX(-50%);
+  color: #221b08;
+  border: 1px solid rgba(255, 255, 255, .25);
+  border-radius: 9px;
+  background: #ffdc56;
+  box-shadow: 0 5px 19px rgba(0, 0, 0, .45);
+  font-size: 11px;
+  font-weight: 750;
+  white-space: nowrap;
+  animation: pww-toast-in .18s ease-out both;
+}
+
+.pww-overlay {
+  position: absolute;
+  z-index: 7;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 17px 14px max(17px, env(safe-area-inset-bottom));
+  background: rgba(1, 4, 8, .72);
+  backdrop-filter: blur(9px);
+  animation: pww-fade-in .19s ease-out both;
+}
+
+.pww-dialog {
+  width: min(100%, 398px);
+  max-height: 92%;
+  overflow: auto;
+  padding: 20px 18px 18px;
+  border: 1px solid rgba(255, 209, 46, .22);
+  border-radius: 19px;
+  background:
+    radial-gradient(ellipse at 93% 2%, rgba(255, 209, 46, .12), transparent 46%),
+    linear-gradient(155deg, #151b22, #0b1016 73%);
+  box-shadow: 0 20px 75px rgba(0, 0, 0, .6);
+}
+
+.pww-dialog-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pww-dialog-eyebrow {
+  margin: 1px 0 5px;
+  color: var(--pww-gold);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.45px;
+}
+
+.pww-dialog-title {
+  margin: 0;
+  color: #f4f2ec;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -.7px;
+}
+
+.pww-icon-button {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  color: #c5c8c9 !important;
+  border: 1px solid rgba(255, 255, 255, .13);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .045);
+  cursor: pointer;
+}
+
+.pww-form-intro {
+  margin: 8px 0 16px;
+  color: #aeb3b9;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.pww-field {
+  display: block;
+  margin-top: 13px;
+}
+
+.pww-field > span {
+  display: block;
+  margin-bottom: 7px;
+  color: #dbd9d1;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.pww-field input,
+.pww-field select {
+  display: block;
+  width: 100%;
+  height: 43px;
+  padding: 0 11px;
+  color: #f1efe9 !important;
+  outline: 0;
+  border: 1px solid rgba(232, 227, 209, .12);
+  border-radius: 9px;
+  background: #090e14 !important;
+  color-scheme: dark;
+  font-size: 13px !important;
+  transition: border-color .14s ease;
+}
+
+.pww-field input::placeholder {
+  color: #757c84;
+}
+
+.pww-field input:focus,
+.pww-field select:focus {
+  border-color: rgba(255, 209, 46, .63);
+}
+
+.pww-field-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 11px;
+  margin-top: 3px;
+}
+
+.pww-demo-note {
+  margin: 14px 0 0;
+  padding: 9px 10px;
+  color: #d0b857;
+  border: 1px solid rgba(255, 209, 46, .12);
+  border-radius: 8px;
+  background: rgba(255, 209, 46, .055);
+  font-size: 10px;
+  line-height: 1.42;
+}
+
+.pww-form-error {
+  margin: 9px 0 0;
+  color: #ffb4a4;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.pww-form-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  gap: 9px;
+  margin-top: 15px;
+}
+
+.pww-button {
+  display: inline-flex;
+  height: 43px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font-size: 12px !important;
+  font-weight: 750 !important;
+  cursor: pointer;
+  transition: filter .15s ease, transform .15s ease;
+}
+
+.pww-button:active {
+  transform: scale(.985);
+}
+
+.pww-button--secondary {
+  color: #dedbd2 !important;
+  border-color: rgba(232, 227, 209, .13);
+  background: rgba(255, 255, 255, .04);
+}
+
+.pww-button--primary {
+  color: #1e190b !important;
+  background: linear-gradient(180deg, #ffdc52, #f4c42b);
+}
+
+.pww-detail {
+  padding-bottom: 18px;
+}
+
+.pww-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0 15px;
+  padding: 5px 1px;
+  color: #c9c9c3 !important;
+  border: 0;
+  background: transparent;
+  font-size: 11px !important;
+  cursor: pointer;
+}
+
+.pww-detail-hero {
+  position: relative;
+  height: 156px;
+  overflow: hidden;
+  padding: 15px;
+  border: 1px solid rgba(255, 209, 46, .24);
+  border-radius: 13px;
+  background: #11171d;
+}
+
+.pww-detail-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: .56;
+}
+
+.pww-detail-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(5, 8, 13, .97) 0%, rgba(5, 8, 13, .42) 63%, rgba(5, 8, 13, .15) 100%);
+}
+
+.pww-detail-hero-content {
+  position: absolute;
+  inset: auto 15px 14px;
+}
+
+.pww-detail-hero-content .pww-war-title {
+  font-size: 25px;
+}
+
+.pww-detail-panel {
+  margin-top: 14px;
+  overflow: hidden;
+  border: 1px solid var(--pww-rule);
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(18, 24, 31, .98), rgba(10, 14, 20, .98));
+}
+
+.pww-detail-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 13px 11px;
+  border-bottom: 1px solid rgba(241, 238, 225, .09);
+  color: #eeece5;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pww-detail-panel-heading span:last-child {
+  color: #a9adb3;
+  font-family: "DM Sans", sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.pww-player {
+  display: flex;
+  min-height: 49px;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  border-bottom: 1px solid rgba(241, 238, 225, .06);
+}
+
+.pww-player:last-child {
+  border-bottom: 0;
+}
+
+.pww-player-rank {
+  width: 15px;
+  color: #90959b;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.pww-player .pww-avatar {
+  width: 27px;
+  height: 27px;
+  margin: 0;
+  font-size: 8px;
+}
+
+.pww-player-name {
+  flex: 1;
+  color: #e8e6e0;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.pww-player-score {
+  color: var(--pww-gold);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.pww-detail-note {
+  margin: 10px 2px 0;
+  color: #9fa4ab;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+@keyframes pww-toast-in {
+  from { opacity: 0; transform: translate(-50%, 6px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@keyframes pww-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 380px) {
+  .pww-content { padding-right: 15px; padding-left: 15px; }
+  .pww-header { padding-right: 17px; padding-left: 17px; }
+  .pww-war-card { padding-right: 11px; padding-left: 11px; }
+  .pww-war-title { font-size: 19px; }
+  .pww-war-content { width: 75%; }
+  .pww-roster-label { margin-left: 5px; font-size: 7.5px; }
+}
+
+@media (max-height: 760px) {
+  .pww { min-height: 650px; }
+  .pww-screen { min-height: 650px; }
+  .pww-content { padding-top: 3px; }
+  .pww-list { margin-top: 12px; }
+  .pww-war-card { height: 145px; }
+  .pww-war-card--compact { height: 122px; }
+  .pww-list--completed { margin-top: 13px; }
+  .pww-war-card--completed { height: 86px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pww *,
+  .pww *::before,
+  .pww *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
