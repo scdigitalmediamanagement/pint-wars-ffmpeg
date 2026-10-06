@@ -15,6 +15,12 @@ The Active Pint War design should feel like a live, social competition, not a sp
 
 **How to apply:** Keep Activity/Details and Invite/Manage compact and secondary. The user separately approved implementing the active-war screen with real application data. Preserve the current camera/photo-proof Log a Pint flow and full War Activity Feed, including protected photos. Scope that integration to active-war presentation; do not change backend, scoring, authentication, RevenueCat, league mechanics, database schema, completed-war presentation, or unrelated screens.
 
+The Pint War creation flow follows the approved Create and Confirm screen references. Keep its presentation changes separate from the existing purchase and league-creation mechanics.
+
+**Why:** The user selected both creation-flow mockups and explicitly ruled out changes to the product model, backend, database schema, and navigation.
+
+**How to apply:** Continue using live RevenueCat products and price strings, the existing one-free-trial-per-account rule, paid 1–30 day durations, and the current pending-purchase verification and retry behavior.
+
 The approved Pub Passport integration is presentation-only with live personal data and existing Map and pub-detail/review flows. Do not add standalone pint logging unless separately requested. Do not attach mock pub photos to real pub identities as though they are authentic: when actual photo data is unavailable, label decorative photography as illustrative.
 
 **Why:** The user required real Passport data and preservation of existing functionality while excluding backend/schema, scoring, authentication, RevenueCat, and unrelated-screen changes. Illustrative imagery preserves the photographic layout without fabricating pub-specific information.
