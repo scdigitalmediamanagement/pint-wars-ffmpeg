@@ -87,7 +87,7 @@ export default function CreateWarScreen() {
   });
   const [name, setName] = useState('');
   const [paidDurationInput, setPaidDurationInput] = useState('7');
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>('paid-6');
   const [isConfirmStep, setIsConfirmStep] = useState(false);
   const [error, setError] = useState('');
   const [isPurchasing, setIsPurchasing] = useState(false);
