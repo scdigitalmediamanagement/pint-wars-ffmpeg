@@ -1,0 +1,95 @@
+Design the CREATE A PINT WAR and CONFIRM YOUR PINT WAR screens for Pint Wars.
+
+These are two connected screens in the same creation flow.
+
+Use the attached original Pint Wars mock-up as the PRIMARY visual reference and match the newly approved Pint Wars design system from:
+- Home
+- Pint Wars
+- Active Pint War
+- Map
+- Pub Passport
+- Profile
+
+CREATE A PINT WAR
+
+This should feel like a premium competition setup screen, not a generic form.
+
+Include:
+
+HEADER
+- Back navigation
+- Pint Wars branding
+- “Create a Pint War”
+
+INTRO
+- Short, strong copy explaining that the host creates the competition and invites friends.
+
+LEAGUE NAME
+- Premium input field
+- Example: “Devon Crew”
+
+LEAGUE SIZE
+Present the four paid capacities clearly:
+- 6 players — £2.99
+- 10 players — £3.99
+- 14 players — £4.99
+- 16 players — £5.99
+
+Also show the free trial option:
+- 4 players
+- 10 days
+- Free
+
+Make the selected size visually obvious with the gold accent.
+
+DURATION
+- 1–30 days
+- Make the duration selection feel polished and simple
+- Clearly state that price depends on player capacity, not duration
+
+PRIMARY CTA
+- Continue
+
+CONFIRM YOUR PINT WAR
+
+Create a separate polished confirmation screen matching the same visual language.
+
+Include:
+- Pint War name
+- player capacity
+- duration
+- price
+- clear “one-time purchase” wording for paid wars
+- strong summary card
+- prominent gold purchase/create CTA
+
+For paid wars:
+- “Purchase 6-player Pint War”
+- “Purchase 10-player Pint War”
+- “Purchase 14-player Pint War”
+- “Purchase 16-player Pint War”
+
+For free:
+- “Create Free Pint War”
+
+The confirmation screen should make the user feel completely confident about:
+WHAT they are buying, HOW MANY players, HOW LONG it lasts, and WHAT it costs.
+
+VISUAL STYLE
+Match the approved Pint Wars visual system:
+- dark navy/black
+- gold/yellow accents
+- strong white typography
+- premium rounded cards
+- clear hierarchy
+- polished iOS proportions
+- minimal clutter
+- commercial-quality presentation
+
+Important:
+Do not invent new pricing, products or league rules.
+Use the current Pint Wars product model.
+
+Design only.
+Do not modify application code, backend logic, RevenueCat, scoring or database schema.
+Create both screens as separate design frames.
