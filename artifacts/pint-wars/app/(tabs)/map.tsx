@@ -1,22 +1,22 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Linking, Platform, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
-import { Button, Card, ErrorText, Screen, Title, uiStyles } from '@/components/AppUi';
-import { PubMap } from '@/components/PubMap';
-import { useColors } from '@/hooks/useColors';
+import { useQueries, useQuery } from '@tanstack/react-query';
+import { useFonts } from 'expo-font';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Card } from '@/components/AppUi';
+import { NearbyAction as Button, NearbyDiscovery, NearbyPubCard, pubRating, type NearbyFilter } from '@/components/NearbyPubsPresentation';
+import { createNearbyStyles, mapColors } from '@/components/NearbyPubStyles';
+import { useAuth } from '@/src/providers/AuthProvider';
+import { getMyPubPassport } from '@/src/lib/league-service';
+import { getPubReviewSummary } from '@/src/lib/review-service';
+import { reviewKeys } from '@/hooks/usePubReviews';
 import { getCurrentLocation, type CurrentLocationResult } from '@/src/lib/location-service';
 import { findNearbyPubs, type Coordinates, type NearbyPub } from '@/src/lib/pub-service';
 
 type LocationState =
   | { status: 'loading' }
   | CurrentLocationResult;
-
-function formatDistance(distanceMeters: number) {
-  return distanceMeters < 1000
-    ? `${Math.round(distanceMeters)} m`
-    : `${(distanceMeters / 1000).toFixed(1)} km`;
-}
 
 function getErrorStatus(error: unknown) {
   if (!error || typeof error !== 'object') return null;
@@ -54,7 +54,7 @@ function LocationStateCard({
   state: LocationState;
   onRetry: () => void;
 }) {
-  const colors = useColors();
+  const colors = mapColors;
 
   if (state.status === 'loading') {
     return (
@@ -109,7 +109,18 @@ function LocationStateCard({
 }
 
 export default function MapScreen() {
-  const colors = useColors();
+  const colors = mapColors;
+  const { user } = useAuth();
+  const insets = useSafeAreaInsets();
+  const [fontsLoaded] = useFonts({
+    NearbyDM: require('@/assets/fonts/wars/DMSans_500Medium.ttf'),
+    NearbyBold: require('@/assets/fonts/wars/DMSans_700Bold.ttf'),
+    NearbySpace: require('@/assets/fonts/wars/SpaceGrotesk_600SemiBold.ttf'),
+  });
+  const s = useMemo(() => createNearbyStyles(fontsLoaded), [fontsLoaded]);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<NearbyFilter>('Nearby');
+  const [recenterKey, setRecenterKey] = useState(0);
   const [locationState, setLocationState] = useState<LocationState>({ status: 'loading' });
 
   const loadLocation = useCallback(async () => {
@@ -135,6 +146,8 @@ export default function MapScreen() {
   });
 
   const refresh = () => {
+    if (user) void passportQuery.refetch();
+    ratings.forEach((rating) => { void rating.refetch(); });
     if (coordinates) {
       void nearbyPubsQuery.refetch();
       return;
@@ -143,33 +156,50 @@ export default function MapScreen() {
   };
 
   const pubs = nearbyPubsQuery.data?.pubs ?? [];
+  const passportQuery = useQuery({
+    queryKey: ['pub-passport', user?.id],
+    queryFn: getMyPubPassport,
+    enabled: Boolean(user),
+  });
+  const ratings = useQueries({
+    queries: pubs.map((pub) => ({
+      queryKey: reviewKeys.summary(user?.id ?? '', pub.provider, pub.placeId),
+      queryFn: () => getPubReviewSummary(pub.provider, pub.placeId),
+      enabled: Boolean(user),
+      staleTime: 60_000,
+      retry: false,
+    })),
+  });
+  const visited = new Set((passportQuery.data ?? []).filter((entry) => entry.pub_provider && entry.pub_place_id)
+    .map((entry) => `${entry.pub_provider}:${entry.pub_place_id}`));
+  const details = new Map(pubs.map((pub, index) => [`${pub.provider}:${pub.placeId}`, ratings[index]]));
+  const shown = pubs.filter((pub) => {
+    const matches = `${pub.name} ${pub.address}`.toLowerCase().includes(search.trim().toLowerCase());
+    return matches && (filter !== 'Not Visited' || (passportQuery.data !== undefined && !visited.has(`${pub.provider}:${pub.placeId}`)));
+  }).sort((a, b) => {
+    if (filter === 'Top Rated') {
+      const aRating = pubRating(details.get(`${a.provider}:${a.placeId}`)?.data) ?? -1;
+      const bRating = pubRating(details.get(`${b.provider}:${b.placeId}`)?.data) ?? -1;
+      if (aRating !== bRating) return bRating - aRating;
+    }
+    return a.distanceMeters - b.distanceMeters;
+  });
 
   return (
-    <Screen>
-      <Stack.Screen options={{ title: 'Map' }} />
-      <ScrollView
-        contentContainerStyle={[uiStyles.content, styles.content]}
-        showsVerticalScrollIndicator={false}
+    <View style={[s.screen, { paddingTop: Math.max(Platform.OS === 'web' ? 27 : 0, insets.top) }]} testID="nearby-pubs-screen">
+      <Stack.Screen options={{ title: 'Map', headerShown: false }} />
+      <NearbyDiscovery
+        s={s} coordinates={coordinates} pubs={shown} count={nearbyPubsQuery.data ? shown.length : null}
+        query={search} onQuery={setSearch} filter={filter} onFilter={setFilter}
+        canFilterVisited={passportQuery.data !== undefined} onOpen={openPubDetail}
+        onRefresh={refresh} onLocation={() => { setRecenterKey((key) => key + 1); void loadLocation(); }}
+        busy={locationState.status === 'loading' || nearbyPubsQuery.isFetching}
+        recenterKey={recenterKey} bottomInset={Math.max(Platform.OS === 'web' ? 84 : 58, insets.bottom + 50)}
       >
-        <Title eyebrow="Find your next stop">Nearby pubs</Title>
-
         {locationState.status !== 'success' ? (
           <LocationStateCard state={locationState} onRetry={() => void loadLocation()} />
         ) : (
           <>
-            <PubMap
-              coordinates={locationState.coordinates}
-              pubs={pubs}
-              onSelect={openPubDetail}
-            />
-
-            <Button
-              label="Refresh nearby pubs"
-              variant="secondary"
-              onPress={refresh}
-              loading={nearbyPubsQuery.isFetching}
-            />
-
             {nearbyPubsQuery.isLoading ? (
               <View style={styles.inlineState}>
                 <ActivityIndicator color={colors.accent} />
@@ -181,7 +211,7 @@ export default function MapScreen() {
 
             {nearbyPubsQuery.isError ? (
               <Card style={styles.stateCard}>
-                <ErrorText>{nearbyPubsErrorMessage(nearbyPubsQuery.error)}</ErrorText>
+                <Text style={styles.stateText}>{nearbyPubsErrorMessage(nearbyPubsQuery.error)}</Text>
                 <Text style={[styles.stateText, { color: colors.mutedForeground }]}>
                   Google Places may be temporarily unavailable. You can try the search again.
                 </Text>
@@ -206,63 +236,23 @@ export default function MapScreen() {
               </Card>
             ) : null}
 
-            {pubs.length ? (
-              <View style={styles.list}>
-                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Nearby pubs</Text>
-                {pubs.map((pub) => (
-                  <Pressable
-                    key={`${pub.provider}:${pub.placeId}`}
-                    accessibilityRole="button"
-                    onPress={() => openPubDetail(pub)}
-                    style={({ pressed }) => [
-                      styles.pubRow,
-                      {
-                        backgroundColor: colors.card,
-                        borderColor: colors.border,
-                        opacity: pressed ? 0.78 : 1,
-                      },
-                    ]}
-                  >
-                    <View style={styles.pubCopy}>
-                      <Text style={[styles.pubName, { color: colors.foreground }]}>{pub.name}</Text>
-                      <Text style={[styles.pubAddress, { color: colors.mutedForeground }]}>
-                        {pub.address || 'Address unavailable'}
-                      </Text>
-                    </View>
-                    <Text style={[styles.pubDistance, { color: colors.accent }]}>
-                      {formatDistance(pub.distanceMeters)}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            ) : null}
+            {passportQuery.isError ? <Card style={styles.stateCard}><Text style={styles.stateText}>Visited status could not be refreshed. Retry before relying on Not Visited.</Text><Button label="Retry visited status" onPress={() => void passportQuery.refetch()} /></Card> : null}
+            {filter === 'Top Rated' && ratings.some((rating) => rating.isLoading) ? <Text style={styles.stateText}>Loading community ratings…</Text> : null}
+            {ratings.some((rating) => rating.isError) ? <Text style={styles.stateHint}>Some community ratings are unavailable. Refresh to retry.</Text> : null}
+            {pubs.length > 0 && shown.length === 0 ? <Card style={styles.stateCard}><Text style={styles.stateTitle}>No matching pubs</Text><Text style={styles.stateText}>Try another search or choose Nearby.</Text></Card> : null}
+            {shown.map((pub) => {
+              const key = `${pub.provider}:${pub.placeId}`;
+              const rating = details.get(key);
+              return <NearbyPubCard key={key} pub={pub} s={s} summary={rating?.data}
+                visited={visited.has(key)} ratingLoading={Boolean(rating?.isLoading)}
+                ratingFailed={Boolean(rating?.isError) || !user}
+                onOpen={() => openPubDetail(pub)} />;
+            })}
           </>
         )}
-      </ScrollView>
-    </Screen>
+      </NearbyDiscovery>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  content: { paddingTop: 22, gap: 16 },
-  stateCard: { gap: 10 },
-  stateTitle: { fontFamily: 'Inter_700Bold', fontSize: 18 },
-  stateText: { fontFamily: 'Inter_400Regular', lineHeight: 21 },
-  stateHint: { fontFamily: 'Inter_400Regular', fontSize: 13, lineHeight: 18 },
-  inlineState: { alignItems: 'center', gap: 8, paddingVertical: 14 },
-  list: { gap: 12, marginTop: 4 },
-  sectionTitle: { fontFamily: 'Inter_700Bold', fontSize: 20 },
-  pubRow: {
-    minHeight: 76,
-    borderWidth: 1,
-    borderRadius: 18,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-  },
-  pubCopy: { flex: 1, gap: 4 },
-  pubName: { fontFamily: 'Inter_700Bold', fontSize: 17 },
-  pubAddress: { fontFamily: 'Inter_400Regular', lineHeight: 19 },
-  pubDistance: { fontFamily: 'Inter_700Bold', fontSize: 14 },
-});
+const styles = createNearbyStyles(false);

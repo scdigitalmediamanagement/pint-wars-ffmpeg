@@ -128,6 +128,18 @@ function ClassicTabLayout() {
         name="map"
         options={{
           title: 'Map',
+          headerShown: false,
+          tabBarActiveTintColor: homeColors.gold,
+          tabBarInactiveTintColor: homeColors.muted,
+          tabBarStyle: {
+            position: 'absolute',
+            backgroundColor: homeColors.background,
+            borderTopWidth: 1,
+            borderTopColor: homeColors.line,
+            elevation: 0,
+            ...(isWeb ? { height: 84 } : {}),
+          },
+          tabBarBackground: () => <View style={[StyleSheet.absoluteFill, { backgroundColor: homeColors.background }]} />,
           tabBarIcon: ({ color }) =>
             isIOS ? <SymbolView name="map" tintColor={color} size={24} /> : <Feather name="map" size={22} color={color} />,
         }}

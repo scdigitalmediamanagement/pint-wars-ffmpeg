@@ -1,19 +1,36 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import MapView, { Marker } from 'react-native-maps';
-import type { Coordinates, NearbyPub } from '@/src/lib/pub-service';
+import type { PubMapProps } from './PubMap.types';
+import { mapColors } from './NearbyPubStyles';
 
 export function PubMap({
   coordinates,
   pubs,
   onSelect,
-}: {
-  coordinates: Coordinates;
-  pubs: NearbyPub[];
-  onSelect: (pub: NearbyPub) => void;
-}) {
+  recenterKey = 0,
+}: PubMapProps) {
+  const map = useRef<MapView>(null);
+  useEffect(() => {
+    map.current?.animateToRegion({
+      ...coordinates,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    }, 400);
+  }, [coordinates.latitude, coordinates.longitude, recenterKey]);
+
   return (
     <MapView
-      style={{ height: 320, borderRadius: 24, overflow: 'hidden' }}
+      ref={map}
+      style={{ flex: 1 }}
+      userInterfaceStyle="dark"
+      customMapStyle={[
+        { elementType: 'geometry', stylers: [{ color: mapColors.map }] },
+        { elementType: 'labels.text.fill', stylers: [{ color: mapColors.muted }] },
+        { elementType: 'labels.text.stroke', stylers: [{ color: mapColors.background }] },
+        { featureType: 'road', elementType: 'geometry', stylers: [{ color: mapColors.road }] },
+        { featureType: 'water', elementType: 'geometry', stylers: [{ color: mapColors.water }] },
+        { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+      ]}
       initialRegion={{
         latitude: coordinates.latitude,
         longitude: coordinates.longitude,
@@ -30,6 +47,7 @@ export function PubMap({
           coordinate={pub.coordinates}
           title={pub.name}
           description={`${formatDistance(pub.distanceMeters)} away`}
+          pinColor={mapColors.gold}
           onPress={() => onSelect(pub)}
         />
       ))}

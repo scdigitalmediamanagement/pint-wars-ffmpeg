@@ -1,0 +1,77 @@
+import { Platform, StyleSheet } from 'react-native';
+import home from '@/constants/homeColors';
+
+export const mapColors = {
+  ...home,
+  background: '#070b10',
+  panel: '#10171e',
+  map: '#111c22',
+  road: '#3c4b4a',
+  water: '#25494a',
+  foreground: home.text,
+  mutedForeground: home.muted,
+  accent: home.gold,
+};
+
+export function createNearbyStyles(fontsLoaded: boolean) {
+  const dm = fontsLoaded ? 'NearbyDM' : 'Inter_500Medium';
+  const bold = fontsLoaded ? 'NearbyBold' : 'Inter_700Bold';
+  const heading = fontsLoaded ? 'NearbySpace' : 'Inter_600SemiBold';
+  return StyleSheet.create({
+    screen: { flex: 1, backgroundColor: mapColors.background },
+    container: { flex: 1, width: '100%', maxWidth: 600, alignSelf: 'center' },
+    header: { height: 48, paddingHorizontal: 19, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: mapColors.line },
+    brand: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    crest: { width: 25, height: 31 },
+    wordmark: { width: 83, height: 31 },
+    locationChip: { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderColor: mapColors.line, borderRadius: 20, padding: 7 },
+    chipText: { color: mapColors.gold, fontFamily: bold, fontSize: 8, letterSpacing: 0.8 },
+    titleRow: { paddingHorizontal: 19, height: 59, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    eyebrow: { color: mapColors.gold, fontFamily: bold, fontSize: 7, letterSpacing: 1.1 },
+    title: { color: mapColors.text, fontFamily: heading, fontSize: 23, letterSpacing: -0.65, marginTop: 3 },
+    count: { color: mapColors.gold, fontFamily: heading, fontSize: 18 },
+    countLabel: { color: mapColors.muted, fontFamily: bold, fontSize: 7, letterSpacing: 0.8 },
+    countRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
+    search: { marginHorizontal: 17, height: 40, paddingHorizontal: 11, gap: 8, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: mapColors.line, borderRadius: 9, backgroundColor: mapColors.panel },
+    input: { flex: 1, minWidth: 0, color: mapColors.text, fontFamily: dm, fontSize: 12, paddingVertical: 0, ...(Platform.OS === 'web' ? { outlineWidth: 0 } : {}) },
+    filters: { flexDirection: 'row', gap: 6, paddingHorizontal: 17, paddingVertical: 8, backgroundColor: mapColors.map },
+    filter: { minHeight: 36, paddingHorizontal: 12, gap: 5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 20, borderWidth: 1, borderColor: mapColors.line, backgroundColor: mapColors.panel },
+    activeFilter: { backgroundColor: mapColors.gold, borderColor: mapColors.gold },
+    filterText: { fontFamily: bold, fontSize: 10, color: mapColors.muted },
+    activeFilterText: { color: mapColors.actionInk },
+    disabled: { opacity: 0.45 },
+    mapArea: { flex: 1.15, minHeight: 180, position: 'relative', backgroundColor: mapColors.map },
+    mapAwaiting: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 9, padding: 25 },
+    mapMessage: { color: mapColors.muted, fontFamily: dm, fontSize: 12, textAlign: 'center', lineHeight: 19 },
+    recenter: { position: 'absolute', right: 16, bottom: 67, width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 11, borderWidth: 1, borderColor: mapColors.line, backgroundColor: mapColors.panel },
+    mapLocation: { position: 'absolute', right: 16, bottom: 25, paddingVertical: 7, paddingHorizontal: 9, flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 6, backgroundColor: mapColors.background },
+    locationText: { color: mapColors.text, fontFamily: dm, fontSize: 10 },
+    sheet: { flex: 1, minHeight: 190, marginTop: -12, borderWidth: 1, borderColor: mapColors.line, borderBottomWidth: 0, borderTopLeftRadius: 18, borderTopRightRadius: 18, backgroundColor: mapColors.panel, paddingTop: 7, paddingHorizontal: 15 },
+    handle: { width: 32, height: 3, borderRadius: 4, backgroundColor: mapColors.muted, alignSelf: 'center', marginBottom: 8 },
+    sheetHeading: { minHeight: 43, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+    sectionTitle: { color: mapColors.text, fontFamily: heading, fontSize: 16, marginTop: 3 },
+    refresh: { padding: 10 },
+    list: { gap: 7, paddingTop: 3, paddingBottom: 18 },
+    pubRow: { minHeight: 82, padding: 6, gap: 9, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: mapColors.line, borderRadius: 10, backgroundColor: mapColors.background },
+    photo: { width: 68, height: 66, borderRadius: 7, overflow: 'hidden', backgroundColor: mapColors.map },
+    photoImage: { width: '100%', height: '100%', opacity: 0.75 },
+    photoLabel: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: mapColors.background, paddingVertical: 3, color: mapColors.muted, textAlign: 'center', fontFamily: bold, fontSize: 6, letterSpacing: 0.5 },
+    pubCopy: { flex: 1, minWidth: 0, gap: 4 },
+    pubName: { color: mapColors.text, fontFamily: heading, fontSize: 12 },
+    pubAddress: { color: mapColors.muted, fontFamily: dm, fontSize: 9 },
+    detailRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flexWrap: 'wrap' },
+    pubDistance: { color: mapColors.muted, fontFamily: dm, fontSize: 9 },
+    visited: { color: mapColors.gold, fontFamily: bold, fontSize: 7 },
+    rating: { color: mapColors.gold, fontFamily: bold, fontSize: 10 },
+    reviewCount: { color: mapColors.muted, fontFamily: dm, fontSize: 8 },
+    view: { minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center', borderRadius: 7, backgroundColor: mapColors.gold },
+    viewText: { color: mapColors.actionInk, fontFamily: bold, fontSize: 10 },
+    stateCard: { gap: 10, padding: 16, borderRadius: 12, backgroundColor: mapColors.background, borderWidth: 1, borderColor: mapColors.line },
+    stateTitle: { color: mapColors.text, fontFamily: heading, fontSize: 17 },
+    stateText: { color: mapColors.muted, fontFamily: dm, fontSize: 12, lineHeight: 19 },
+    stateHint: { color: mapColors.muted, fontFamily: dm, fontSize: 11, lineHeight: 17 },
+    inlineState: { alignItems: 'center', gap: 8, paddingVertical: 14 },
+  });
+}
+
+export type NearbyStyles = ReturnType<typeof createNearbyStyles>;

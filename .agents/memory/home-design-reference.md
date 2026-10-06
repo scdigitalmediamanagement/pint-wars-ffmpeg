@@ -1,6 +1,6 @@
 ---
 name: Pint Wars design reference
-description: Approved Home and Wars presentation is screen-scoped and differs from the legacy application palette.
+description: Approved Pint Wars screen presentation is screen-scoped and differs from the legacy application palette.
 ---
 
 For reference-based Home and Wars design work, the approved mobile mock-ups are the primary visual reference, not the existing teal/orange application styling. Recreate their composition rather than reinterpret it: dark/navy surfaces, gold/yellow accents, photographic cards, compact proportions, and the existing Home / Wars / Map / Passport / Profile order.
@@ -32,3 +32,9 @@ The approved Profile integration must use real personal data, never the mockup's
 **Why:** The user explicitly prohibited fabricated statistics and new backend/statistics infrastructure solely to reproduce the design.
 
 **How to apply:** Keep Profile changes presentation-only and preserve editing, history, privacy, support, account deletion and sign-out. Use available existing data or omit unsupported metrics. Achievements stays “Coming Soon.” Do not change scoring, authentication, RevenueCat, schema or unrelated screens.
+
+The Map / Nearby Pubs canvas reference is approved for the real app. Its illustrated streets and sample venues are design references, not production data. Preserve live current-location handling, Google Places discovery, real markers, distances, pub-detail navigation, and the existing five tabs.
+
+**Why:** The user explicitly approved the visual structure while requiring real application data and prohibiting backend, scoring, authentication, RevenueCat, database-schema, and unrelated-screen changes.
+
+**How to apply:** Reproduce the navy/gold composition with the actual native map, rather than substituting fictional streets or sample pub records. Use existing community-review data and Passport visit records for filters. Apply the same truthful-image rule as Passport: decorative photography must be labelled illustrative when venue photos are unavailable.
