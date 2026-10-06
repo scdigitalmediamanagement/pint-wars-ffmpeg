@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -46,12 +46,17 @@ export function ActiveWarScreen(props: Props) {
   const { dashboard: { league, members }, userId } = props;
   const [section, setSection] = useState<'leaderboard' | 'activity' | 'details'>('leaderboard');
   const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
+  const topInset = Math.max(Platform.OS === 'web' ? 67 : 0, insets.top + 4);
+  // Keep the approved hierarchy visible on shorter phones without truncating
+  // players or removing the complete scrollable leaderboard/activity feed.
+  const compact = height - topInset - Math.max(insets.bottom, 34) < 750;
   const [loaded] = useFonts({
     WarsDM_500: require('@/assets/fonts/wars/DMSans_500Medium.ttf'),
     WarsDM_700: require('@/assets/fonts/wars/DMSans_700Bold.ttf'),
     WarsSpace_600: require('@/assets/fonts/wars/SpaceGrotesk_600SemiBold.ttf'),
   });
-  const s = useMemo(() => createActiveWarStyles(loaded), [loaded]);
+  const s = useMemo(() => createActiveWarStyles(loaded, compact), [loaded, compact]);
   const position = props.hasScores && props.currentStanding
     ? `${props.currentStanding.isTied ? 'TIED ' : ''}${ordinal(props.currentStanding.rank).toUpperCase()}` : '—';
 
@@ -66,8 +71,8 @@ export function ActiveWarScreen(props: Props) {
           accessibilityState={{ disabled: props.preparing }} disabled={props.preparing} onPress={props.onLogPint}
           style={({ pressed }) => [s.log, { opacity: props.preparing ? 0.6 : pressed ? 0.8 : 1 }]}>
           <LinearGradient colors={['#ffe067', c.gold, '#f4c02c']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
-          <View style={s.logIcon}><Ionicons name="beer-outline" size={19} color={c.actionInk} /></View>
-          <View style={s.logCopy}><Text style={s.logTitle}>LOG A PINT</Text><Text style={s.logHint}>A fresh photo is required · Pub optional</Text></View>
+          <View style={s.logIcon}><Feather name="flag" size={16} color={c.actionInk} /></View>
+          <View style={s.logCopy}><Text style={s.logTitle}>Log a Pint</Text><Text style={s.logHint}>A fresh photo is required · Pub optional</Text></View>
           {props.preparing ? <ActivityIndicator color={c.actionInk} /> : <Feather name="arrow-right" size={19} color={c.actionInk} />}
         </Pressable>
         {props.error ? <Text accessibilityRole="alert" style={s.body}>{props.error}</Text> : null}
@@ -78,7 +83,7 @@ export function ActiveWarScreen(props: Props) {
   return (
     <>
       <ScrollView style={s.scroll} showsVerticalScrollIndicator={false}
-        contentContainerStyle={[s.content, { paddingTop: Platform.OS === 'web' ? 31 : insets.top + 4, paddingBottom: 110 + insets.bottom }]}
+        contentContainerStyle={[s.content, { paddingTop: topInset, paddingBottom: 110 + insets.bottom }]}
         refreshControl={<RefreshControl refreshing={props.refreshing} onRefresh={props.onRefresh} tintColor={c.gold} colors={[c.gold]} />}>
         {Platform.OS === 'web' ? <View style={s.status} pointerEvents="none"><Text style={s.statusText}>9:41</Text>
           <View style={s.icons}><Feather name="bar-chart" size={13} color={c.paper} /><Feather name="wifi" size={13} color={c.paper} /><Feather name="battery" size={16} color={c.paper} /></View></View> : null}
@@ -87,7 +92,7 @@ export function ActiveWarScreen(props: Props) {
             <Image source={require('@/assets/images/wars/pw-wars-crest.png')} style={s.crest} resizeMode="contain" accessible={false} />
             <Image source={require('@/assets/images/wars/pw-wars-wordmark.png')} style={s.wordmark} resizeMode="contain" accessible={false} />
           </View>
-          {props.onInvite ? <Pressable accessibilityRole="button" testID="active-war-invite" onPress={props.onInvite} style={s.invite}>
+          {props.onInvite ? <Pressable accessibilityRole="button" accessibilityLabel="Invite players to this Pint War" testID="active-war-invite" onPress={props.onInvite} style={s.invite} hitSlop={5}>
             <Feather name="users" size={14} color={c.gold} /><Text style={s.inviteText}>Invite</Text></Pressable> : null}
         </View>
         <Pressable accessibilityRole="button" onPress={() => router.replace('/(tabs)/wars')} style={s.back} testID="active-war-back">
@@ -96,8 +101,8 @@ export function ActiveWarScreen(props: Props) {
         <View style={s.hero} testID="active-war-hero">
           {/* Approved decorative pub photograph, not a claim about this league's location. */}
           <Image source={require('@/assets/images/wars/pw-wars-devon-active.jpg')} style={s.photo} resizeMode="cover" accessible={false} />
-          <LinearGradient colors={[c.shade, 'rgba(5,8,13,0.2)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
-          <LinearGradient colors={['rgba(5,8,13,0.24)', 'rgba(5,8,13,0.95)']} style={StyleSheet.absoluteFill} />
+          <LinearGradient colors={['rgba(8,11,15,0.79)', 'rgba(8,11,15,0.48)', 'rgba(8,11,15,0.17)']} locations={[0, 0.51, 1]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
+          <LinearGradient colors={['transparent', 'rgba(5,8,13,0.93)']} locations={[0.28, 1]} style={StyleSheet.absoluteFill} />
           <View style={s.heroTop}><View style={s.liveBadge}><View style={s.dot} /><Text style={s.smallGold}>LIVE PINT WAR</Text></View>
             <View style={s.countdown}><Feather name="clock" size={11} color={c.wash} /><Text style={s.countdownText}>{props.remainingLabel.toUpperCase()}</Text></View>
           </View>
@@ -119,7 +124,7 @@ export function ActiveWarScreen(props: Props) {
         </View>
         {section === 'leaderboard' ? <>
           <View style={s.sectionHeading}><View><Text style={s.eyebrow}>THE RACE SO FAR</Text><Text style={s.heading}>Leaderboard</Text></View>
-            <View style={s.icons}><View style={s.dot} /><Text style={s.smallGold}>LIVE</Text></View></View>
+            <View style={s.standingPill}><View style={s.dot} /><Text style={s.smallGold}>LIVE</Text></View></View>
           <View style={s.board} testID="active-war-leaderboard">
             <View style={s.boardHead}><Text style={[s.column, s.rankColumn]}>POS</Text><Text style={[s.column, s.playerColumn]}>PLAYER</Text><Text style={s.column}>POINTS</Text></View>
             {!props.rankedMembers.length ? <View style={s.panel}><Text style={s.body}>No players to show yet</Text></View> : null}
@@ -129,15 +134,15 @@ export function ActiveWarScreen(props: Props) {
                 accessibilityLabel={`${member.display_name}${me ? ', you' : ''}, ${props.hasScores ? `${isTied ? 'tied ' : ''}${ordinal(rank)}` : 'no position yet'}, ${member.points} points, ${member.status}`}
                 style={[s.row, me && s.yourRow]}>
                 {me ? <View style={s.yourMarker} /> : null}
-                <Text style={[s.rank, me && s.yourRank]}>{props.hasScores ? String(rank).padStart(2, '0') : '—'}</Text>
+                <Text style={[s.rank, rank <= 3 && props.hasScores && s.topRank, me && s.yourRank]}>{props.hasScores ? String(rank).padStart(2, '0') : '—'}</Text>
                 <View style={[s.avatar, { backgroundColor: c.avatar[index % c.avatar.length] }, me && s.yourAvatar]}>
                   <Text style={[s.avatarText, me && s.yourAvatarText]}>{initials(member.display_name)}</Text></View>
-                <View style={s.playerCopy}><View style={{ flexShrink: 1 }}><Text numberOfLines={1} style={s.name}>{member.display_name}</Text>
+                <View style={s.playerCopy}><View style={{ flexShrink: 1 }}><Text numberOfLines={1} style={[s.name, me && s.yourName]}>{member.display_name}</Text>
                   {member.status === 'retired' ? <Text style={s.role}>Retired</Text> : null}</View>
                   {me ? <View style={s.tag}><Text style={s.tagText}>YOU</Text></View> : null}
                   {props.hasScores && isTied ? <Text style={s.role}>TIED</Text> : null}
                 </View>
-                <Text style={s.score}>{member.points}<Text style={s.units}> {member.points === 1 ? 'pt' : 'pts'}</Text></Text>
+                <Text style={[s.score, me && s.yourScore]}>{member.points}<Text style={s.units}> {member.points === 1 ? 'pt' : 'pts'}</Text></Text>
               </View>;
             })}
           </View>
@@ -167,7 +172,7 @@ export function ActiveWarScreen(props: Props) {
           {props.retired ? logAction() : null}
         </>}
       </ScrollView>
-      <View style={[s.nav, { paddingBottom: Math.max(insets.bottom, Platform.OS === 'web' ? 24 : 12) }]}>
+      <View style={[s.nav, { paddingBottom: Math.max(insets.bottom, Platform.OS === 'web' ? 34 : 12) }]}>
         {navigation.map(item => <Pressable key={item.label} accessibilityRole="button" accessibilityLabel={item.label}
           accessibilityState={{ selected: item.label === 'Wars' }} onPress={() => router.replace(item.route)} style={s.navItem}>
           <Feather name={item.icon} size={22} color={item.label === 'Wars' ? c.gold : c.secondary} /><Text style={[s.navText, item.label === 'Wars' && s.selectedNavText]}>{item.label}</Text>
