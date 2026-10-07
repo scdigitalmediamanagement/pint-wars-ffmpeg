@@ -1,3 +1,4 @@
+- [Current Pint Wars handoff](PINT-WARS-CURRENT-HANDOFF.md) — authoritative current project state, redesign approvals, native Memories status, EAS/device status, and exact next steps; read this first for continuity.
 - [Expo SDK patch updates](expo-sdk-patch-updates.md) — package firewall timing can temporarily block a compatible patch release; verify Metro and typecheck instead of forcing it.
 - [Supabase DDL access](supabase-ddl-access.md) — the connector exposes PostgREST only; schema changes require a separate DDL-capable connection.
 - [Expo map web bundling](expo-map-web-bundling.md) — isolate react-native-maps behind .native/.web modules because its native internals break the web bundle.
