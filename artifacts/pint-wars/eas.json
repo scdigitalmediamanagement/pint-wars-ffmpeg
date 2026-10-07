@@ -1,6 +1,7 @@
 {
   "build": {
     "development": {
+      "pnpm": "10.26.1",
       "developmentClient": true,
       "distribution": "internal",
       "channel": "main"
