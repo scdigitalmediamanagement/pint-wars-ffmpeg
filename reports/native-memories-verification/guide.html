@@ -1,0 +1,507 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pint Wars native iPhone verification package</title><style>body{margin:0;background:#0b111b;color:#ecf1f7;font:15px/1.65 system-ui,sans-serif}main{max-width:1000px;margin:auto;padding:32px 24px}h1{font-size:30px;line-height:1.2}h2{margin-top:38px;color:#ffd12e}h3{margin-top:24px}code,pre{font:13px/1.6 ui-monospace,monospace}code{color:#fff0b3}pre{background:#131e2d;border:1px solid #29354a;border-radius:10px;padding:16px;overflow:auto}pre code{color:#e5ebf3}.line{overflow-wrap:anywhere}.space{height:9px}.status{padding:16px;border:1px solid #63501e;background:#282216;color:#ffd12e;border-radius:12px;margin-bottom:24px}.line:has(code){padding-bottom:2px}</style><main><div class="status"><strong>Verification preparation complete. No feature/configuration changes.</strong><br>55 tests, full TypeScript, native integrity/autolinking, temporary iOS prebuild and iOS JavaScript export: PASS.<br>Actual Xcode linking and physical-iPhone tests: NOT RUN. Nothing published.</div><h1>Pint Wars Memories — physical-iPhone native verification</h1>
+<div class="space"></div>
+<h2>Scope and current decision</h2>
+<div class="space"></div>
+<div class="line">This is a verification hand-off, not a feature revision or release.</div>
+<div class="line">No Memories UI/video logic, backend, scoring, authentication, RevenueCat,</div>
+<div class="line">payments, database schema, or unrelated feature is to be changed.</div>
+<div class="line">Do not publish, submit to App Store Connect, run EAS Update, or use a simulator.</div>
+<div class="space"></div>
+<div class="line"><strong>Primary method:</strong> generate the existing Expo/CNG iOS project, install its</div>
+<div class="line">CocoaPods dependencies, compile the <code>PintWars</code> scheme for <code>iphoneos</code> on macOS,</div>
+<div class="line">then install a signed <strong>Debug development build on a physical iPhone</strong>.</div>
+<div class="line"><code>expo-dev-client</code> is already installed; Expo Go cannot load the local module.</div>
+<div class="space"></div>
+<div class="line">No application code/configuration change was found necessary by the checks</div>
+<div class="line">available in Replit. Actual Swift compilation and linking are still gates,</div>
+<div class="line">not assumed successes.</div>
+<div class="space"></div>
+<h2>Inspected configuration</h2>
+<div class="space"></div>
+<div class="line">| Item | Current value / finding |</div>
+<div class="line">|---|---|</div>
+<div class="line">| App / scheme / generated target | Pint Wars / <code>PintWars</code> |</div>
+<div class="line">| Bundle identifier | <code>com.pintwars.app</code> |</div>
+<div class="line">| Expo / React Native | <code>57.0.25</code> / <code>0.86.3</code> |</div>
+<div class="line">| Expo Modules Core / dev client | <code>57.0.19</code> / <code>57.0.19</code> |</div>
+<div class="line">| Generated iOS deployment target | <code>16.4</code> |</div>
+<div class="line">| Local pod minimum iOS | <code>16.4</code> |</div>
+<div class="line">| Pod Swift language mode | <code>5.0</code> |</div>
+<div class="line">| Local Expo module | <code>PintWarsMemoriesModule</code>; bridge name <code>PintWarsMemories</code> |</div>
+<div class="line">| Pod / Swift module | <code>PintWarsMemories</code> |</div>
+<div class="line">| Platforms | Apple only; no Android module configuration |</div>
+<div class="line">| FFmpegKit Next | <code>9.0.0</code>, source commit <code>5e51b2da4c3593c0f2f9b49f53eeb497d93e39d3</code> |</div>
+<div class="line">| XCFramework architecture | iOS device arm64 only; no simulator slice |</div>
+<div class="line">| Mach-O payload | Eight dynamic libraries, single-arm64 universal containers |</div>
+<div class="line">| Library install names | <code>@rpath/&lt;name&gt;.framework/&lt;name&gt;</code> |</div>
+<div class="line">| Binary deployment / SDK metadata | Minimum iOS <code>12.1.0</code>; SDK <code>26.5.0</code>. The app/module requirement remains iOS 16.4. |</div>
+<div class="line">| Artifact producer toolchain | Xcode <code>26.6</code>, macOS <code>26.6.2</code>, per original verification report |</div>
+<div class="line">| Codec build | VideoToolbox enabled; GPL and x264 disabled |</div>
+<div class="line">| Photos | <code>NSPhotoLibraryAddUsageDescription</code>; native <code>.addOnly</code> request; no Photos read permission |</div>
+<div class="line">| Privacy declaration | File-timestamp reason <code>C617.1</code>; no tracking declared by this local module |</div>
+<div class="line">| CNG | App-root <code>/ios/</code> and <code>/android/</code> ignored; local module native files are tracked |</div>
+<div class="space"></div>
+<div class="line">Use Xcode 26.6 for the first reproducible verification attempt, matching the</div>
+<div class="line">artifact producer. This is a recommendation, not a claim that 26.6 is the</div>
+<div class="line">minimum supported Xcode. React Native's installed helper declares a minimum</div>
+<div class="line">of Xcode 16.1; that alone does not prove an older toolchain can consume this</div>
+<div class="line">artifact and the whole current dependency graph.</div>
+<div class="space"></div>
+<h2>Prerequisites outside this Replit workspace</h2>
+<div class="space"></div>
+<div class="line">1. A Mac capable of running the chosen full Xcode installation and iOS SDK.</div>
+<div class="line">   Accept its license and install its platform components.</div>
+<div class="line">2. CocoaPods available on the Mac; record its version. No CocoaPods install or</div>
+<div class="line">   Swift/Xcode build has been performed in this Linux workspace.</div>
+<div class="line">3. Node <code>24.13.0</code> and pnpm <code>10.26.1</code>, matching the tools used for this check.</div>
+<div class="line">   Install <strong>both dependencies and devDependencies</strong>: Expo/React Native and</div>
+<div class="line">   several runtime packages are currently declared in devDependencies.</div>
+<div class="line">4. A connected, unlocked, trusted physical arm64 iPhone running iOS 16.4 or newer,</div>
+<div class="line">   with Developer Mode enabled and sufficient free space. Record its iOS version.</div>
+<div class="line">5. An Apple signing team authorized to sign <code>com.pintwars.app</code>; select it in</div>
+<div class="line">   Xcode. Do not change the bundle identifier to bypass signing without approval.</div>
+<div class="line">   Local USB signing may use a Personal Team if Apple permits this identifier;</div>
+<div class="line">   cloud ad-hoc/EAS distribution requires the appropriate paid Apple Developer</div>
+<div class="line">   membership and registered device.</div>
+<div class="line">6. The checkout must include the eight tracked XCFramework trees and the whole</div>
+<div class="line">   pnpm workspace, not just the mobile folder. Workspace libraries are needed.</div>
+<div class="line">   <strong>Mac installation caveat:</strong> <code>pnpm-workspace.yaml</code> explicitly excludes Darwin</div>
+<div class="line">   optional binaries for esbuild, lightningcss, Tailwind Oxide, Rollup and ngrok.</div>
+<div class="line">   A fresh macOS dependency install has not been verified here. esbuild can</div>
+<div class="line">   attempt its upstream platform-binary download during installation, requiring</div>
+<div class="line">   network access; unrelated web tooling may still lack its Mac binaries.</div>
+<div class="line">   The native path uses Metro, not the web/Vite build, and the commands below</div>
+<div class="line">   deliberately use LAN rather than an ngrok tunnel.</div>
+<div class="line">   Do not disable the release-age security policy or remove these overrides</div>
+<div class="line">   speculatively. If installation fails, capture the exact package/platform</div>
+<div class="line">   error and resolve only the demonstrated native-build prerequisite.</div>
+<div class="line">7. Configure the existing public mobile runtime settings on the Mac through</div>
+<div class="line">   your approved local environment setup, without committing them:</div>
+<div class="line">   - <code>EXPO_PUBLIC_SUPABASE_URL</code></div>
+<div class="line">   - <code>EXPO_PUBLIC_SUPABASE_ANON_KEY</code></div>
+<div class="line">   - <code>EXPO_PUBLIC_REVENUECAT_TEST_API_KEY</code> (the existing Debug/Test Store path)</div>
+<div class="line">   - <code>EXPO_PUBLIC_DOMAIN</code>: the existing API hostname <strong>without</strong> <code>https://</code></div>
+<div class="line">     or a path. The app prepends <code>https://</code>; generated requests include <code>/api</code>.</div>
+<div class="line">   Do not put service-role keys, database passwords, RevenueCat secret keys,</div>
+<div class="line">   or other server credentials into the mobile app.</div>
+<div class="line">8. The iPhone must reach the existing HTTPS API and Supabase and the Mac's</div>
+<div class="line">   Metro server. The Replit dev API must remain running/reachable if used.</div>
+<div class="line">   Do not confuse the Expo preview hostname with the API hostname.</div>
+<div class="line">9. An authorized account that belongs to an <strong>already completed</strong> war with</div>
+<div class="line">   actual accessible proof photos and known final results. Prefer a test war</div>
+<div class="line">   with at least 16 photos, several players/pubs and late-war photos.</div>
+<div class="line">   Do not change production scores, delete proofs, or end a live war to create</div>
+<div class="line">   test conditions. If suitable data is absent, record that prerequisite as blocked.</div>
+<div class="space"></div>
+<div class="line">Replit can prepare/check the source and can initiate an authorized hosted</div>
+<div class="line">macOS build through EAS. It cannot perform local Xcode/CocoaPods linking or the</div>
+<div class="line">hands-on iPhone tests inside this current Linux container. No cloud build was</div>
+<div class="line">started as part of this preparation.</div>
+<div class="space"></div>
+<h2>A. Exact clean-checkout preparation commands — Mac</h2>
+<div class="space"></div>
+<div class="line">Replace <code>/path/to/pint-wars-workspace</code> with the root of a fresh workspace checkout.</div>
+<div class="line">Set the existing runtime settings securely before starting Metro.</div>
+<div class="space"></div>
+<pre><code>cd /path/to/pint-wars-workspace
+node --version
+pnpm --version
+xcodebuild -version
+xcrun --sdk iphoneos --show-sdk-version
+pod --version
+
+# Do not use --prod: the mobile project needs its devDependencies.
+pnpm install --frozen-lockfile --prod=false
+pnpm run typecheck:libs
+pnpm --filter @workspace/pint-wars run verify:memories-native
+
+cd artifacts/pint-wars
+pnpm exec expo prebuild --platform ios --no-install
+pod install --project-directory=ios
+open ios/PintWars.xcworkspace</code></pre>
+<div class="space"></div>
+<div class="line">In Xcode, select target <code>PintWars</code> → Signing &amp; Capabilities → the authorized</div>
+<div class="line">development team, and use automatic signing if your team permits it.</div>
+<div class="line">Select your <strong>physical iPhone</strong>, not an iOS Simulator.</div>
+<div class="space"></div>
+<div class="line">The native verifier intentionally requires that generated app-root native</div>
+<div class="line">folders are absent. Run it <strong>before prebuild</strong>, as above. After prebuild in this</div>
+<div class="line">local checkout, use the generated-project/link checks below instead; the</div>
+<div class="line">verifier's CNG assertion would otherwise fail for an expected generated folder.</div>
+<div class="space"></div>
+<div class="line">Prebuild generates native files locally; do not commit them. Do not use</div>
+<div class="line"><code>prebuild --clean</code> on a checkout containing native edits without backing them up</div>
+<div class="line">and obtaining approval. A fresh checkout avoids needing that destructive flag.</div>
+<div class="space"></div>
+<h2>B. Compile/link gate — no signing needed for this first gate</h2>
+<div class="space"></div>
+<div class="line">Run from <code>artifacts/pint-wars</code>, after <code>pod install</code>.</div>
+<div class="line">Evidence stays outside the repository. Do not reuse a prior result-bundle path.</div>
+<div class="space"></div>
+<pre><code>EVIDENCE=&quot;$HOME/Desktop/pint-wars-native-$(date +%Y%m%d-%H%M%S)&quot;
+mkdir -p &quot;$EVIDENCE&quot;
+export EVIDENCE
+
+xcodebuild -list -workspace ios/PintWars.xcworkspace
+xcodebuild -showdestinations \
+  -workspace ios/PintWars.xcworkspace -scheme PintWars
+
+set -o pipefail
+xcodebuild \
+  -workspace ios/PintWars.xcworkspace \
+  -scheme PintWars \
+  -configuration Debug \
+  -sdk iphoneos \
+  -destination 'generic/platform=iOS' \
+  -derivedDataPath &quot;$EVIDENCE/DerivedData&quot; \
+  -resultBundlePath &quot;$EVIDENCE/compile.xcresult&quot; \
+  CODE_SIGNING_ALLOWED=NO \
+  build 2&gt;&amp;1 | tee &quot;$EVIDENCE/compile.log&quot;</code></pre>
+<div class="space"></div>
+<div class="line"><strong>Pass:</strong> command exits zero and reports BUILD SUCCEEDED, including compilation</div>
+<div class="line">of all four local Swift files and successful device linking.</div>
+<div class="line"><strong>Fail:</strong> any Swift/API/concurrency, missing module/header, unsupported</div>
+<div class="line">architecture, undefined symbol, framework-copy, or linker error.</div>
+<div class="line">Record the actual first error. Only then decide whether a narrowly scoped</div>
+<div class="line">compile-required change is needed.</div>
+<div class="space"></div>
+<div class="line">An unsigned <code>.app</code> proves compilation/linking only. It is <strong>not</strong> the app to</div>
+<div class="line">install on the iPhone.</div>
+<div class="space"></div>
+<div class="line">Inspect generated registration/integration:</div>
+<div class="space"></div>
+<pre><code>grep -n 'PintWarsMemories' ios/Podfile.lock
+find ios -name ExpoModulesProvider.swift -print
+# Inspect the located provider: it must import/register PintWarsMemoriesModule.
+grep -R -n 'PintWarsMemoriesModule' \
+  &quot;ios/Pods/Target Support Files&quot; 2&gt;/dev/null
+find &quot;ios/Pods/Target Support Files&quot; \
+  -name '*frameworks.sh' -o -name '*xcframeworks.sh'</code></pre>
+<div class="space"></div>
+<div class="line">The exact CocoaPods-generated script/provider placement can vary. Inspect the</div>
+<div class="line">located scripts to confirm all eight XCFrameworks are copied/embedded. Do not</div>
+<div class="line">manually add framework references to the generated project to mask an</div>
+<div class="line">autolinking/podspec issue.</div>
+<div class="space"></div>
+<h2>C. Confirm the eight native frameworks in the built app</h2>
+<div class="space"></div>
+<pre><code>APP=&quot;$EVIDENCE/DerivedData/Build/Products/Debug-iphoneos/PintWars.app&quot;
+test -d &quot;$APP&quot;
+
+for name in ffmpegkit libavcodec libavdevice libavfilter \
+            libavformat libavutil libswresample libswscale; do
+  BIN=&quot;$APP/Frameworks/$name.framework/$name&quot;
+  test -f &quot;$BIN&quot; || { echo &quot;MISSING: $BIN&quot;; exit 1; }
+  xcrun lipo -archs &quot;$BIN&quot;
+  xcrun otool -D &quot;$BIN&quot;
+  xcrun otool -L &quot;$BIN&quot;
+done | tee &quot;$EVIDENCE/frameworks.txt&quot;
+
+for BIN in &quot;$APP/PintWars&quot; &quot;$APP/PintWars.debug.dylib&quot;; do
+  if test -f &quot;$BIN&quot;; then xcrun otool -L &quot;$BIN&quot;; fi
+done | tee &quot;$EVIDENCE/app-linkage.txt&quot;</code></pre>
+<div class="space"></div>
+<div class="line"><strong>Pass:</strong> all eight dynamic framework binaries are present, contain arm64, have</div>
+<div class="line">the expected relocatable install names and valid dependency resolution.</div>
+<div class="line">Inspect the executable <strong>and Debug dylib</strong>, if present: modern Xcode can place</div>
+<div class="line">the application's linked code in <code>PintWars.debug.dylib</code>.</div>
+<div class="line">Presence of files alone does not prove linking or runtime loading.</div>
+<div class="space"></div>
+<div class="line">The local <code>PintWarsMemories</code> pod uses static-framework packaging. Do not demand</div>
+<div class="line">that it appear as a ninth dynamically embedded framework.</div>
+<div class="space"></div>
+<h2>D. Signed build, installation and launch — physical iPhone</h2>
+<div class="space"></div>
+<div class="line">With signing selected in Xcode, first start Metro in a separate terminal:</div>
+<div class="space"></div>
+<pre><code>cd /path/to/pint-wars-workspace/artifacts/pint-wars
+pnpm exec expo start --dev-client --lan</code></pre>
+<div class="space"></div>
+<div class="line">Then run:</div>
+<div class="space"></div>
+<pre><code>cd /path/to/pint-wars-workspace/artifacts/pint-wars
+pnpm exec expo run:ios \
+  --device \
+  --scheme PintWars \
+  --configuration Debug \
+  --no-install \
+  --no-bundler</code></pre>
+<div class="space"></div>
+<div class="line">Choose the connected <strong>physical iPhone</strong> in the prompt.</div>
+<div class="line">This builds a signed Debug binary, installs it and launches it.</div>
+<div class="line">If the development launcher appears, open the Mac's Metro project.</div>
+<div class="line">Do not select an existing Expo Go installation or an older native binary.</div>
+<div class="space"></div>
+<div class="line">For a signed Xcode build with a deterministic evidence output directory,</div>
+<div class="line">run the following after the team has been configured:</div>
+<div class="space"></div>
+<pre><code>set -o pipefail
+xcodebuild \
+  -workspace ios/PintWars.xcworkspace \
+  -scheme PintWars \
+  -configuration Debug \
+  -sdk iphoneos \
+  -destination 'generic/platform=iOS' \
+  -derivedDataPath &quot;$EVIDENCE/SignedDerivedData&quot; \
+  -resultBundlePath &quot;$EVIDENCE/signed.xcresult&quot; \
+  -allowProvisioningUpdates \
+  build 2&gt;&amp;1 | tee &quot;$EVIDENCE/signed.log&quot;
+
+SIGNED_APP=&quot;$EVIDENCE/SignedDerivedData/Build/Products/Debug-iphoneos/PintWars.app&quot;
+codesign --verify --deep --strict --verbose=2 &quot;$SIGNED_APP&quot;
+for name in ffmpegkit libavcodec libavdevice libavfilter \
+            libavformat libavutil libswresample libswscale; do
+  codesign --verify --strict --verbose=2 \
+    &quot;$SIGNED_APP/Frameworks/$name.framework&quot;
+done
+
+xcrun devicectl list devices</code></pre>
+<div class="space"></div>
+<div class="line">To install that exact signed evidence build, replace <code>DEVICE_IDENTIFIER</code> with</div>
+<div class="line">the connected physical device identifier shown by devicectl:</div>
+<div class="space"></div>
+<pre><code>xcrun devicectl device install app \
+  --device DEVICE_IDENTIFIER &quot;$SIGNED_APP&quot;
+xcrun devicectl device process launch \
+  --device DEVICE_IDENTIFIER com.pintwars.app</code></pre>
+<div class="space"></div>
+<div class="line"><strong>Pass:</strong> signed app and all frameworks validate, the app launches on the actual</div>
+<div class="line">iPhone without dyld/Library not loaded failures, and the Memories screen starts</div>
+<div class="line">generation instead of reporting a missing native exporter.</div>
+<div class="line">Record Xcode/device console output without session tokens or private URLs.</div>
+<div class="space"></div>
+<h2>E. Real-device acceptance matrix</h2>
+<div class="space"></div>
+<div class="line">Use <code>checklist.csv</code> for PASS / FAIL / BLOCKED / NOT RUN and evidence references.</div>
+<div class="line">No row below has already passed native testing.</div>
+<div class="space"></div>
+<h3>1. Generate a real MP4</h3>
+<div class="space"></div>
+<div class="line">- Sign in normally as the authorized member; open the known completed war.</div>
+<div class="line">- Enter Memories and allow generation to complete while foregrounded/unlocked.</div>
+<div class="line">- Check progress reflects actual staging/encoding; Save/Share are not enabled</div>
+<div class="line">  before a real film exists.</div>
+<div class="line">- Compare photos, player/pub captions, winner, ties if present, and scores with</div>
+<div class="line">  the real war. Check late-war coverage/variety and absence of duplicate photos.</div>
+<div class="line">- Expect 720×1280 portrait, 30fps, approximately 30 seconds: two-second opening,</div>
+<div class="line">  25-second photo sequence and three-second final real result.</div>
+<div class="line">- Transitions should be smooth fades through navy. AAC is intentionally silent.</div>
+<div class="space"></div>
+<h3>2. Play, seek, pause and replay</h3>
+<div class="space"></div>
+<div class="line">- Play and pause; timeline should follow AVPlayer, not a JS slideshow timer.</div>
+<div class="line">- Seek forward/backward, including near 0, the 2-second first-photo boundary,</div>
+<div class="line">  mid-film, 27-second final-result boundary and the end.</div>
+<div class="line">- Tap several selected thumbnails and verify the matching moment/time.</div>
+<div class="line">- Complete playback and replay. Repeat after Save and after dismissing Share.</div>
+<div class="line">- No frozen black frames, error state, incorrect duration or UI lock.</div>
+<div class="space"></div>
+<h3>3. Photos permission and saving</h3>
+<div class="space"></div>
+<div class="line">- Use a dedicated test device/account. A fresh installation gives the clean</div>
+<div class="line">  permission state; uninstalling destroys that installation's session/temp data.</div>
+<div class="line">- First Save tap: expect <strong>add-only Photos</strong> authorization, not library read</div>
+<div class="line">  or microphone permission.</div>
+<div class="line">- Allow: the actual video appears and plays in Photos; success notice appears</div>
+<div class="line">  only after Photos completion.</div>
+<div class="line">- Separate clean-permission run: deny. Expect denial/error and Settings action,</div>
+<div class="line">  no claimed save. Allow in Settings, return, and retry without regenerating.</div>
+<div class="line">- Where available, test restricted/managed access and Photos/storage failure</div>
+<div class="line">  on a disposable test device. Do not fill or endanger a personal device.</div>
+<div class="line">  If a failure condition cannot be induced safely, mark it BLOCKED/NOT RUN,</div>
+<div class="line">  not PASS from unit tests alone.</div>
+<div class="space"></div>
+<h3>4. Native MP4 sharing and permissions</h3>
+<div class="space"></div>
+<div class="line">- Tap Share: an iOS activity sheet appears with the actual local <code>.mp4</code>.</div>
+<div class="line">- Share to Files or AirDrop to the Mac; recipient can play the file offline.</div>
+<div class="line">- Dismiss the sheet: no false success and no error; controls become usable.</div>
+<div class="line">- Complete a share: success is reported only when iOS reports completion.</div>
+<div class="line">- Test an available restricted/failed destination and confirm truthful failure</div>
+<div class="line">  if the OS reports one. A target cancelled by its user may simply report</div>
+<div class="line">  dismissal, not a share error.</div>
+<div class="line">- <strong>There is no app-wide “share permission” to request.</strong> Target services may</div>
+<div class="line">  have their own authorization, device restrictions or connectivity prompts.</div>
+<div class="line">  Sharing must not request Photos add-only/read permission merely to open the sheet.</div>
+<div class="line">- If no safe/reproducible native share-error condition is available, mark that</div>
+<div class="line">  case BLOCKED/NOT RUN and retain the passing unit-test result separately.</div>
+<div class="space"></div>
+<h3>5. Prove MP4 format and actual-file delivery</h3>
+<div class="space"></div>
+<div class="line">Save the shared file locally as <code>Pint-War-Memories.mp4</code>. On the Mac, install</div>
+<div class="line">ffprobe separately if it is not already available, then:</div>
+<div class="space"></div>
+<pre><code>ffprobe -v error \
+  -show_entries format=duration,size:stream=codec_name,codec_type,width,height,r_frame_rate,nb_frames \
+  -of json &quot;Pint-War-Memories.mp4&quot; &gt; &quot;$EVIDENCE/mp4.json&quot;
+shasum -a 256 &quot;Pint-War-Memories.mp4&quot; &gt; &quot;$EVIDENCE/shared-file.sha256&quot;</code></pre>
+<div class="space"></div>
+<div class="line">Expect H.264 video, AAC audio, 720×1280, 30/1 fps and about 30 seconds.</div>
+<div class="line">The frame plan is 900 frames; confirm actual frame count if ffprobe reports it</div>
+<div class="line">or use <code>-count_frames</code> and <code>-show_entries stream=nb_read_frames</code>.</div>
+<div class="line">Playback without network and a recipient-visible video file prove actual-file</div>
+<div class="line">sharing, unlike merely seeing a URL in a share sheet.</div>
+<div class="space"></div>
+<div class="line">If comparing app output with shared output, compare SHA-256 for the original</div>
+<div class="line">files. Photos or a destination may transcode exports; use an **unmodified</div>
+<div class="line">original** export where available and distinguish transcode behavior from</div>
+<div class="line">the original app's output.</div>
+<div class="space"></div>
+<h3>6. Successful cleanup — retention while needed is correct</h3>
+<div class="space"></div>
+<div class="line">The job's directory is:</div>
+<div class="space"></div>
+<pre><code>&lt;application-data-container&gt;/tmp/pint-war-memories/&lt;job UUID&gt;/</code></pre>
+<div class="space"></div>
+<div class="line">- While the completed film is still on screen: <code>Pint-War-Memories.mp4</code> and</div>
+<div class="line">  selected <code>photo-*.jpg</code> thumbnails may remain intentionally.</div>
+<div class="line">- <code>segment-*.mp4</code>, <code>opening.jpg</code>, <code>closing.jpg</code> and <code>concat.txt</code> must have been</div>
+<div class="line">  removed after generation.</div>
+<div class="line">- After leaving Memories, once AVPlayer and native Photos/share consumers</div>
+<div class="line">  finish, the released job directory and its remaining MP4/JPEGs should disappear.</div>
+<div class="line">- Native operations must retain the file if the screen is left while saving or</div>
+<div class="line">  sharing. After the operation and all consumers finish, deletion must follow.</div>
+<div class="line">- Generate again and confirm no accumulation of released jobs.</div>
+<div class="space"></div>
+<div class="line">Use Xcode → Window → Devices and Simulators → select the <strong>physical iPhone</strong> →</div>
+<div class="line">installed Pint Wars app → <strong>Download Container</strong> to inspect snapshots, where</div>
+<div class="line">that operation is supported for the development build.</div>
+<div class="line">Inspect <code>.xcappdata/AppData/tmp/pint-war-memories</code>.</div>
+<div class="line">Unlock the device because these files use complete file protection.</div>
+<div class="space"></div>
+<div class="line">Alternative for live checks: pause briefly in Xcode's debugger and use these</div>
+<div class="line">read-only Swift expressions, then resume:</div>
+<div class="space"></div>
+<pre><code>expression -l Swift -- import Foundation
+expression -l Swift -O -- FileManager.default.temporaryDirectory.appendingPathComponent(&quot;pint-war-memories&quot;).path
+expression -l Swift -O -- try? FileManager.default.subpathsOfDirectory(atPath: FileManager.default.temporaryDirectory.appendingPathComponent(&quot;pint-war-memories&quot;).path)</code></pre>
+<div class="space"></div>
+<div class="line">Record job/file names and counts, not private photo bytes.</div>
+<div class="line">Do not stop/kill the app as a substitute for navigating away: a killed process</div>
+<div class="line">cannot run ordinary cleanup callbacks.</div>
+<div class="line">Do not upload the full container; it can contain authentication sessions and</div>
+<div class="line">private photos.</div>
+<div class="space"></div>
+<h3>7. Failure, cancellation and back-navigation cleanup</h3>
+<div class="space"></div>
+<div class="line">- Cancel once during private-photo staging, then once during native encoding.</div>
+<div class="line">- Repeat with back navigation in both stages.</div>
+<div class="line">- Switch off networking while a fresh run is still downloading photos.</div>
+<div class="line">  Expect an explicit failure, no fake ready film, and a working retry after</div>
+<div class="line">  restoring network. Disabling networking after staging is complete may not</div>
+<div class="line">  fail a local encode.</div>
+<div class="line">- After each case and after in-flight native consumer holds drain, inspect</div>
+<div class="line">  the affected job directory: partial files must be removed.</div>
+<div class="line">- Retry and complete a new generation, without reusing a cancelled output.</div>
+<div class="line">- A decode/encoder failure requires a naturally encountered failure or a</div>
+<div class="line">  separately authorized test condition. Do not delete real proof photos,</div>
+<div class="line">  modify the encoder or introduce fault-injection code for this hand-off.</div>
+<div class="space"></div>
+<div class="line">Process-termination leftovers are a separate case: directories from a killed</div>
+<div class="line">process are pruned on the next generation <strong>after 24 hours</strong>, not immediately</div>
+<div class="line">on every launch. Test elapsed-time recovery on a dedicated device if needed;</div>
+<div class="line">do not falsify the device clock and interfere with TLS/authentication.</div>
+<div class="space"></div>
+<h2>F. Exact source/configuration files involved</h2>
+<div class="space"></div>
+<div class="line">Paths below are relative to the workspace root.</div>
+<div class="space"></div>
+<h3>Build inputs (unchanged)</h3>
+<div class="space"></div>
+<div class="line">- <code>artifacts/pint-wars/app.json</code>: identity, plugins, Photos add-only usage text.</div>
+<div class="line">- <code>artifacts/pint-wars/package.json</code>: Expo/dev-client/runtime packages and checks.</div>
+<div class="line">- <code>artifacts/pint-wars/eas.json</code>: existing development/preview/production profiles.</div>
+<div class="line">- <code>artifacts/pint-wars/.gitignore</code>: CNG ignore boundaries.</div>
+<div class="line">- <code>pnpm-workspace.yaml</code>, <code>pnpm-lock.yaml</code>, root <code>package.json</code>, <code>.npmrc</code>:</div>
+<div class="line">  workspace/dependency resolution; retain the lockfile, no opportunistic upgrades.</div>
+<div class="line">- <code>artifacts/pint-wars/modules/pint-wars-memories/package.json</code></div>
+<div class="line">- <code>artifacts/pint-wars/modules/pint-wars-memories/expo-module.config.json</code></div>
+<div class="line">- <code>artifacts/pint-wars/modules/pint-wars-memories/ios/PintWarsMemories.podspec</code></div>
+<div class="line">- <code>artifacts/pint-wars/modules/pint-wars-memories/ios/PrivacyInfo.xcprivacy</code></div>
+<div class="line">- <code>artifacts/pint-wars/modules/pint-wars-memories/ios/MemoriesJobStore.swift</code></div>
+<div class="line">- <code>artifacts/pint-wars/modules/pint-wars-memories/ios/MemoriesRenderer.swift</code></div>
+<div class="line">- <code>artifacts/pint-wars/modules/pint-wars-memories/ios/MemoriesPlayerView.swift</code></div>
+<div class="line">- <code>artifacts/pint-wars/modules/pint-wars-memories/ios/PintWarsMemoriesModule.swift</code></div>
+<div class="line">- <code>artifacts/pint-wars/modules/pint-wars-memories/ios/Frameworks/</code>:</div>
+<div class="line">  <code>ffmpegkit</code>, <code>libavcodec</code>, <code>libavdevice</code>, <code>libavfilter</code>, <code>libavformat</code>,</div>
+<div class="line">  <code>libavutil</code>, <code>libswresample</code>, <code>libswscale</code>, each as its own <code>.xcframework</code>.</div>
+<div class="line">- <code>artifacts/pint-wars/modules/pint-wars-memories/ios/Notices/</code>:</div>
+<div class="line">  original licenses, source manifest and verification report.</div>
+<div class="line">- <code>artifacts/pint-wars/scripts/verify-memories-native.py</code></div>
+<div class="space"></div>
+<div class="line"><code>native-file-inventory.csv</code> enumerates the native package's individual files</div>
+<div class="line">and the related configuration/source references.</div>
+<div class="space"></div>
+<h3>Existing runtime references (inspect only; do not change)</h3>
+<div class="space"></div>
+<div class="line">- <code>artifacts/pint-wars/app/_layout.tsx</code>: existing HTTPS API base and auth token getter.</div>
+<div class="line">- <code>artifacts/pint-wars/src/lib/supabase.ts</code>: existing client configuration.</div>
+<div class="line">- <code>artifacts/pint-wars/src/providers/RevenueCatProvider.tsx</code>: existing Debug/Test Store path.</div>
+<div class="line">- <code>artifacts/pint-wars/app/war/[leagueId]/memories.tsx</code></div>
+<div class="line">- <code>artifacts/pint-wars/src/lib/memories-native.ts</code></div>
+<div class="line">- <code>artifacts/pint-wars/src/lib/memories-video-pipeline.ts</code></div>
+<div class="line">- <code>artifacts/pint-wars/src/lib/memories-actions.ts</code></div>
+<div class="line">- <code>artifacts/pint-wars/src/components/MemoriesVideoPlayer.tsx</code></div>
+<div class="line">- <code>artifacts/pint-wars/src/components/PintWarMemoriesPresentation.tsx</code></div>
+<div class="space"></div>
+<h3>Generated on the Mac only (do not commit)</h3>
+<div class="space"></div>
+<div class="line">- <code>artifacts/pint-wars/ios/Podfile</code> and <code>Podfile.properties.json</code></div>
+<div class="line">- <code>artifacts/pint-wars/ios/Podfile.lock</code></div>
+<div class="line">- <code>artifacts/pint-wars/ios/PintWars.xcodeproj</code></div>
+<div class="line">- <code>artifacts/pint-wars/ios/PintWars.xcworkspace</code> after CocoaPods installation</div>
+<div class="line">- <code>artifacts/pint-wars/ios/PintWars/Info.plist</code></div>
+<div class="line">- <code>artifacts/pint-wars/ios/Pods/</code> including the module provider and copy/embed scripts</div>
+<div class="line">- DerivedData, <code>.app</code>, <code>.xcresult</code> and signing evidence in the external evidence folder</div>
+<div class="space"></div>
+<h2>G. EAS alternative — not started, not required for the primary method</h2>
+<div class="space"></div>
+<div class="line">The existing <code>development</code> profile has <code>developmentClient: true</code>,</div>
+<div class="line"><code>distribution: internal</code>, and no simulator flag. If a cloud build is later</div>
+<div class="line">authorized and EAS CLI/signing/environment setup is complete:</div>
+<div class="space"></div>
+<pre><code>cd /path/to/pint-wars-workspace/artifacts/pint-wars
+eas device:create
+eas build --platform ios --profile development</code></pre>
+<div class="space"></div>
+<div class="line">These are build/registration commands, not publication. They were not run.</div>
+<div class="line">EAS executes the iOS build on hosted macOS; installation/runtime tests still</div>
+<div class="line">need the physical iPhone. Do not use the production/store profile for this pass.</div>
+<div class="space"></div>
+<div class="line"><strong>Inspection finding before any EAS/OTA action:</strong> the current</div>
+<div class="line"><code>extra.eas.projectId</code> and <code>updates.url</code> contain different project UUIDs.</div>
+<div class="line">Do not assume their relationship is correct or change it as part of this</div>
+<div class="line">verification-only request. The temporary local prebuild passed; use the local</div>
+<div class="line">Debug/Metro path above, which does not publish an OTA update. Resolve EAS</div>
+<div class="line">project/channel/environment ownership separately before relying on cloud/OTA.</div>
+<div class="space"></div>
+<h2>H. Evidence and completion rule</h2>
+<div class="space"></div>
+<div class="line">Record:</div>
+<div class="space"></div>
+<div class="line">- Checkout revision, app build/version, device model/iOS, Xcode/SDK, CocoaPods,</div>
+<div class="line">  Node and pnpm versions; authorized test-war identifier stored privately.</div>
+<div class="line">- Unsigned compile <code>.xcresult</code>/log, signed build/signature evidence, generated</div>
+<div class="line">  module registration and all eight framework load dependencies.</div>
+<div class="line">- Actual MP4 ffprobe metadata and shared-file checksum.</div>
+<div class="line">- Permission allow/deny/retry, sheet completion/dismissal and failure outcomes.</div>
+<div class="line">- Temporary-directory snapshots/counts at ready, after leaving, after cancel</div>
+<div class="line">  and after a failed run, including deferred consumer-held cleanup.</div>
+<div class="space"></div>
+<div class="line">Every required acceptance row must be PASS with evidence before declaring the feature</div>
+<div class="line">device-verified. The optional killed-process recovery row remains a separately</div>
+<div class="line">reported result; do not claim it was tested if it was not. FAIL, BLOCKED and NOT RUN remain explicit. Unit/static checks</div>
+<div class="line">do not substitute for native checks. No report should say “linked correctly”</div>
+<div class="line">until Xcode linking and real-device dyld loading both pass.</div>
+<div class="space"></div>
+<div class="line">The companion <code>non-device-results.json</code> records only checks actually run here.</div>
+<div class="line">The application was not changed, no native/cloud build was started, and</div>
+<div class="line">nothing was published.</div>
+<div class="space"></div>
+<h2>References</h2>
+<div class="space"></div>
+<div class="line">- Expo local native builds: https://docs.expo.dev/guides/local-app-development/</div>
+<div class="line">- Expo development builds: https://docs.expo.dev/develop/development-builds/introduction/</div>
+<div class="line">- Replit native mobile apps: https://docs.replit.com/features/artifact-types/building-mobile-apps</div>
+<div class="line">- Replit phone testing: https://docs.replit.com/features/workspace-tools/mobile-preview-testing</div>
+<div class="space"></div></main></html>

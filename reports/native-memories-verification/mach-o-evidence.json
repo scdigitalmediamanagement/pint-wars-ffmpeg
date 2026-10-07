@@ -1,0 +1,162 @@
+[
+  {
+    "framework": "ffmpegkit",
+    "install_name": "@rpath/ffmpegkit.framework/ffmpegkit",
+    "target": {
+      "minimum_ios": "12.1.0",
+      "sdk": "26.5.0"
+    },
+    "dependencies": [
+      "/System/Library/Frameworks/Foundation.framework/Foundation",
+      "/System/Library/Frameworks/CoreVideo.framework/CoreVideo",
+      "@rpath/libavdevice.framework/libavdevice",
+      "/usr/lib/libc++.1.dylib",
+      "@rpath/libavcodec.framework/libavcodec",
+      "@rpath/libavfilter.framework/libavfilter",
+      "@rpath/libavformat.framework/libavformat",
+      "@rpath/libavutil.framework/libavutil",
+      "@rpath/libswscale.framework/libswscale",
+      "@rpath/libswresample.framework/libswresample",
+      "/usr/lib/libSystem.B.dylib",
+      "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation",
+      "/usr/lib/libobjc.A.dylib"
+    ]
+  },
+  {
+    "framework": "libavcodec",
+    "install_name": "@rpath/libavcodec.framework/libavcodec",
+    "target": {
+      "minimum_ios": "12.1.0",
+      "sdk": "26.5.0"
+    },
+    "dependencies": [
+      "/usr/lib/libz.1.dylib",
+      "/usr/lib/libc++.1.dylib",
+      "@rpath/libswresample.framework/libswresample",
+      "@rpath/libavutil.framework/libavutil",
+      "/usr/lib/libSystem.B.dylib",
+      "/System/Library/Frameworks/VideoToolbox.framework/VideoToolbox",
+      "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation",
+      "/System/Library/Frameworks/CoreMedia.framework/CoreMedia",
+      "/System/Library/Frameworks/CoreVideo.framework/CoreVideo"
+    ]
+  },
+  {
+    "framework": "libavdevice",
+    "install_name": "@rpath/libavdevice.framework/libavdevice",
+    "target": {
+      "minimum_ios": "12.1.0",
+      "sdk": "26.5.0"
+    },
+    "dependencies": [
+      "/usr/lib/libz.1.dylib",
+      "/usr/lib/libc++.1.dylib",
+      "@rpath/libavfilter.framework/libavfilter",
+      "@rpath/libswscale.framework/libswscale",
+      "@rpath/libavformat.framework/libavformat",
+      "@rpath/libavcodec.framework/libavcodec",
+      "@rpath/libswresample.framework/libswresample",
+      "@rpath/libavutil.framework/libavutil",
+      "/usr/lib/libSystem.B.dylib",
+      "/System/Library/Frameworks/VideoToolbox.framework/VideoToolbox",
+      "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation",
+      "/System/Library/Frameworks/CoreMedia.framework/CoreMedia",
+      "/System/Library/Frameworks/CoreVideo.framework/CoreVideo"
+    ]
+  },
+  {
+    "framework": "libavfilter",
+    "install_name": "@rpath/libavfilter.framework/libavfilter",
+    "target": {
+      "minimum_ios": "12.1.0",
+      "sdk": "26.5.0"
+    },
+    "dependencies": [
+      "/usr/lib/libz.1.dylib",
+      "/usr/lib/libc++.1.dylib",
+      "@rpath/libswscale.framework/libswscale",
+      "@rpath/libavformat.framework/libavformat",
+      "@rpath/libavcodec.framework/libavcodec",
+      "@rpath/libswresample.framework/libswresample",
+      "@rpath/libavutil.framework/libavutil",
+      "/usr/lib/libSystem.B.dylib",
+      "/System/Library/Frameworks/VideoToolbox.framework/VideoToolbox",
+      "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation",
+      "/System/Library/Frameworks/CoreMedia.framework/CoreMedia",
+      "/System/Library/Frameworks/CoreVideo.framework/CoreVideo"
+    ]
+  },
+  {
+    "framework": "libavformat",
+    "install_name": "@rpath/libavformat.framework/libavformat",
+    "target": {
+      "minimum_ios": "12.1.0",
+      "sdk": "26.5.0"
+    },
+    "dependencies": [
+      "/usr/lib/libz.1.dylib",
+      "/usr/lib/libc++.1.dylib",
+      "@rpath/libavcodec.framework/libavcodec",
+      "@rpath/libswresample.framework/libswresample",
+      "@rpath/libavutil.framework/libavutil",
+      "/usr/lib/libSystem.B.dylib",
+      "/System/Library/Frameworks/VideoToolbox.framework/VideoToolbox",
+      "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation",
+      "/System/Library/Frameworks/CoreMedia.framework/CoreMedia",
+      "/System/Library/Frameworks/CoreVideo.framework/CoreVideo"
+    ]
+  },
+  {
+    "framework": "libavutil",
+    "install_name": "@rpath/libavutil.framework/libavutil",
+    "target": {
+      "minimum_ios": "12.1.0",
+      "sdk": "26.5.0"
+    },
+    "dependencies": [
+      "/usr/lib/libz.1.dylib",
+      "/usr/lib/libc++.1.dylib",
+      "/usr/lib/libSystem.B.dylib",
+      "/System/Library/Frameworks/VideoToolbox.framework/VideoToolbox",
+      "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation",
+      "/System/Library/Frameworks/CoreMedia.framework/CoreMedia",
+      "/System/Library/Frameworks/CoreVideo.framework/CoreVideo"
+    ]
+  },
+  {
+    "framework": "libswresample",
+    "install_name": "@rpath/libswresample.framework/libswresample",
+    "target": {
+      "minimum_ios": "12.1.0",
+      "sdk": "26.5.0"
+    },
+    "dependencies": [
+      "/usr/lib/libz.1.dylib",
+      "/usr/lib/libc++.1.dylib",
+      "@rpath/libavutil.framework/libavutil",
+      "/usr/lib/libSystem.B.dylib",
+      "/System/Library/Frameworks/VideoToolbox.framework/VideoToolbox",
+      "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation",
+      "/System/Library/Frameworks/CoreMedia.framework/CoreMedia",
+      "/System/Library/Frameworks/CoreVideo.framework/CoreVideo"
+    ]
+  },
+  {
+    "framework": "libswscale",
+    "install_name": "@rpath/libswscale.framework/libswscale",
+    "target": {
+      "minimum_ios": "12.1.0",
+      "sdk": "26.5.0"
+    },
+    "dependencies": [
+      "/usr/lib/libz.1.dylib",
+      "/usr/lib/libc++.1.dylib",
+      "@rpath/libavutil.framework/libavutil",
+      "/usr/lib/libSystem.B.dylib",
+      "/System/Library/Frameworks/VideoToolbox.framework/VideoToolbox",
+      "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation",
+      "/System/Library/Frameworks/CoreMedia.framework/CoreMedia",
+      "/System/Library/Frameworks/CoreVideo.framework/CoreVideo"
+    ]
+  }
+]

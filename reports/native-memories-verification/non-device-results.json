@@ -1,0 +1,120 @@
+{
+  "checkedAtUtc": "2026-10-07T05:42:55.422Z",
+  "scope": "Physical-iPhone native verification preparation only; no application or native configuration changes",
+  "versions": {
+    "node": "24.13.0",
+    "pnpm": "10.26.1",
+    "expo": "57.0.25",
+    "reactNative": "0.86.3",
+    "expoModulesCore": "57.0.19",
+    "expoDevClient": "57.0.19"
+  },
+  "checks": [
+    {
+      "name": "Full workspace TypeScript",
+      "command": "pnpm run typecheck",
+      "status": "PASS"
+    },
+    {
+      "name": "Memories selection/pipeline/actions",
+      "command": "pnpm --filter @workspace/pint-wars run test:memories",
+      "status": "PASS",
+      "tests": 16,
+      "nativeFunctionsAreTestDoubles": true
+    },
+    {
+      "name": "API authorization and protected photos",
+      "command": "pnpm --filter @workspace/api-server run test",
+      "status": "PASS",
+      "tests": 32
+    },
+    {
+      "name": "War presentation regression",
+      "command": "node --experimental-strip-types --test artifacts/pint-wars/scripts/wars-presentation.test.mjs",
+      "status": "PASS",
+      "tests": 7
+    },
+    {
+      "name": "Tracked diff whitespace",
+      "command": "git diff --check",
+      "status": "PASS"
+    },
+    {
+      "name": "Framework checksums and static module/permission/cleanup checks",
+      "command": "pnpm --filter @workspace/pint-wars run verify:memories-native",
+      "status": "PASS",
+      "frameworks": 8,
+      "nativeFilesTracked": 1286
+    },
+    {
+      "name": "Apple autolinking",
+      "status": "PASS",
+      "resolvedModule": {
+        "packageName": "pint-wars-memories",
+        "pods": [
+          {
+            "podName": "PintWarsMemories",
+            "podspecDir": "/home/runner/workspace/artifacts/pint-wars/modules/pint-wars-memories/ios"
+          }
+        ],
+        "swiftModuleNames": [
+          "PintWarsMemories"
+        ],
+        "modules": [
+          {
+            "name": null,
+            "class": "PintWarsMemoriesModule"
+          }
+        ],
+        "appDelegateSubscribers": [],
+        "reactDelegateHandlers": [],
+        "debugOnly": false,
+        "packageVersion": "1.0.0"
+      }
+    },
+    {
+      "name": "Temporary CNG iOS prebuild",
+      "command": "expo prebuild --platform ios --no-install (temporary copy only)",
+      "status": "PASS",
+      "deploymentTarget": "16.4",
+      "scheme": "PintWars",
+      "photosAddOnlyUsagePresent": true,
+      "photosReadUsageAbsent": true,
+      "podsInstalled": false
+    },
+    {
+      "name": "iOS JavaScript export",
+      "command": "pnpm --filter @workspace/pint-wars exec expo export --platform ios --output-dir <temporary-directory> --no-bytecode",
+      "status": "PASS",
+      "note": "JavaScript bundling only, not Swift compilation or native Hermes/runtime execution"
+    },
+    {
+      "name": "Mach-O static dependency/install-name audit",
+      "status": "PASS",
+      "frameworks": 8,
+      "note": "Single-arm64 universal containers; dynamic libraries; dependencies resolve to provided frameworks or iOS system paths. Not an actual linker run."
+    }
+  ],
+  "automatedTestsPassed": 55,
+  "nativeChecks": {
+    "macosSwiftCompilation": "NOT RUN — macOS/Xcode required",
+    "cocoaPodsInstallationAndLinking": "NOT RUN — macOS toolchain required",
+    "signedPhysicalIPhoneInstallation": "NOT RUN",
+    "realMp4GenerationPlaybackSeekPhotosShareCleanup": "NOT RUN"
+  },
+  "observation": {
+    "recommendedFirstToolchain": "Xcode 26.6 (matches artifact producer)",
+    "artifactBinarySdk": "26.5.0",
+    "artifactBinaryMinimumIOS": "12.1.0",
+    "effectiveAppAndModuleMinimumIOS": "16.4",
+    "easProjectAndUpdatesUuidDiffer": true,
+    "easConfigurationChanged": false
+  },
+  "warnings": [
+    "Node strip-types module-format warnings are nonblocking.",
+    "Existing EAS project UUID and updates URL UUID differ; cloud/OTA ownership/configuration must be reviewed separately, not modified for this local verification hand-off.",
+    "Fresh macOS pnpm install not verified: workspace overrides exclude Darwin esbuild/lightningcss/Tailwind Oxide/Rollup/ngrok binaries. esbuild may require its upstream binary-download fallback. Do not change overrides or release-age policy speculatively."
+  ],
+  "cloudBuildStarted": false,
+  "published": false
+}

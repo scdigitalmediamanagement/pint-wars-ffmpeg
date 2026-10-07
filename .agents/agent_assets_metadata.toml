@@ -42,3 +42,31 @@ mtime_ms = 1791323724733
 storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:42494b53-7437-4b27-84d0-d65610c110e9/64ccede8-cefb-4d57-a2e7-ed3aede7ccae/77e31f91-6dd5-4c0c-a14d-d15384f66b30"
 storage_version_token = "1791323732742221"
 content_type = "text/html"
+
+[[outputs]]
+id = "_LGY3JLXzOcmV_W35p9CJ"
+uri = "file://reports/pint-wars-native-iphone-verification.zip"
+type = "unspecified"
+title = "Final native iPhone verification package"
+description = "Exact macOS commands, 25-row checklist, native inventory and current evidence. Includes Mac dependency-install and EAS configuration caveats; no app changes or publishing."
+logical_id = "5e7a44e9-2654-4087-befa-564b8813343f"
+content_hash = "sha256:84e9d9417d2a02de7ef931696cb5ed61920d4a8ebdcb4470ed782c644566068f"
+size = 39654
+mtime_ms = 1791351889644
+storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:42494b53-7437-4b27-84d0-d65610c110e9/5e7a44e9-2654-4087-befa-564b8813343f/0c53b52f-cd43-42d1-8186-ad51066808bf"
+storage_version_token = "1791351890144570"
+content_type = "application/octet-stream"
+
+[[outputs]]
+id = "AHj9kctLc7X1Jv2hCavwB"
+uri = "file://reports/native-memories-verification/guide.html"
+type = "html"
+title = "Final native iPhone verification guide"
+description = "Readable hand-off covering compilation, signing, real MP4 export/playback/seek, Photos, file sharing, permissions and cleanup."
+logical_id = "9fdb3336-d2b9-4934-a6fb-6aca970396c3"
+content_hash = "sha256:feade7a1c904433e0d3f02c4397cdcd1705de0ed15dd3f3cc414f58e0773c4c7"
+size = 38137
+mtime_ms = 1791351888768
+storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:42494b53-7437-4b27-84d0-d65610c110e9/9fdb3336-d2b9-4934-a6fb-6aca970396c3/d2f606e6-4f1d-4de9-94a1-7876a23ad69f"
+storage_version_token = "1791351890908705"
+content_type = "text/html"

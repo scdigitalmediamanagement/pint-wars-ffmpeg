@@ -1,0 +1,26 @@
+ID,Verification,Expected result,Status,Evidence,Notes
+N01,macOS compile and link,Unsigned Debug iphoneos build succeeds; all four local Swift files compile; xcresult retained,NOT RUN,,
+N02,Native registration,PintWarsMemories pod appears in Podfile.lock and generated provider registers module,NOT RUN,,
+N03,Eight FFmpegKit Next frameworks,All eight device arm64 frameworks embedded; relocatable install names and resolved dependencies,NOT RUN,,
+N04,Signing and physical installation,Signed app and embedded frameworks validate; installation and dyld launch succeed on real iPhone,NOT RUN,,
+N05,Real completed-war export,Actual selected photos and final results produce approximately 30-second portrait MP4,NOT RUN,,
+N06,Actual MP4 format,H264 plus AAC; 720x1280; 30fps; approximately 30 seconds; recorded ffprobe evidence,NOT RUN,,
+N07,Playback and pause,Actual native MP4 plays and pauses without errors,NOT RUN,,
+N08,Timeline and thumbnail seek,Forward/backward and thumbnail seek match actual moments; final result near 27 seconds,NOT RUN,,
+N09,Replay,Replay works after natural playback completion,NOT RUN,,
+N10,Photos permission allowed,Add-only authorization followed by actual Photos save and truthful completion notice,NOT RUN,,
+N11,Photos denied then Settings retry,No false save; Settings action; allow and successful retry without unnecessary regeneration,NOT RUN,,
+N12,Photos restricted or save failure,Explicit failure and retryable UI under safely induced device condition,NOT RUN,,Mark BLOCKED if condition cannot safely be induced
+N13,Actual-file share,Native activity sheet sends playable MP4 file to Files or Mac; not a public URL,NOT RUN,,
+N14,Share dismissal,Dismissal reports neither false success nor error; controls become usable,NOT RUN,,
+N15,Share destination permissions/failure,No global share permission requested; destination restrictions handled truthfully,NOT RUN,,Mark BLOCKED if no reproducible safe native error is available
+N16,Ready-state cleanup,Intermediate segments/cards/concat removed; live MP4 and thumbnail retention permitted,NOT RUN,,
+N17,Success cleanup after leaving,Released job directory removed after player and native save/share holds finish,NOT RUN,,
+N18,Deferred cleanup during native operations,File remains until active Photos/share consumer finishes then is removed,NOT RUN,,
+N19,Cancel during staging,No ready film; affected job and partial files removed after holds drain; retry works,NOT RUN,,
+N20,Cancel during encoding,Encoder cancels; affected job and partial files removed after holds drain; retry works,NOT RUN,,
+N21,Back navigation during staging/encoding,No stale ready result; affected job cleaned up when holds drain,NOT RUN,,
+N22,Network failure during private download,Explicit generation failure; temporary job removed; restored-network retry works,NOT RUN,,
+N23,Decode or encoder failure,No claimed MP4 success; failed job released and cleaned; retry available,NOT RUN,,Do not alter real proofs or feature code to induce a failure
+N24,Repeated successful generations,No accumulation of released jobs and no use-after-delete during play/save/share,NOT RUN,,
+N25,Optional killed-process recovery,Older-than-24-hour leftover removed on next generation; normal immediate cleanup not expected after force quit,NOT RUN,,Separate elapsed-time test on dedicated device
