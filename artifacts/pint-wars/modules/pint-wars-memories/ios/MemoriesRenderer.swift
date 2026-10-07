@@ -134,7 +134,7 @@ enum MemoriesRenderer {
     let done = DispatchSemaphore(value: 0)
     let session = FFmpegKit.execute(withArgumentsAsync: arguments, withCompleteCallback: { _ in done.signal() })
     guard let session else { throw failure("The iOS video encoder could not start.") }
-    store.session(session.getSessionId(), job: job)
+    store.session((session as Session).getSessionId(), job: job)
     done.wait()
     store.session(nil, job: job)
     try store.check(job)
