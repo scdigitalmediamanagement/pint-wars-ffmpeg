@@ -30,7 +30,7 @@
       [
         "expo-image-picker",
         {
-          "cameraPermission": "Allow Pint Wars to use your camera so you can log a pint photo.",
+          "cameraPermission": "Allow Pint Wars to take a pint proof photo or a private Pub Passport visit photo.",
           "microphonePermission": false,
           "photosPermission": false
         }

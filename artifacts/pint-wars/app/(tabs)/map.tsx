@@ -43,6 +43,8 @@ function openPubDetail(pub: NearbyPub) {
       provider: pub.provider,
       name: pub.name,
       address: pub.address,
+      latitude: String(pub.coordinates.latitude),
+      longitude: String(pub.coordinates.longitude),
     },
   });
 }

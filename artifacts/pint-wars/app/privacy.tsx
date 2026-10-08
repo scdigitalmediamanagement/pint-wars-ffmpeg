@@ -74,7 +74,7 @@ export default function PrivacyPolicyScreen() {
           The current code does not define a fixed retention period or automatic expiry schedule for account, league, score, review, or purchase records.
         </PublicParagraph>
         <PublicParagraph>
-          You can start account deletion from Profile in the app or from the public Account Deletion page after verifying access to your account email. The process deletes your Supabase Auth account, removes pint-proof files and personal visit coordinates, deletes your authored reviews, reports, and notifications, and revokes active invites. It cannot run while you host an active Pint War; the app will not end a league automatically.
+          You can start account deletion from Profile in the app or from the public Account Deletion page after verifying access to your account email. The process deletes your Supabase Auth account, removes pint-proof files, private Passport visit photos and visit records, removes personal visit coordinates, deletes your authored reviews, reports, and notifications, and revokes active invites. It cannot run while you host an active Pint War; the app will not end a league automatically.
         </PublicParagraph>
         <PublicParagraph>
           Historical league memberships, scores, host attribution, and purchase verification records may remain under a new generic “Deleted player” profile. The original account UUID is not retained in completed Pint Wars deletion records, and historical score values are not changed. No fixed retention period or automatic expiry schedule is defined in the current project.

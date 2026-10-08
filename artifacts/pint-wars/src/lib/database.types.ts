@@ -100,6 +100,23 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      pub_visits: {
+        Row: {
+          id: string;
+          user_id: string;
+          pub_provider: string;
+          pub_place_id: string;
+          pub_name: string;
+          pub_address: string;
+          latitude: number;
+          longitude: number;
+          photo_path: string;
+          visited_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       pub_reviews: {
         Row: {
           id: string;
@@ -225,6 +242,8 @@ export type Database = {
           latitude: number;
           longitude: number;
           pint_count: number;
+          visit_count: number;
+          latest_photo_path: string | null;
           most_recent_visit: string;
           review_count: number;
           average_atmosphere: number | null;
@@ -235,6 +254,33 @@ export type Database = {
           average_value: number | null;
           current_user_review_id: string | null;
         }[];
+      };
+      log_passport_visit: {
+        Args: {
+          p_pub_provider: string;
+          p_pub_place_id: string;
+          p_pub_name: string;
+          p_pub_address: string;
+          p_latitude: number;
+          p_longitude: number;
+          p_photo_path: string;
+        };
+        Returns: { visit_id: string; visited_at: string }[];
+      };
+      create_passport_pub_review: {
+        Args: {
+          p_pub_provider: string;
+          p_pub_place_id: string;
+          p_atmosphere_rating: number;
+          p_pints_drinks_rating: number;
+          p_staff_rating: number;
+          p_music_rating: number;
+          p_food_rating?: number | null;
+          p_value_rating?: number | null;
+          p_would_return: boolean;
+          p_review_text?: string | null;
+        };
+        Returns: { review_id: string; pub_provider: string; pub_place_id: string }[];
       };
       can_review_pub: {
         Args: { p_pub_provider: string; p_pub_place_id: string };

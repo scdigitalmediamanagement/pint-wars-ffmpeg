@@ -559,6 +559,9 @@ export type PubPassportEntry = {
   latitude: number;
   longitude: number;
   pint_count: number;
+  visit_count: number;
+  latest_photo_path: string | null;
+  photo_url?: string | null;
   most_recent_visit: string;
   review_count: number;
   average_atmosphere: number | null;
@@ -571,9 +574,19 @@ export type PubPassportEntry = {
 };
 
 export async function getMyPubPassport(): Promise<PubPassportEntry[]> {
-  const { data, error } = await getSupabase().rpc('get_my_pub_passport');
+  const client = getSupabase();
+  const { data, error } = await client.rpc('get_my_pub_passport');
   if (error) throw error;
-  return (data ?? []) as PubPassportEntry[];
+  const entries = (data ?? []) as PubPassportEntry[];
+  const paths = entries.flatMap((entry) => entry.latest_photo_path ? [entry.latest_photo_path] : []);
+  if (!paths.length) return entries;
+  const { data: photos, error: photoError } = await client.storage
+    .from(PINT_PROOF_BUCKET).createSignedUrls(paths, 3600);
+  if (photoError) throw photoError;
+  const urls = new Map((photos ?? []).map((photo) => [photo.path, photo.signedUrl]));
+  return entries.map((entry) => ({
+    ...entry, photo_url: entry.latest_photo_path ? urls.get(entry.latest_photo_path) ?? null : null,
+  }));
 }
 
 export async function getMyProfile(userId: string) {

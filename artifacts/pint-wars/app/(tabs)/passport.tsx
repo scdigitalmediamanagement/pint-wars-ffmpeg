@@ -40,6 +40,8 @@ export default function PassportScreen() {
         provider: entry.pub_provider,
         name: entry.pub_name || '',
         address: entry.address || '',
+        latitude: String(entry.latitude),
+        longitude: String(entry.longitude),
       },
     });
   };
@@ -108,8 +110,8 @@ export default function PassportScreen() {
             {!user ? <View style={s.state}><Text style={s.stateText}>Sign in to see your pub passport.</Text></View> : null}
             {hasData && !entries.length ? (
               <View style={s.state} testID="passport-empty">
-                <Text style={s.stateTitle}>No location-tagged visits yet</Text>
-                <Text style={s.stateText}>Log a pint with location enabled during a Pint War and your recorded visit will appear here. You can still log pints without sharing your location.</Text>
+                <Text style={s.stateTitle}>Your visits start here</Text>
+                <Text style={s.stateText}>Find a pub on the Map and tap Log a Visit to save one photo to your Passport. No active Pint War is needed. Location-tagged War pints still appear here too.</Text>
               </View>
             ) : hasData && !shown.length ? (
               <View style={s.state} testID="passport-reviews-empty">
@@ -122,7 +124,7 @@ export default function PassportScreen() {
               </View>
             )}
             {shown.length ? <>
-              <Text style={s.photoNote}>Card imagery is illustrative, not a photo of each pub.</Text>
+              <Text style={s.photoNote}>Passport visit photos are private. Cards without a visit photo use illustrative imagery.</Text>
               <Text style={s.endNote}>End of the good ones—for now</Text>
             </> : null}
           </View>

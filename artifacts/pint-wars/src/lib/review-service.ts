@@ -116,6 +116,26 @@ export async function updatePubReview(reviewId: string, input: Omit<ReviewRating
   return result;
 }
 
+// Passport reviews intentionally bypass the qualifying-War/scoring RPC.
+export async function createPassportPubReview(input: ReviewRatingInput) {
+  const { data, error } = await getSupabase().rpc('create_passport_pub_review', {
+    p_pub_provider: input.pubProvider,
+    p_pub_place_id: input.pubPlaceId,
+    p_atmosphere_rating: input.atmosphereRating,
+    p_pints_drinks_rating: input.pintsDrinksRating,
+    p_staff_rating: input.staffRating,
+    p_music_rating: input.musicRating,
+    p_food_rating: input.foodRating ?? null,
+    p_value_rating: input.valueRating ?? null,
+    p_would_return: input.wouldReturn,
+    p_review_text: input.reviewText?.trim() || null,
+  });
+  if (error) throw error;
+  const result = data?.[0];
+  if (!result) throw new Error('The review could not be created.');
+  return result;
+}
+
 export async function deletePubReview(reviewId: string) {
   const { data, error } = await getSupabase().rpc('delete_pub_review', {
     p_review_id: reviewId,

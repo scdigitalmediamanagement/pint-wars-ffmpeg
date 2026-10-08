@@ -97,15 +97,16 @@ export function PassportPubCard({ entry, onOpen }: { entry: PubPassportEntry; on
   const content = (
     <LinearGradient colors={['#141b21', '#0c1117']} style={s.pubCard}>
       <View style={s.photo}>
-        <Image source={require('@/assets/images/home/pw-home-pints.jpg')} style={s.photoImage} resizeMode="cover" accessible={false} />
+        <Image source={entry.photo_url ? { uri: entry.photo_url } : require('@/assets/images/home/pw-home-pints.jpg')} style={s.photoImage} resizeMode="cover" accessible={false} />
         <LinearGradient colors={['transparent', 'rgba(3,6,8,0.88)']} style={s.photoShade} />
-        <Text style={s.photoCaption}>ILLUSTRATIVE</Text>
+        <Text style={s.photoCaption}>{entry.photo_url ? 'YOUR VISIT' : 'ILLUSTRATIVE'}</Text>
       </View>
       <View style={s.pubCopy}>
         <Text style={s.pubName} numberOfLines={2}>{entry.pub_name ?? 'Pub name unavailable'}</Text>
         {!entry.pub_name ? <Text style={s.identification}>Waiting for pub identification</Text> : null}
         <Text style={s.location} numberOfLines={2}>{location}</Text>
-        <Text style={s.pints}>{entry.pint_count} {entry.pint_count === 1 ? 'pint' : 'pints'} logged</Text>
+        {entry.visit_count > 0 ? <Text style={s.pints}>{entry.visit_count} Passport {entry.visit_count === 1 ? 'visit' : 'visits'}</Text> : null}
+        {entry.pint_count > 0 ? <Text style={s.pints}>{entry.pint_count} {entry.pint_count === 1 ? 'pint' : 'pints'} logged</Text> : null}
         <View style={s.visit}><Feather name="calendar" size={10} color={home.muted} /><Text style={s.visitText}>Last visit · {visitDate(entry.most_recent_visit)}</Text></View>
         {identified ? <Text style={s.reviewCount}>{entry.review_count ? `${entry.review_count} community ${entry.review_count === 1 ? 'review' : 'reviews'}` : 'No reviews yet'}</Text> : null}
       </View>

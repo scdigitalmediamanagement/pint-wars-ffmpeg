@@ -9,9 +9,12 @@ import {
   Alert,
   Modal,
   TextInput,
+  Linking,
+  Platform,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
-import { useLocalSearchParams, Stack } from 'expo-router';
+import { useLocalSearchParams, Stack, router } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/src/providers/AuthProvider';
@@ -23,12 +26,14 @@ import {
   deletePubReview, 
   reportPubReview, 
   createPubReview, 
+  createPassportPubReview,
   updatePubReview, 
   getPubReviewDetail,
   canReviewPub,
   type ReviewRow 
 } from '@/src/lib/review-service';
 import { getMyPubPassport, type PubPassportEntry } from '@/src/lib/league-service';
+import { logPassportVisit } from '@/src/lib/passport-service';
 import { StarRating, RatingBadge } from '@/components/Reviews';
 
 function RatingInput({
@@ -196,12 +201,14 @@ function ReportModal({
 }
 
 export default function PubScreen() {
-  const { placeId, provider, name, address, pintLogId } = useLocalSearchParams<{
+  const { placeId, provider, name, address, pintLogId, latitude, longitude } = useLocalSearchParams<{
     placeId: string;
     provider: string;
     name?: string;
     address?: string;
     pintLogId?: string;
+    latitude?: string;
+    longitude?: string;
   }>();
   const colors = useColors();
   const { user } = useAuth();
@@ -224,6 +231,64 @@ export default function PubScreen() {
   const [isLoadingReview, setIsLoadingReview] = useState(false);
   const [editingReview, setEditingReview] = useState<ReviewRow | null>(null);
   const [reportingReviewId, setReportingReviewId] = useState<string | null>(null);
+  const [isLoggingVisit, setIsLoggingVisit] = useState(false);
+  const [visitError, setVisitError] = useState('');
+  const [cameraBlocked, setCameraBlocked] = useState(false);
+  const [passportVisitSaved, setPassportVisitSaved] = useState(false);
+  const visitInFlight = useRef(false);
+
+  async function handleLogVisit() {
+    if (visitInFlight.current) return;
+    if (!user) { router.push('/(auth)/sign-in'); return; }
+    const entry = passportQuery.data?.find((item) => item.pub_provider === provider && item.pub_place_id === placeId);
+    const pubLatitude = latitude === undefined ? entry?.latitude : Number(latitude);
+    const pubLongitude = longitude === undefined ? entry?.longitude : Number(longitude);
+    if (provider !== 'google_places' || !placeId || !(name || entry?.pub_name)
+      || pubLatitude === undefined || pubLongitude === undefined
+      || !Number.isFinite(pubLatitude) || Math.abs(pubLatitude) > 90
+      || !Number.isFinite(pubLongitude) || Math.abs(pubLongitude) > 180) {
+      setVisitError('Select this pub from the Map before logging a visit.');
+      return;
+    }
+    visitInFlight.current = true;
+    setIsLoggingVisit(true);
+    setVisitError('');
+    setCameraBlocked(false);
+    try {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted) {
+        setCameraBlocked(!permission.canAskAgain);
+        throw new Error(permission.canAskAgain
+          ? 'Allow camera access to take your visit photo, then try again.'
+          : 'Camera access is off. Enable it in device settings, then try again.');
+      }
+      const photo = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'], allowsEditing: false, quality: 0.8,
+        cameraType: ImagePicker.CameraType.back,
+      });
+      if (photo.canceled) return;
+      if (photo.assets.length !== 1 || !photo.assets[0]?.uri) {
+        throw new Error('Exactly one photo is required for each visit.');
+      }
+      await logPassportVisit({
+        pubProvider: provider, pubPlaceId: placeId, pubName: name || entry!.pub_name!,
+        pubAddress: address || entry?.address || '',
+        latitude: pubLatitude, longitude: pubLongitude,
+        photoUri: photo.assets[0].uri, mimeType: photo.assets[0].mimeType ?? null,
+      });
+      // This explicit context wins even if the pub was opened from a War log.
+      setPassportVisitSaved(true);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['pub-passport'] }),
+        queryClient.invalidateQueries({ queryKey: reviewKeys.all }),
+      ]);
+    } catch (error) {
+      setVisitError(error instanceof Error ? error.message : 'The visit could not be saved. Please try again.');
+    } finally {
+      visitInFlight.current = false;
+      setIsLoggingVisit(false);
+    }
+  }
 
   if (!placeId || !provider) {
     return (
@@ -298,12 +363,14 @@ export default function PubScreen() {
     (entry) => entry.pub_provider === provider && entry.pub_place_id === placeId,
   );
   const hasCurrentReview = Boolean(summaryQuery.data?.current_user_review_id);
+  const hasPassportVisit = passportVisitSaved || (passportEntry?.visit_count ?? 0) > 0;
+  const passportReview = passportVisitSaved || !pintLogId;
   const canOpenReviewForm =
     hasCurrentReview ||
     (!summaryQuery.isLoading &&
       !summaryQuery.isError &&
       eligibilityQuery.data === true &&
-      Boolean(pintLogId));
+      (passportReview ? hasPassportVisit : Boolean(pintLogId)));
   const reviewButtonLabel = hasCurrentReview
     ? 'Edit your review'
     : !user
@@ -318,10 +385,10 @@ export default function PubScreen() {
               ? 'Checking review access…'
               : eligibilityQuery.isError
                 ? 'Review access unavailable'
-                : eligibilityQuery.data === false
-                  ? 'Log a pint here to review'
-                  : !pintLogId
-                    ? 'Open this pub from your Pint War log'
+                 : passportReview && !hasPassportVisit
+                   ? 'Log a visit to review'
+                   : eligibilityQuery.data === false
+                     ? 'Log a pint here to review'
                     : 'Write a review';
 
   return (
@@ -352,6 +419,10 @@ export default function PubScreen() {
             ) : passportEntry ? (
               <>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+                  <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_500Medium' }}>Passport visits</Text>
+                  <Text style={{ color: colors.foreground, fontFamily: 'Inter_700Bold' }}>{passportEntry.visit_count ?? 0}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
                   <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_500Medium' }}>Pints logged</Text>
                   <Text style={{ color: colors.foreground, fontFamily: 'Inter_700Bold' }}>
                     {passportEntry.pint_count}
@@ -372,6 +443,21 @@ export default function PubScreen() {
                 No passport visit is recorded for this pub yet.
               </Text>
             )}
+            <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', fontSize: 13, lineHeight: 19 }}>
+              Take one photo of yourself in the pub or of the pub. Your photo is private. No active War is needed and Passport activity earns no points.
+            </Text>
+            <Button label="Log a Visit" onPress={() => void handleLogVisit()}
+              loading={isLoggingVisit} disabled={isLoggingVisit} testID="log-passport-visit" />
+            {visitError ? <ErrorText>{visitError}</ErrorText> : null}
+            {cameraBlocked && Platform.OS !== 'web' ? <Button label="Open device settings" variant="quiet"
+              onPress={() => { void Linking.openSettings().catch(() => setVisitError('Device settings could not be opened.')); }}
+              testID="passport-camera-settings" /> : null}
+            {passportVisitSaved ? <>
+              <Text style={{ color: colors.foreground, fontFamily: 'Inter_500Medium', lineHeight: 20 }} testID="passport-visit-saved">
+                Visit saved. You can leave a review below, or go back to your Passport. No War points were awarded.
+              </Text>
+              <Button label="View Passport" variant="quiet" onPress={() => router.push('/(tabs)/passport')} testID="visit-view-passport" />
+            </> : null}
           </Card>
         ) : null}
 
@@ -425,17 +511,19 @@ export default function PubScreen() {
                   onPress={() => void eligibilityQuery.refetch()}
                 />
               </View>
-            ) : !hasCurrentReview && eligibilityQuery.data === true && !pintLogId ? (
+            ) : !hasCurrentReview && passportReview && !hasPassportVisit ? (
               <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', fontSize: 13, lineHeight: 19, marginTop: 8 }}>
-                Open this pub from the pint log you want to use. A new review must be submitted against a qualifying pint logged during an active Pint War.
+                Log a Visit with one photo to leave a community review without joining a Pint War.
               </Text>
-            ) : !hasCurrentReview && eligibilityQuery.data === false ? (
+            ) : !hasCurrentReview && !passportReview && eligibilityQuery.data === false ? (
               <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', fontSize: 13, lineHeight: 19, marginTop: 8 }}>
                 A review requires a pint logged at this pub during an active Pint War.
               </Text>
            ) : null}
             <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', fontSize: 12, lineHeight: 18, marginTop: 8 }}>
-              Each logged pint earns +1. A qualifying first review may earn a one-time +1 bonus per player at this pub. Editing, deleting or recreating, and reporting reviews earn no points.
+              {passportReview
+                ? 'Passport visits and reviews never award Pint War points. Your review is visible to other Pint Wars users; your visit photo is private.'
+                : 'Each logged pint earns +1. A qualifying first review may earn a one-time +1 bonus per player at this pub. Editing, deleting or recreating, and reporting reviews earn no points.'}
             </Text>
         </View>
 
@@ -534,6 +622,7 @@ export default function PubScreen() {
         pubProvider={provider as string} 
         pubPlaceId={placeId as string} 
         qualifyingPintLogId={pintLogId}
+        passportReview={passportReview}
         existingReview={editingReview} 
       />
       <ReportModal 
@@ -551,6 +640,7 @@ function ReviewFormModal({
   pubProvider,
   pubPlaceId,
   qualifyingPintLogId,
+  passportReview,
   existingReview,
 }: {
   visible: boolean;
@@ -558,6 +648,7 @@ function ReviewFormModal({
   pubProvider: string;
   pubPlaceId: string;
   qualifyingPintLogId?: string;
+  passportReview: boolean;
   existingReview: ReviewRow | null;
 }) {
   const colors = useColors();
@@ -617,7 +708,9 @@ function ReviewFormModal({
       
        if (existingReview?.id) {
         await updatePubReview(existingReview.id, input);
-      } else {
+       } else if (passportReview) {
+         await createPassportPubReview(input);
+       } else {
          if (!qualifyingPintLogId) {
            throw new Error('Open this pub from a qualifying pint logged during an active Pint War.');
          }
@@ -632,7 +725,9 @@ function ReviewFormModal({
         existingReview ? 'Review updated' : 'Review added',
         existingReview
           ? 'Editing a review does not award points.'
-          : 'Your review was saved. A qualifying first review may earn the one-time review bonus.',
+           : passportReview
+             ? 'Your community review was saved. No Pint War points or review bonuses were awarded.'
+             : 'Your review was saved. A qualifying first review may earn the one-time review bonus.',
       );
     } catch (error) {
       if (__DEV__) {
@@ -679,7 +774,9 @@ function ReviewFormModal({
           <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_400Regular', fontSize: 14, lineHeight: 21 }}>
             {existingReview
               ? 'You can update your ratings and comments at any time. Editing does not award points.'
-              : 'A qualifying first review may earn the one-time +1 review bonus. Saving confirms your review, not a points award.'}
+              : passportReview
+                ? 'Your review is shared with other Pint Wars users. Passport reviews never award points or review bonuses.'
+                : 'A qualifying first review may earn the one-time +1 review bonus. Saving confirms your review, not a points award.'}
           </Text>
           
           <View style={{ gap: 20 }}>
