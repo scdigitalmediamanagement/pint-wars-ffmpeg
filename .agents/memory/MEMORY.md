@@ -13,3 +13,4 @@
 - [Pint Wars design reference](home-design-reference.md) — approved navy/gold screens use live leagues; scope presentation changes to requested screens, preserving backend and purchase mechanics.
 - [Expo runtime compatibility](expo-runtime-compatibility.md) — Metro CI mode can disable reloads; use the style helpers supported by the current React Native runtime.
 - [CNG ignore boundaries](cng-ignore-boundaries.md) — generated app native folders and maintained local-module native source require different ignore treatment.
+- [Independent Pub Passport](passport-scope.md) — visits and reviews work without a war; Passport activity never awards points; preserve existing War scoring and other features.
