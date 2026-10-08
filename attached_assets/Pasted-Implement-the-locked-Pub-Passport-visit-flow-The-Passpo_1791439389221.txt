@@ -1,0 +1,46 @@
+Implement the locked Pub Passport visit flow.
+
+The Passport visit must work WITHOUT an active Pint War.
+
+Flow:
+Log a Visit → take exactly ONE photo → save the visit to Passport → optionally leave a review.
+
+The one photo can be:
+- a photo of the user in the pub, OR
+- a photo of the pub.
+
+This photo is a Passport memory/proof of the visit. It is NOT Pint War proof and must NEVER award Pint War points.
+
+Requirements:
+1. User selects a pub from the existing Map/pub discovery flow.
+2. User taps “Log a Visit”.
+3. Camera opens and the user takes exactly ONE photo.
+4. Save the photo securely against that user's Passport visit.
+5. Save the pub, visit date/time and photo reference.
+6. The visit appears in the user's Passport.
+7. User can optionally leave a review for that pub.
+8. Reviews are community reviews and can be viewed by other Pint Wars users looking at that pub.
+9. Existing Pint War logging, proof photos and scoring must remain completely unchanged.
+10. Passport visits and reviews must not create Pint War score events or review bonus events.
+11. Allow repeat visits to the same pub.
+12. Do not redesign the existing Passport UI; make only the changes required for this functionality.
+13. Reuse the existing pub discovery and review systems where possible.
+14. Secure the Passport photo with authenticated-user access and include it in account-deletion cleanup.
+
+Use the existing implementation report and current codebase as the source of truth. Make the smallest safe database and application changes needed.
+
+Before finishing, test:
+- visit with no active War
+- visit while user is in an active War
+- exactly one photo required
+- Passport visit saved correctly
+- review saved correctly
+- zero Pint War points awarded
+- community review visible on the pub
+- existing War scoring still works
+
+Do not change RevenueCat, Memories, league duration, create/join/invite or existing War scoring.
+
+Do not commit or push yet.
+
+When complete, report the files changed, migration created, tests run and any problems.
