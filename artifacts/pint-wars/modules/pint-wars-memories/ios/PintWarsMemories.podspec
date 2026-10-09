@@ -13,9 +13,12 @@ Pod::Spec.new do |s|
   s.static_framework = true
   s.dependency 'ExpoModulesCore'
   s.source_files = '*.swift'
-  s.vendored_frameworks = 'Frameworks/*.xcframework'
+  s.vendored_frameworks = 'Frameworks/**/*.framework'
   s.preserve_paths = 'Notices/**/*'
-  s.resources = 'Notices/**/*'
+  s.resources = [
+    'Notices/FFmpegKitNext-LICENSE',
+    'Notices/upstream-SOURCE'
+  ]
   s.resource_bundles = { 'PintWarsMemories_privacy' => ['PrivacyInfo.xcprivacy'] }
   s.frameworks = 'AVFoundation', 'Photos', 'UIKit', 'VideoToolbox', 'AudioToolbox', 'ImageIO'
   s.libraries = 'z', 'bz2', 'iconv', 'c++'

@@ -14,7 +14,8 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSPhotoLibraryAddUsageDescription": "Allow Pint Wars to save your completed Pint War Memories video to Photos."
-      }
+      },
+      "buildNumber": "3"
     },
     "android": {
       "package": "com.pintwars.app",

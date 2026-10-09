@@ -9,7 +9,7 @@ No generated `ios/` or `android/` project is committed.
 
 FFmpegKit Next 9.0.0, source commit
 `5e51b2da4c3593c0f2f9b49f53eeb497d93e39d3`, built with iOS VideoToolbox.
-The eight vendored XCFrameworks are device-only arm64, with **no simulator slice**.
+The eight vendored framework slices are device-only arm64, with **no simulator slice**.
 Their original manifest, verification report and notices are preserved in
 `ios/Notices`. Dynamic vendored frameworks are declared through CocoaPods,
 which must link and embed them in the generated device application.
@@ -60,7 +60,7 @@ state and real final results, with Save/Share disabled.
 Before considering the feature device-verified, compile/link the generated iOS
 project and check on an iPhone:
 
-1. All eight dynamic XCFrameworks are embedded and signed; app launch succeeds.
+1. All eight dynamic framework slices are embedded and signed; app launch succeeds.
 2. A completed war's private photos download, including HEIC/orientation cases.
 3. Generation produces a playable ~30s portrait H.264/AAC MP4 with the final result.
 4. Cancel/back/retry and a failed encode/download remove unneeded temporary files.
