@@ -1,0 +1,50 @@
+## Pint Wars — Read-Only Pub Discovery Reliability Audit
+
+**Objective:** Identify the verified root cause of intermittent pub discovery failures affecting both the Maps screen and the Log a Pint pub selector on the physical iPhone TestFlight build.
+
+### Critical rules
+
+1. Do NOT modify, create, delete or format any files.
+2. Do NOT change API keys, environment variables, Supabase configuration, Google Cloud settings, database schema, dependencies or deployment settings.
+3. Do NOT run migrations, install packages, restart services or trigger a build.
+4. Do NOT guess. Trace the actual implementation and distinguish verified facts from hypotheses.
+5. Replit is the source of truth. Inspect the existing code and configuration as they currently stand.
+
+### Investigate the complete request flow
+
+**A. Maps screen**
+- Identify the screen, components, hooks and functions responsible for loading nearby pubs.
+- Trace the request from screen entry through location acquisition, API/backend request, Google Places integration, response parsing and rendering.
+- Identify every timeout, retry, cache, cancellation, debounce, pagination and error-handling mechanism.
+
+**B. Log a Pint**
+- Trace how the pub selector obtains its results.
+- Establish whether it uses the same endpoint, service, location source and query logic as Maps.
+- Determine whether one failure can affect both screens.
+- Verify whether the selector can load pubs independently of the Maps screen.
+
+**C. Backend and Google Places**
+- Identify the exact backend endpoint and Google Places API version being called.
+- Establish where the API key is read and how it reaches the request. Never print or expose the key.
+- Inspect response status handling, Google error payload handling, server timeouts, rate limits, quotas, billing-related errors and upstream failures.
+- Check for server-side rate limiting, request deduplication, caching, stale-cache fallback, and concurrency issues.
+- Establish whether the app calls Google Places directly or through our backend.
+- Inspect server and client logs or existing diagnostic facilities if available. Do not expose tokens, keys, personal information or full sensitive request URLs.
+
+**D. Location and request lifecycle**
+- Inspect location permissions, current-position acquisition, cached coordinates, location timeouts, fallback behaviour and handling of denied or unavailable GPS.
+- Check whether a stale location, missing coordinates, component unmount, request cancellation, network transition or concurrent request could cause empty results or errors.
+- Determine whether the error state incorrectly persists after a successful response.
+- Determine whether Maps and Log a Pint can issue conflicting or duplicate requests.
+
+**E. Test and deployment alignment**
+- Identify the relevant environment variables by name only, never by value.
+- Establish whether the backend and the installed TestFlight binary use compatible endpoint/configuration values.
+- Do not assume a Replit development preview behaves identically to the production iOS app.
+- Identify which findings can be verified from source and which require live logs or a controlled test.
+
+### Required report
+
+Return the findings in this exact structure:
+
+1. **Executive finding:** What is verified

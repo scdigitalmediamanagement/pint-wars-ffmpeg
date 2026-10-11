@@ -13,7 +13,7 @@ Pod::Spec.new do |s|
   s.static_framework = true
   s.dependency 'ExpoModulesCore'
   s.source_files = '*.swift'
-  s.vendored_frameworks = 'Frameworks/**/*.framework'
+  s.vendored_frameworks = 'Frameworks/*.xcframework'
   s.preserve_paths = 'Notices/**/*'
   s.resources = [
     'Notices/FFmpegKitNext-LICENSE',

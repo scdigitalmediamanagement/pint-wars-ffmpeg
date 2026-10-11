@@ -48,7 +48,7 @@ codec = (ios / "Frameworks/libavcodec.xcframework/ios-arm64/libavcodec.framework
 assert b"h264_videotoolbox" in codec
 assert b"libx264" not in codec
 pod = (ios / "PintWarsMemories.podspec").read_text()
-assert "s.vendored_frameworks = 'Frameworks/**/*.framework'" in pod
+assert "s.vendored_frameworks = 'Frameworks/*.xcframework'" in pod
 assert "s.resources = 'Notices/**/*'" not in pod
 assert "s.dependency 'ExpoModulesCore'" in pod
 assert ":ios => '16.4'" in pod
