@@ -18,7 +18,7 @@ await build({
   entryPoints: [resolve(apiRoot, "src/routes/pubs.ts")],
   outfile: routeBundlePath,
   bundle: true,
-  external: ["express"],
+  external: ["express", "pino", "pino-pretty"],
   platform: "node",
   format: "esm",
   plugins: [

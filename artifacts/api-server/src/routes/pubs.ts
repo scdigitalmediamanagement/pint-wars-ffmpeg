@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import {
   FindNearbyPubsBody,
   FindNearbyPubsResponse,
@@ -11,6 +12,7 @@ import {
   PlacesServiceError,
 } from "../lib/google-places";
 import { authenticateSupabaseBearer } from "../lib/supabase-auth";
+import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 const SEARCH_LIMIT = 10;
@@ -69,26 +71,43 @@ function hasOnlyCoordinateKeys(body: unknown) {
 }
 
 router.post("/pubs/nearby", async (req, res) => {
+  const startedAt = Date.now();
+  const incomingRequestId = req.header("x-request-id");
+  const requestId =
+    incomingRequestId && /^[A-Za-z0-9._-]{1,80}$/.test(incomingRequestId)
+      ? incomingRequestId
+      : randomUUID();
+  res.set("X-Request-ID", requestId);
+  const logFailure = (stage: string, status: number, category: string) => {
+    logger.warn(
+      { requestId, durationMs: Date.now() - startedAt, stage, status, category },
+      "pub discovery failed",
+    );
+  };
   res.set(GOOGLE_CONTENT_RESPONSE_HEADERS);
 
   const auth = await authenticateSupabaseBearer(req.header("authorization"));
   if (!auth.authenticated) {
+    logFailure("authentication", auth.status, "authentication");
     res.status(auth.status).json({ message: auth.message });
     return;
   }
 
   if (!hasOnlyCoordinateKeys(req.body)) {
+    logFailure("validate_request", 400, "invalid_location");
     res.status(400).json({ message: "Latitude and longitude are invalid." });
     return;
   }
 
   const parsedBody = FindNearbyPubsBody.safeParse(req.body);
   if (!parsedBody.success) {
+    logFailure("validate_request", 400, "invalid_location");
     res.status(400).json({ message: "Latitude and longitude are invalid." });
     return;
   }
 
   if (!canSearch(auth.userId)) {
+    logFailure("rate_limit", 429, "rate_limit");
     res.status(429).json({
       message: "Too many nearby pub searches. Please wait and try again.",
     });
@@ -97,13 +116,28 @@ router.post("/pubs/nearby", async (req, res) => {
 
   try {
     const result = await searchNearbyGooglePubs(parsedBody.data);
+    logger.info(
+      {
+        requestId,
+        durationMs: Date.now() - startedAt,
+        stage: "complete",
+        status: 200,
+        category: result.pubs.length ? "success" : "empty_results",
+        resultCount: result.pubs.length,
+      },
+      "pub discovery completed",
+    );
     res.json(FindNearbyPubsResponse.parse(result));
   } catch (error) {
     if (error instanceof PlacesServiceError) {
+      res.set("X-Pub-Discovery-Category", error.category);
+      logFailure("google_places", error.status, error.category);
       res.status(error.status).json({ message: error.message });
       return;
     }
 
+    res.set("X-Pub-Discovery-Category", "server_failure");
+    logFailure("server", 502, "server_failure");
     res.status(502).json({ message: "Nearby pubs could not be loaded." });
   }
 });

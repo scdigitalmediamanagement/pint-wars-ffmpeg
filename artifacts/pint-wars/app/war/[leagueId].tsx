@@ -9,7 +9,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Card, ErrorText, Screen, Title, uiStyles } from '@/components/AppUi';
 import { endLeagueEarly, getLeagueDashboard, getLeagueSummary, logPint, PintPhotoUploadError, retireFromLeague } from '@/src/lib/league-service';
 import { getCurrentLocation } from '@/src/lib/location-service';
-import { findNearbyPubs, type Coordinates, type NearbyPub } from '@/src/lib/pub-service';
+import { findNearbyPubs, PubDiscoveryError, type Coordinates, type NearbyPub } from '@/src/lib/pub-service';
+import { locationFailureMessage } from '@/src/lib/pub-discovery-core';
 import { CURRENT_LEAGUE_SCORING, type LeaguePoints } from '@/src/types/league';
 import { useAuth } from '@/src/providers/AuthProvider';
 import { useColors } from '@/hooks/useColors';
@@ -20,6 +21,20 @@ function leagueDurationDays(startsAt: string, endsAt: string) {
   const start = new Date(startsAt).getTime();
   const end = new Date(endsAt).getTime();
   return Math.max(1, Math.ceil((end - start) / 86400000));
+}
+
+function pubSearchFailureMessage(error: unknown) {
+  if (error instanceof PubDiscoveryError) {
+    if (error.category === 'invalid_api_base_url') return 'Pub search could not connect to its service. You can still log without a pub.';
+    if (error.category === 'authentication') return 'Your session could not be verified. Sign in again, or log without a pub.';
+    if (error.category === 'rate_limit') return 'Pub search is temporarily rate-limited. Wait a moment and try again, or log without a pub.';
+    if (error.category === 'configuration') return 'Pub search is not configured right now. You can still log without a pub.';
+    if (error.category === 'invalid_location') return 'Your location could not be used for pub search. You can still log without a pub.';
+    if (error.category.startsWith('google_')) return 'Google Places could not complete the search. Try again shortly, or log without a pub.';
+    if (error.category === 'client_timeout' || error.category === 'client_network') return 'The connection timed out. Check your connection and retry, or log without a pub.';
+    if (error.category === 'server_failure') return 'The pub-search service had a temporary error. Try again shortly, or log without a pub.';
+  }
+  return 'Nearby pubs could not be found. You can still log without a pub.';
 }
 
 function dayNumber(startsAt: string, endsAt: string, status: string, now: number) {
@@ -263,7 +278,7 @@ export default function LeagueDashboardScreen() {
     });
   }
 
-  async function identifyNearbyPubs() {
+  async function identifyNearbyPubs(forceRefresh = false) {
     if (!pendingPint || isSearchingPubs) return;
     const generation = ++pubSearchGeneration.current;
     setIsSearchingPubs(true);
@@ -275,11 +290,7 @@ export default function LeagueDashboardScreen() {
       const locationResult = await getCurrentLocation();
       if (generation !== pubSearchGeneration.current) return;
       if (locationResult.status !== 'success') {
-        setNearbyPubMessage(
-          locationResult.status === 'permission-denied'
-            ? 'Location is off. You can still log without a pub.'
-            : 'We could not get your location. You can still log without a pub.',
-        );
+        setNearbyPubMessage(locationFailureMessage(locationResult.status));
         setPendingPint((current) => current ? { ...current, location: null } : current);
         return;
       }
@@ -287,17 +298,23 @@ export default function LeagueDashboardScreen() {
       setPendingPint((current) => current
         ? { ...current, location: locationResult.coordinates }
         : current);
-      const search = await findNearbyPubs(locationResult.coordinates);
+      const search = await findNearbyPubs(locationResult.coordinates, { forceRefresh });
       if (generation !== pubSearchGeneration.current) return;
       setNearbyPubs(search.pubs);
-      if (!search.providerConfigured) {
+      if (search.isStale) {
+        setNearbyPubMessage(
+          search.failureCategory
+            ? `Showing saved nearby pubs because the latest search failed (${search.failureCategory.replaceAll('_', ' ')}). Try again for current results.`
+            : 'Showing pubs found recently. They may be out of date; try again for current results.',
+        );
+      } else if (!search.providerConfigured) {
         setNearbyPubMessage('Pub search is unavailable right now. You can still log without a pub.');
       } else if (!search.pubs.length) {
         setNearbyPubMessage('No nearby pubs were found. You can still log without a pub.');
       }
-    } catch {
+    } catch (error) {
       if (generation === pubSearchGeneration.current) {
-        setNearbyPubMessage('Nearby pubs could not be found. You can still log without a pub.');
+        setNearbyPubMessage(pubSearchFailureMessage(error));
       }
     } finally {
       if (generation === pubSearchGeneration.current) {
@@ -944,7 +961,7 @@ export default function LeagueDashboardScreen() {
                     <Button
                       label="Try again"
                       variant="quiet"
-                      onPress={() => void identifyNearbyPubs()}
+                      onPress={() => void identifyNearbyPubs(true)}
                       testID="retry-nearby-pubs"
                     />
                   </View>

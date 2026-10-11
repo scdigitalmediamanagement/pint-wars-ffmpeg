@@ -1,0 +1,67 @@
+
+
+## Pint Wars — Implement Reliable Pub Discovery
+
+Use the completed read-only audit as your starting point. Implement a focused reliability fix for nearby pub discovery on both Maps and Log a Pint.
+
+### Non-negotiable safeguards
+
+- Do not recreate the app or change its architecture.
+- Preserve the existing Replit project, Supabase backend, Google Places integration, authentication, and API contracts wherever possible.
+- Do not change scoring, pint logging, proof photos, pub reviews, league rules, payments, or database schemas.
+- Do not change, expose, or replace API keys or environment variables without verified evidence that a change is necessary.
+- Do not install new packages unless absolutely necessary. Prefer dependencies already installed.
+- Do not trigger an EAS build, deploy, or App Store submission.
+- Inspect actual source code before editing. Do not assume the audit's suspected API URL problem is the root cause.
+
+### 1. Make discovery resilient
+
+- Keep Maps and Log a Pint using the same shared pub-discovery service.
+- Deduplicate simultaneous equivalent requests and avoid unnecessary repeat searches.
+- Add a small, bounded retry policy for transient network failures, timeouts, and appropriate upstream 5xx errors. Use backoff and ensure retries cannot create request loops or exceed reasonable API usage.
+- Distinguish application rate limits, authentication failures, configuration errors, empty results, and Google Places failures. Do not retry permanent errors indiscriminately.
+- Review the existing five-second Google request timeout and adjust it only if the code and tests justify the change.
+
+### 2. Preserve useful results
+
+- Reuse the existing query/cache mechanisms where possible.
+- Where supported by the existing storage dependencies, retain the last successful nearby-pub results so a temporary failure does not unnecessarily leave an otherwise usable screen empty.
+- Only display cached pubs when the stored location is sufficiently close to the current location. Never misrepresent stale results as freshly loaded.
+- Make a stale-result state clear to the user and provide a usable retry action.
+- If no safe cached results exist, show a clear error and keep manual pub search available where the existing architecture supports it.
+- Do not add a new storage dependency without stopping to explain why it is required.
+
+### 3. Add safe diagnostics
+
+- Log a request/correlation ID, duration, failure stage, HTTP status, and sanitized upstream error category for pub discovery.
+- Never log API keys, authorization headers, passwords, or precise user coordinates.
+- Preserve enough information to distinguish a client connectivity issue, invalid API base URL, authentication failure, rate limiting, Google Places rejection, timeout, and valid empty results.
+- Validate the API base URL and fail clearly if invalid. Do not silently change the production endpoint or configuration.
+
+### 4. Verify both screens
+
+Add or update tests, using the project's existing test framework, for:
+
+- Successful pub discovery.
+- Temporary network or upstream failure and bounded retry.
+- Fallback to appropriate cached results.
+- No cached results available.
+- Invalid location or denied location permission.
+- Empty results versus API failure.
+- Authentication errors and rate limits without endless retries.
+- Shared behaviour between Maps and Log a Pint.
+- Duplicate requests and protection against excessive API calls.
+
+Run the available relevant tests and report any that cannot run in the current environment.
+
+### Final report
+
+Provide:
+
+1. Exact files changed and why.
+2. The reliability behaviour before and after.
+3. Tests run and their actual results.
+4. Any remaining risks or device-only tests.
+5. Confirmation that scoring, proof-photo security, pub reviews and league behaviour were not changed.
+
+Do not deploy or build a new iOS binary. Stop after implementing, testing, and reporting the changes.

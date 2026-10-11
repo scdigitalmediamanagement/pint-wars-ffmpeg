@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Platform, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { useQueries, useQuery } from '@tanstack/react-query';
@@ -12,7 +12,7 @@ import { getMyPubPassport } from '@/src/lib/league-service';
 import { getPubReviewSummary } from '@/src/lib/review-service';
 import { reviewKeys } from '@/hooks/usePubReviews';
 import { getCurrentLocation, type CurrentLocationResult } from '@/src/lib/location-service';
-import { findNearbyPubs, type Coordinates, type NearbyPub } from '@/src/lib/pub-service';
+import { findNearbyPubs, PubDiscoveryError, type Coordinates, type NearbyPub } from '@/src/lib/pub-service';
 
 type LocationState =
   | { status: 'loading' }
@@ -25,6 +25,16 @@ function getErrorStatus(error: unknown) {
 }
 
 function nearbyPubsErrorMessage(error: unknown) {
+  if (error instanceof PubDiscoveryError) {
+    if (error.category === 'invalid_api_base_url') return 'Pub search could not connect to its service. Check the app configuration.';
+    if (error.category === 'authentication') return 'Your session could not be verified. Sign in again and retry.';
+    if (error.category === 'rate_limit') return 'Nearby pub search is temporarily rate-limited. Try again in a moment.';
+    if (error.category === 'configuration') return 'Nearby pub search is not configured right now.';
+    if (error.category === 'invalid_location') return 'Your location could not be used for pub search.';
+    if (error.category.startsWith('google_')) return 'Google Places could not complete the nearby search. Try again shortly.';
+    if (error.category === 'client_timeout' || error.category === 'client_network') return 'The connection to pub search timed out. Check your connection and retry.';
+    if (error.category === 'server_failure') return 'The pub-search service had a temporary error. Try again shortly.';
+  }
   const status = getErrorStatus(error);
   if (status === 429) {
     return 'Nearby pub search is temporarily rate-limited. Try again in a moment.';
@@ -124,6 +134,7 @@ export default function MapScreen() {
   const [filter, setFilter] = useState<NearbyFilter>('Nearby');
   const [recenterKey, setRecenterKey] = useState(0);
   const [locationState, setLocationState] = useState<LocationState>({ status: 'loading' });
+  const forcePubRefresh = useRef(false);
 
   const loadLocation = useCallback(async () => {
     setLocationState({ status: 'loading' });
@@ -141,7 +152,9 @@ export default function MapScreen() {
     queryKey: ['nearby-pubs', coordinates?.latitude, coordinates?.longitude],
     queryFn: () => {
       if (!coordinates) throw new Error('Location is not available.');
-      return findNearbyPubs(coordinates);
+      const forceRefresh = forcePubRefresh.current;
+      forcePubRefresh.current = false;
+      return findNearbyPubs(coordinates, { forceRefresh });
     },
     enabled: Boolean(coordinates),
     gcTime: 0,
@@ -152,6 +165,7 @@ export default function MapScreen() {
     if (user) void passportQuery.refetch();
     ratings.forEach((rating) => { void rating.refetch(); });
     if (coordinates) {
+      forcePubRefresh.current = true;
       void nearbyPubsQuery.refetch();
       return;
     }
@@ -216,8 +230,22 @@ export default function MapScreen() {
               <Card style={styles.stateCard}>
                 <Text style={styles.stateText}>{nearbyPubsErrorMessage(nearbyPubsQuery.error)}</Text>
                 <Text style={[styles.stateText, { color: colors.mutedForeground }]}>
-                  Google Places may be temporarily unavailable. You can try the search again.
+                  Check your connection and try the search again.
                 </Text>
+                <Button label="Try again" onPress={refresh} />
+              </Card>
+            ) : null}
+            {nearbyPubsQuery.data?.isStale ? (
+              <Card style={styles.stateCard}>
+                <Text style={[styles.stateTitle, { color: colors.foreground }]}>
+                  Showing saved nearby pubs
+                </Text>
+                <Text style={[styles.stateText, { color: colors.mutedForeground }]}>
+                  {nearbyPubsQuery.data.failureCategory
+                    ? `The latest search failed (${nearbyPubsQuery.data.failureCategory.replaceAll('_', ' ')}). These results may be out of date.`
+                    : 'These results were found recently and may be out of date.'}
+                </Text>
+                <Button label="Search again" onPress={refresh} />
               </Card>
             ) : null}
 

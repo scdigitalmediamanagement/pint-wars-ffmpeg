@@ -37,8 +37,14 @@ export async function getCurrentLocation(): Promise<CurrentLocationResult> {
       };
     }
 
-    const position = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const position = await Promise.race([
+      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+      new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('location_timeout')), 12_000);
+      }),
+    ]).finally(() => {
+      if (timeoutId) clearTimeout(timeoutId);
     });
     const { latitude, longitude } = position.coords;
 
@@ -60,10 +66,13 @@ export async function getCurrentLocation(): Promise<CurrentLocationResult> {
       status: 'success',
       coordinates: { latitude, longitude },
     };
-  } catch {
+  } catch (error) {
     return {
       status: 'unavailable',
-      message: 'Your current location could not be read. Try again.',
+      message:
+        error instanceof Error && error.message === 'location_timeout'
+          ? 'Location is taking too long to respond. Try again or log without a pub.'
+          : 'Your current location could not be read. Try again.',
     };
   }
 }

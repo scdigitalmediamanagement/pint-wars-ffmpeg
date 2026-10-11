@@ -51,6 +51,7 @@ export class PlacesServiceError extends Error {
   constructor(
     readonly status: 502 | 503,
     message: string,
+    readonly category = "google_rejection",
   ) {
     super(message);
     this.name = "PlacesServiceError";
@@ -198,6 +199,7 @@ export async function searchNearbyGooglePubs(
     throw new PlacesServiceError(
       503,
       "Nearby pub search is not configured.",
+      "configuration",
     );
   }
 
@@ -232,6 +234,7 @@ export async function searchNearbyGooglePubs(
     throw new PlacesServiceError(
       502,
       "Nearby pubs could not be loaded from Google Places.",
+      controller.signal.aborted ? "google_timeout" : "google_network",
     );
   } finally {
     clearTimeout(timeout);
@@ -241,6 +244,7 @@ export async function searchNearbyGooglePubs(
     throw new PlacesServiceError(
       502,
       "Nearby pubs could not be loaded from Google Places.",
+      "google_rejection",
     );
   }
 
